@@ -8,7 +8,7 @@ import { importSimpleCsv } from './services/csvImportService';
 import { exportSimpleCsv } from './services/csvExportService';
 import { buildFamilyLayout, sanitizeSelectedPersonId } from './services/layoutService';
 import { createJsonBackup, parseJsonBackup } from './services/backupService';
-import { createStandardCsvSetZip, parseStandardCsvSetZip, type StandardCsvSetPreview } from './services/standardCsvSetService';
+import { createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetZip, type StandardCsvSetPreview } from './services/standardCsvSetService';
 import { downloadElementAsPdf, downloadElementAsPng } from './services/exportImageService';
 import { download } from './utils/download';
 import { clearFamilyData, loadFamilyData, saveBackupData, saveFamilyData, updatePerson } from './db/repositories/familyRepository';
@@ -31,7 +31,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [exporting, setExporting] = useState<string | undefined>();
   const backupRef = useRef<HTMLInputElement>(null);
-  const standardCsvSetRef = useRef<HTMLInputElement>(null);
+  const standardCsvSetZipRef = useRef<HTMLInputElement>(null);
+  const standardCsvSetFilesRef = useRef<HTMLInputElement>(null);
   const [standardPreview, setStandardPreview] = useState<StandardCsvSetPreview | undefined>();
   const treeRef = useRef<HTMLDivElement>(null);
 
@@ -148,16 +149,31 @@ export default function App() {
     download('kakeizu_standard_csv_set.zip', zip, 'application/zip');
   });
 
-  const loadStandardCsvSetPreview = async (file: File) => {
+  const showStandardCsvSetPreview = (preview: StandardCsvSetPreview, sourceLabel: string) => {
+    setStandardPreview(preview);
+    setIssues(preview.issues);
+    setStatus(`${sourceLabel}を読み込みました。error ${preview.counts.errors}件 / warning ${preview.counts.warnings}件`);
+  };
+
+  const loadStandardCsvSetZipPreview = async (file: File) => {
     try {
       const preview = await parseStandardCsvSetZip(file);
-      setStandardPreview(preview);
-      setIssues(preview.issues);
-      setStatus(`標準CSVセットを読み込みました。error ${preview.counts.errors}件 / warning ${preview.counts.warnings}件`);
+      showStandardCsvSetPreview(preview, '標準CSVセットZIP');
     } catch (error) {
       console.error('標準CSVセットの読み込みに失敗しました。', error);
       setStandardPreview(undefined);
-      setStatus(error instanceof Error ? `標準CSVセットの読み込みに失敗しました: ${error.message}` : '標準CSVセットの読み込みに失敗しました。');
+      setStatus(error instanceof Error ? `標準CSVセットZIPの読み込みに失敗しました: ${error.message}` : '標準CSVセットZIPの読み込みに失敗しました。');
+    }
+  };
+
+  const loadStandardCsvSetFilesPreview = async (files: FileList) => {
+    try {
+      const preview = await parseStandardCsvSetFileList(files);
+      showStandardCsvSetPreview(preview, '標準CSVセットの複数ファイル');
+    } catch (error) {
+      console.error('標準CSVセットの複数ファイル読み込みに失敗しました。', error);
+      setStandardPreview(undefined);
+      setStatus(error instanceof Error ? `標準CSVセットの複数ファイル読み込みに失敗しました: ${error.message}` : '標準CSVセットの複数ファイル読み込みに失敗しました。');
     }
   };
 
@@ -184,5 +200,5 @@ export default function App() {
     }
   };
 
-  return <div className="app"><header><div><h1>Kakeizu Studio</h1><p>CSVから家系図を作るローカルファーストMVP</p></div><nav><button disabled={!!exporting} onClick={exportCsv}>CSV出力</button><button disabled={!!exporting} onClick={exportJson}>JSONバックアップ</button><button disabled={!!exporting} onClick={exportStandardCsvSet}>標準CSVセットをエクスポート</button><input ref={backupRef} className="hidden-file" type="file" accept="application/json,.json" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void restoreBackup(file); }} /><button onClick={()=>backupRef.current?.click()}>JSON復元</button><input ref={standardCsvSetRef} className="hidden-file" type="file" accept="application/zip,.zip" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void loadStandardCsvSetPreview(file); e.currentTarget.value=''; }} /><button onClick={()=>standardCsvSetRef.current?.click()}>標準CSVセットをインポート</button><button onClick={handleClear}>データ全削除</button><button disabled={!!exporting} onClick={exportPng}>PNG出力</button><button disabled={!!exporting} onClick={exportPdf}>PDF出力</button></nav></header><main><aside className="left"><CsvImport onImported={handleImported}/><section className="panel"><h2>標準CSVセット</h2><p>標準CSVセットは、人物・夫婦関係・親子関係・資料・出典をまとめて出し入れする形式です。Excelや外部ツールで編集したい場合、または資料・出典を保持したまま移行したい場合に使います。既存の単一CSVインポートは手軽な人物投入用です。</p>{standardPreview && <div><h3>インポート前プレビュー</h3><p>persons {standardPreview.counts.persons}件 / unions {standardPreview.counts.unions}件 / parent_child_relations {standardPreview.counts.parent_child_relations}件 / sources {standardPreview.counts.sources}件 / citations {standardPreview.counts.citations}件 / warning {standardPreview.counts.warnings}件 / error {standardPreview.counts.errors}件</p><button disabled={standardPreview.counts.errors > 0} onClick={applyStandardCsvSet}>標準CSVセットを反映</button>{standardPreview.issues.length > 0 && <ul className="issue-list">{standardPreview.issues.map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</div>}</section><section className="panel"><h2>検証結果</h2><p className="notice">{status}</p>{exporting && <p className="notice">{exporting}を出力中...</p>}{isLoading && <p className="notice">保存データを読み込み中...</p>}<p>{persons.length}人 / Union {unions.length}件 / 親子 {relations.length}件 / 警告 {issues.filter(i=>i.severity==='warning').length}件</p>{[...issues, ...layout.issues].length===0 ? <p>エラー・警告なし</p> : <ul className="issue-list">{[...issues, ...layout.issues].map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</section><SourceManager sources={sources} onSave={handleSaveSource} onDelete={handleDeleteSource}/><section className="panel"><h2>人物一覧</h2>{persons.length===0 && !isLoading ? <p>人物データがありません。CSVをインポートすると一覧に表示されます。</p> : <ul className="person-list">{persons.map((p)=><li key={p.id}><button className={p.id===safeSelectedId?'selected-list':''} onClick={()=>setSelectedId(p.id)}>{p.external_id} {p.display_name} {citedPersonIds.has(p.id) ? '📎' : ''}</button></li>)}</ul>}</section></aside><section className="canvas" ref={treeRef}><FamilyTreeView nodes={layout.layoutNodes} edges={layout.layoutEdges} viewBox={layout.viewBox} issues={layout.issues} citedPersonIds={citedPersonIds} selectedPersonId={safeSelectedId} onSelectPerson={(p)=>setSelectedId(p.id)}/></section><PersonDetailPanel person={selected} sources={sources} citations={citations} onChange={handlePersonChange} onSaveCitation={handleSaveCitation} onDeleteCitation={handleDeleteCitation}/></main></div>;
+  return <div className="app"><header><div><h1>Kakeizu Studio</h1><p>CSVから家系図を作るローカルファーストMVP</p></div><nav><button disabled={!!exporting} onClick={exportCsv}>CSV出力</button><button disabled={!!exporting} onClick={exportJson}>JSONバックアップ</button><button disabled={!!exporting} onClick={exportStandardCsvSet}>標準CSVセットをエクスポート</button><input ref={backupRef} className="hidden-file" type="file" accept="application/json,.json" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void restoreBackup(file); }} /><button onClick={()=>backupRef.current?.click()}>JSON復元</button><input ref={standardCsvSetZipRef} className="hidden-file" type="file" accept="application/zip,.zip" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void loadStandardCsvSetZipPreview(file); e.currentTarget.value=''; }} /><button onClick={()=>standardCsvSetZipRef.current?.click()}>標準CSVセットZIPをインポート</button><input ref={standardCsvSetFilesRef} className="hidden-file" type="file" multiple accept="application/json,.json,text/csv,.csv" onChange={(e)=>{ const files=e.target.files; if(files?.length) void loadStandardCsvSetFilesPreview(files); e.currentTarget.value=''; }} /><button onClick={()=>standardCsvSetFilesRef.current?.click()}>標準CSVセットの複数ファイルをインポート</button><button onClick={handleClear}>データ全削除</button><button disabled={!!exporting} onClick={exportPng}>PNG出力</button><button disabled={!!exporting} onClick={exportPdf}>PDF出力</button></nav></header><main><aside className="left"><CsvImport onImported={handleImported}/><section className="panel"><h2>標準CSVセット</h2><p>標準CSVセットは、人物・夫婦関係・親子関係・資料・出典をまとめて出し入れする形式です。Excelや外部ツールで編集したい場合、または資料・出典を保持したまま移行したい場合に使います。既存の単一CSVインポートは手軽な人物投入用です。</p><p className="notice">標準CSVセットZIPはKakeizu Studioで再インポート可能です。Excel等で編集する場合はZIPを展開してCSVを編集し、再ZIP化せず複数ファイル選択で取り込めます。</p><p className="notice">ZIPインポートは、Kakeizu Studioが出力した標準CSVセットZIPを想定しています。現時点のZIP読込は無圧縮ZIP前提です。外部ツールで再圧縮したZIPが読めない場合は、複数ファイル直接インポートを使用してください。</p>{standardPreview && <div><h3>インポート前プレビュー</h3><p>persons {standardPreview.counts.persons}件 / unions {standardPreview.counts.unions}件 / parent_child_relations {standardPreview.counts.parent_child_relations}件 / sources {standardPreview.counts.sources}件 / citations {standardPreview.counts.citations}件 / warning {standardPreview.counts.warnings}件 / error {standardPreview.counts.errors}件</p><button disabled={standardPreview.counts.errors > 0} onClick={applyStandardCsvSet}>標準CSVセットを反映</button>{standardPreview.issues.length > 0 && <ul className="issue-list">{standardPreview.issues.map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</div>}</section><section className="panel"><h2>検証結果</h2><p className="notice">{status}</p>{exporting && <p className="notice">{exporting}を出力中...</p>}{isLoading && <p className="notice">保存データを読み込み中...</p>}<p>{persons.length}人 / Union {unions.length}件 / 親子 {relations.length}件 / 警告 {issues.filter(i=>i.severity==='warning').length}件</p>{[...issues, ...layout.issues].length===0 ? <p>エラー・警告なし</p> : <ul className="issue-list">{[...issues, ...layout.issues].map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</section><SourceManager sources={sources} onSave={handleSaveSource} onDelete={handleDeleteSource}/><section className="panel"><h2>人物一覧</h2>{persons.length===0 && !isLoading ? <p>人物データがありません。CSVをインポートすると一覧に表示されます。</p> : <ul className="person-list">{persons.map((p)=><li key={p.id}><button className={p.id===safeSelectedId?'selected-list':''} onClick={()=>setSelectedId(p.id)}>{p.external_id} {p.display_name} {citedPersonIds.has(p.id) ? '📎' : ''}</button></li>)}</ul>}</section></aside><section className="canvas" ref={treeRef}><FamilyTreeView nodes={layout.layoutNodes} edges={layout.layoutEdges} viewBox={layout.viewBox} issues={layout.issues} citedPersonIds={citedPersonIds} selectedPersonId={safeSelectedId} onSelectPerson={(p)=>setSelectedId(p.id)}/></section><PersonDetailPanel person={selected} sources={sources} citations={citations} onChange={handlePersonChange} onSaveCitation={handleSaveCitation} onDeleteCitation={handleDeleteCitation}/></main></div>;
 }
