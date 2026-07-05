@@ -40,6 +40,10 @@ export async function updateCitation(citation: Citation) {
   await db.citations.put(citation);
 }
 
+export async function addOrUpdateCitations(citations: Citation[]) {
+  await db.citations.bulkPut(citations);
+}
+
 export async function deleteCitation(id: string) {
   await db.citations.delete(id);
 }
