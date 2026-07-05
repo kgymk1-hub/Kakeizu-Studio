@@ -12,8 +12,8 @@ import { createJsonBackup, parseJsonBackup } from './services/backupService';
 import { createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetZip, type StandardCsvSetPreview } from './services/standardCsvSetService';
 import { downloadElementAsPdf, downloadElementAsPng } from './services/exportImageService';
 import { download } from './utils/download';
-import { addOrUpdateParentChildRelations, addOrUpdatePersons, addOrUpdateUnions, clearFamilyData, loadFamilyData, saveBackupData, saveFamilyData, updatePerson } from './db/repositories/familyRepository';
-import { addCitation, addOrUpdateCitations, addSource, deleteCitation, deleteSource, updateCitation, updateSource } from './db/repositories/sourceRepository';
+import { clearFamilyData, loadFamilyData, saveBackupData, saveFamilyData, saveKosekiEntryData, updatePerson } from './db/repositories/familyRepository';
+import { addCitation, addSource, deleteCitation, deleteSource, updateCitation, updateSource } from './db/repositories/sourceRepository';
 import type { NormalizedFamilyData } from './services/normalizationService';
 import type { KosekiEntryResult } from './services/kosekiEntryService';
 import './styles/app.css';
@@ -110,10 +110,7 @@ export default function App() {
   };
 
   const handleApplyKosekiEntry = async (result: KosekiEntryResult) => {
-    await addOrUpdatePersons(result.persons);
-    await addOrUpdateCitations(result.citations);
-    await addOrUpdateParentChildRelations(result.parentChildRelations);
-    await addOrUpdateUnions(result.unions);
+    await saveKosekiEntryData(result);
     setPersons(result.persons);
     setCitations(result.citations);
     setRelations(result.parentChildRelations);

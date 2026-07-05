@@ -43,6 +43,8 @@ export interface KosekiEntryResult extends KosekiEntryData {
 const nowIso = () => new Date().toISOString();
 const uuid = () => crypto.randomUUID();
 const clean = (value?: string) => value?.trim() || undefined;
+const keepExistingWhenBlank = <T,>(value: T | undefined, existing: T | undefined) => value === undefined ? existing : value;
+const cleanKeepExistingWhenBlank = (value: string | undefined, existing: string | undefined) => clean(value) ?? existing;
 
 export function createKosekiSource(input: {
   title: string;
@@ -77,12 +79,12 @@ export function applyKosekiPersonEntry(data: KosekiEntryData, input: KosekiPerso
   const person: Person = {
     ...(existing ?? { id: targetId, created_at: now }),
     display_name: input.display_name.trim() || existing?.display_name || '',
-    gender: input.gender || undefined,
-    birth_date_text: clean(input.birth_date_text),
-    death_date_text: clean(input.death_date_text),
-    generation_no: input.generation_no,
-    rank_title: clean(input.rank_title),
-    note: clean(input.note),
+    gender: input.gender || existing?.gender || undefined,
+    birth_date_text: cleanKeepExistingWhenBlank(input.birth_date_text, existing?.birth_date_text),
+    death_date_text: cleanKeepExistingWhenBlank(input.death_date_text, existing?.death_date_text),
+    generation_no: keepExistingWhenBlank(input.generation_no, existing?.generation_no),
+    rank_title: cleanKeepExistingWhenBlank(input.rank_title, existing?.rank_title),
+    note: cleanKeepExistingWhenBlank(input.note, existing?.note),
     confidence: input.confidence,
     review_status: existing?.review_status ?? 'reviewed',
     updated_at: now,
@@ -90,7 +92,7 @@ export function applyKosekiPersonEntry(data: KosekiEntryData, input: KosekiPerso
   const persons = existing ? data.persons.map((p) => p.id === person.id ? person : p) : [...data.persons, person];
 
   const dupCitation = data.citations.find((c) => c.source_id === input.sourceId && c.target_type === 'person' && c.target_id === person.id);
-  const citation: Citation = { ...(dupCitation ?? { id: uuid(), source_id: input.sourceId, target_type: 'person' as const, target_id: person.id, created_at: now }), confidence: input.confidence, page_or_location: clean(input.page_or_location), quote_text: clean(input.quote_text), interpretation: clean(input.interpretation), note: clean(input.citation_note), updated_at: now };
+  const citation: Citation = { ...(dupCitation ?? { id: uuid(), source_id: input.sourceId, target_type: 'person' as const, target_id: person.id, created_at: now }), confidence: input.confidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, dupCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, dupCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, dupCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, dupCitation?.note), updated_at: now };
   const citations = dupCitation ? data.citations.map((c) => c.id === citation.id ? citation : c) : [...data.citations, citation];
 
   const createdRelationIds: string[] = [];
