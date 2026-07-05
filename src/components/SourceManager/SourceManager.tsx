@@ -44,8 +44,9 @@ export function SourceManager({ sources, onSave, onDelete }: Props) {
   };
 
   return <section className="panel source-manager"><h2>資料一覧</h2>
+    <p className="help-text">資料は、戸籍・Webページ・書籍・聞き取りなど、根拠となる情報源の登録場所です。人物への紐づけは右側の「出典」で行います。</p>
     <details><summary>資料追加</summary><SourceForm onSubmit={(form) => save(form)} /></details>
-    {sources.length === 0 ? <p>資料はまだ登録されていません。</p> : <ul className="source-list">{sources.map((source) => <li key={source.id}>
+    {sources.length === 0 ? <p>資料はまだ登録されていません。まず戸籍、Webページ、書籍、聞き取りなどの根拠資料を追加してください。</p> : <ul className="source-list">{sources.map((source) => <li key={source.id}>
       <div><strong>{source.title}</strong><span className="badge">{sourceTypeLabels[source.source_type]}</span></div>
       <small>{source.url ? 'URLあり' : source.note ? 'メモあり' : 'URL/メモなし'} / 登録日 {source.created_at.slice(0, 10)}</small>
       <details><summary>編集</summary><SourceForm source={source} onSubmit={(form) => save(form, source)} /></details>

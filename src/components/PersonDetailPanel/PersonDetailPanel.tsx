@@ -50,10 +50,11 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
     <label>称号<input value={person.rank_title ?? ''} onChange={(e)=>update('rank_title',e.target.value)}/></label>
     <label>備考<textarea value={person.note ?? ''} onChange={(e)=>update('note',e.target.value)}/></label>
     <section className="citation-section"><h3>出典</h3>
+      <p className="help-text">出典は、選択中の人物にどの資料を根拠として紐づけるかを記録します。現時点では人物単位が中心で、親子関係・婚姻関係への紐づけは将来対応です。</p>
       <details><summary>この人物に出典を追加</summary><CitationForm sources={sources} onSubmit={(form) => saveCitation(form)} /></details>
       {personCitations.length === 0 ? <p>この人物に紐づく出典はありません。</p> : <ul className="citation-list">{personCitations.map((citation) => {
         const source = sourceById.get(citation.source_id);
-        return <li key={citation.id}><strong>{source?.title ?? '不明な資料'}</strong> <span className="badge">{source ? sourceTypeLabels[source.source_type] : '不明'}</span>
+        return <li key={citation.id}><strong>{source?.title ?? '参照先資料なし'}</strong> <span className="badge">{source ? sourceTypeLabels[source.source_type] : '不明'}</span>
           <dl><dt>ページ・位置</dt><dd>{citation.page_or_location || '-'}</dd><dt>引用</dt><dd>{citation.quote_text || '-'}</dd><dt>解釈</dt><dd>{citation.interpretation || '-'}</dd><dt>確度</dt><dd>{citation.confidence ? confidenceLabels[citation.confidence] : '-'}</dd><dt>メモ</dt><dd>{citation.note || '-'}</dd></dl>
           <details><summary>編集</summary><CitationForm citation={citation} sources={sources} onSubmit={(form) => saveCitation(form, citation)} /></details>
           <button type="button" onClick={() => onDeleteCitation(citation.id)}>出典紐づけを削除</button>
@@ -65,7 +66,7 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
 
 function CitationForm({ sources, citation, onSubmit }: { sources: Source[]; citation?: Citation; onSubmit: (form: HTMLFormElement) => void }) {
   return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
-    <label>既存Source<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? '__new__'}>{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}<option value="__new__">新しい簡易Sourceを作成</option></select></label>
+    <label>既存資料<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? '__new__'}>{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}<option value="__new__">新しい簡易Sourceを作成</option></select></label>
     <label>新規資料名<input name="new_source_title" placeholder="既存Sourceがない場合のみ" /></label>
     <label>新規資料種別<select name="new_source_type" defaultValue="other">{sourceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>ページ・位置<input name="page_or_location" defaultValue={citation?.page_or_location ?? ''} /></label>
