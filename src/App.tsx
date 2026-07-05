@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CsvImport, sampleCsv } from './components/CsvImport/CsvImport';
 import { FamilyTreeView } from './components/FamilyTreeView/FamilyTreeView';
+import { SourceManager } from './components/SourceManager/SourceManager';
 import { PersonDetailPanel } from './components/PersonDetailPanel/PersonDetailPanel';
-import type { ImportBatch, ParentChildRelation, Person, Union, ValidationIssue } from './models';
+import type { Citation, ImportBatch, ParentChildRelation, Person, Source, Union, ValidationIssue } from './models';
 import { importSimpleCsv } from './services/csvImportService';
 import { exportSimpleCsv } from './services/csvExportService';
 import { buildFamilyLayout, sanitizeSelectedPersonId } from './services/layoutService';
@@ -10,6 +11,7 @@ import { createJsonBackup, parseJsonBackup } from './services/backupService';
 import { downloadElementAsPdf, downloadElementAsPng } from './services/exportImageService';
 import { download } from './utils/download';
 import { clearFamilyData, loadFamilyData, saveBackupData, saveFamilyData, updatePerson } from './db/repositories/familyRepository';
+import { addCitation, addSource, deleteCitation, deleteSource, updateCitation, updateSource } from './db/repositories/sourceRepository';
 import type { NormalizedFamilyData } from './services/normalizationService';
 import './styles/app.css';
 
@@ -20,6 +22,8 @@ export default function App() {
   const [unions, setUnions] = useState<Union[]>([]);
   const [relations, setRelations] = useState<ParentChildRelation[]>([]);
   const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
+  const [citations, setCitations] = useState<Citation[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [status, setStatus] = useState('起動中...');
@@ -28,8 +32,8 @@ export default function App() {
   const backupRef = useRef<HTMLInputElement>(null);
   const treeRef = useRef<HTMLDivElement>(null);
 
-  const applyData = (data: { persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches?: ImportBatch[]; issues?: ValidationIssue[] }) => {
-    setPersons(data.persons); setUnions(data.unions); setRelations(data.parentChildRelations); setImportBatches(data.importBatches ?? []); setIssues(data.issues ?? []); setSelectedId(data.persons[0]?.id);
+  const applyData = (data: { persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches?: ImportBatch[]; sources?: Source[]; citations?: Citation[]; issues?: ValidationIssue[] }) => {
+    setPersons(data.persons); setUnions(data.unions); setRelations(data.parentChildRelations); setImportBatches(data.importBatches ?? []); setSources(data.sources ?? []); setCitations(data.citations ?? []); setIssues(data.issues ?? []); setSelectedId(data.persons[0]?.id);
   };
 
   useEffect(() => { void (async () => {
@@ -52,6 +56,7 @@ export default function App() {
   const layout = useMemo(() => buildFamilyLayout(persons, unions, relations), [persons, unions, relations]);
   const safeSelectedId = sanitizeSelectedPersonId(selectedId, persons);
   const selected = persons.find((p) => p.id === safeSelectedId);
+  const citedPersonIds = useMemo(() => new Set(citations.filter((c) => c.target_type === 'person').map((c) => c.target_id)), [citations]);
 
   useEffect(() => { if (selectedId && !safeSelectedId) setSelectedId(undefined); }, [selectedId, safeSelectedId]);
 
@@ -68,6 +73,34 @@ export default function App() {
     setPersons((ps) => ps.map((p) => p.id === next.id ? next : p));
     await updatePerson(next);
     setStatus(`${next.display_name} を保存しました。`);
+  };
+
+  const handleSaveSource = async (source: Source) => {
+    const exists = sources.some((s) => s.id === source.id);
+    if (exists) await updateSource(source); else await addSource(source);
+    setSources((prev) => exists ? prev.map((s) => s.id === source.id ? source : s) : [...prev, source]);
+    setStatus(`資料「${source.title}」を保存しました。`);
+  };
+
+  const handleDeleteSource = async (sourceId: string) => {
+    await deleteSource(sourceId);
+    setSources((prev) => prev.filter((s) => s.id !== sourceId));
+    setCitations((prev) => prev.filter((c) => c.source_id !== sourceId));
+    setStatus('資料と関連出典を削除しました。');
+  };
+
+  const handleSaveCitation = async (citation: Citation, newSource?: Source) => {
+    if (newSource) await handleSaveSource(newSource);
+    const exists = citations.some((c) => c.id === citation.id);
+    if (exists) await updateCitation(citation); else await addCitation(citation);
+    setCitations((prev) => exists ? prev.map((c) => c.id === citation.id ? citation : c) : [...prev, citation]);
+    setStatus('人物の出典を保存しました。');
+  };
+
+  const handleDeleteCitation = async (citationId: string) => {
+    await deleteCitation(citationId);
+    setCitations((prev) => prev.filter((c) => c.id !== citationId));
+    setStatus('出典紐づけを削除しました。');
   };
 
   const handleClear = async () => {
@@ -105,14 +138,14 @@ export default function App() {
 
   const exportCsv = () => runExport('CSV', () => download('family_simple.csv', exportSimpleCsv(persons, unions, relations), 'text/csv'));
 
-  const exportJson = () => runExport('JSON', () => download('kakeizu_backup.json', createJsonBackup({ persons, unions, parent_child_relations: relations, import_batches: importBatches }), 'application/json'));
+  const exportJson = () => runExport('JSON', () => download('kakeizu_backup.json', createJsonBackup({ persons, unions, parent_child_relations: relations, import_batches: importBatches, sources, citations }), 'application/json'));
 
   const restoreBackup = async (file: File) => {
     if (!confirm('現在のデータを置き換えます。よろしいですか？')) return;
     try {
       const backup = parseJsonBackup(await file.text());
-      await saveBackupData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches });
-      applyData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, issues: [] });
+      await saveBackupData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, sources: backup.sources, citations: backup.citations });
+      applyData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, sources: backup.sources, citations: backup.citations, issues: [] });
       setStatus('JSONバックアップを復元しました。');
     } catch (error) {
       console.error('JSONバックアップの復元に失敗しました。', error);
@@ -120,5 +153,5 @@ export default function App() {
     }
   };
 
-  return <div className="app"><header><div><h1>Kakeizu Studio</h1><p>CSVから家系図を作るローカルファーストMVP</p></div><nav><button disabled={!!exporting} onClick={exportCsv}>CSV出力</button><button disabled={!!exporting} onClick={exportJson}>JSONバックアップ</button><input ref={backupRef} className="hidden-file" type="file" accept="application/json,.json" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void restoreBackup(file); }} /><button onClick={()=>backupRef.current?.click()}>JSON復元</button><button onClick={handleClear}>データ全削除</button><button disabled={!!exporting} onClick={exportPng}>PNG出力</button><button disabled={!!exporting} onClick={exportPdf}>PDF出力</button></nav></header><main><aside className="left"><CsvImport onImported={handleImported}/><section className="panel"><h2>検証結果</h2><p className="notice">{status}</p>{exporting && <p className="notice">{exporting}を出力中...</p>}{isLoading && <p className="notice">保存データを読み込み中...</p>}<p>{persons.length}人 / Union {unions.length}件 / 親子 {relations.length}件 / 警告 {issues.filter(i=>i.severity==='warning').length}件</p>{[...issues, ...layout.issues].length===0 ? <p>エラー・警告なし</p> : <ul className="issue-list">{[...issues, ...layout.issues].map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</section><section className="panel"><h2>人物一覧</h2>{persons.length===0 && !isLoading ? <p>人物データがありません。CSVをインポートすると一覧に表示されます。</p> : <ul className="person-list">{persons.map((p)=><li key={p.id}><button className={p.id===safeSelectedId?'selected-list':''} onClick={()=>setSelectedId(p.id)}>{p.external_id} {p.display_name}</button></li>)}</ul>}</section></aside><section className="canvas" ref={treeRef}><FamilyTreeView nodes={layout.layoutNodes} edges={layout.layoutEdges} viewBox={layout.viewBox} issues={layout.issues} selectedPersonId={safeSelectedId} onSelectPerson={(p)=>setSelectedId(p.id)}/></section><PersonDetailPanel person={selected} onChange={handlePersonChange}/></main></div>;
+  return <div className="app"><header><div><h1>Kakeizu Studio</h1><p>CSVから家系図を作るローカルファーストMVP</p></div><nav><button disabled={!!exporting} onClick={exportCsv}>CSV出力</button><button disabled={!!exporting} onClick={exportJson}>JSONバックアップ</button><input ref={backupRef} className="hidden-file" type="file" accept="application/json,.json" onChange={(e)=>{ const file=e.target.files?.[0]; if(file) void restoreBackup(file); }} /><button onClick={()=>backupRef.current?.click()}>JSON復元</button><button onClick={handleClear}>データ全削除</button><button disabled={!!exporting} onClick={exportPng}>PNG出力</button><button disabled={!!exporting} onClick={exportPdf}>PDF出力</button></nav></header><main><aside className="left"><CsvImport onImported={handleImported}/><section className="panel"><h2>検証結果</h2><p className="notice">{status}</p>{exporting && <p className="notice">{exporting}を出力中...</p>}{isLoading && <p className="notice">保存データを読み込み中...</p>}<p>{persons.length}人 / Union {unions.length}件 / 親子 {relations.length}件 / 警告 {issues.filter(i=>i.severity==='warning').length}件</p>{[...issues, ...layout.issues].length===0 ? <p>エラー・警告なし</p> : <ul className="issue-list">{[...issues, ...layout.issues].map((i,idx)=><li key={idx} className={i.severity}>{i.severity}: {i.code}: {i.message}</li>)}</ul>}</section><SourceManager sources={sources} onSave={handleSaveSource} onDelete={handleDeleteSource}/><section className="panel"><h2>人物一覧</h2>{persons.length===0 && !isLoading ? <p>人物データがありません。CSVをインポートすると一覧に表示されます。</p> : <ul className="person-list">{persons.map((p)=><li key={p.id}><button className={p.id===safeSelectedId?'selected-list':''} onClick={()=>setSelectedId(p.id)}>{p.external_id} {p.display_name} {citedPersonIds.has(p.id) ? '📎' : ''}</button></li>)}</ul>}</section></aside><section className="canvas" ref={treeRef}><FamilyTreeView nodes={layout.layoutNodes} edges={layout.layoutEdges} viewBox={layout.viewBox} issues={layout.issues} citedPersonIds={citedPersonIds} selectedPersonId={safeSelectedId} onSelectPerson={(p)=>setSelectedId(p.id)}/></section><PersonDetailPanel person={selected} sources={sources} citations={citations} onChange={handlePersonChange} onSaveCitation={handleSaveCitation} onDeleteCitation={handleDeleteCitation}/></main></div>;
 }

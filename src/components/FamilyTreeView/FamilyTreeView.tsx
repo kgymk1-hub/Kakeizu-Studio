@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { LayoutEdge, LayoutNode, Person, ValidationIssue } from '../../models';
 import type { LayoutViewBox } from '../../services/layoutService';
 
-interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; }
+interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; }
 
 const genderLabel: Record<string, string> = { male: '男', female: '女', unknown: '不明', other: '他' };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -19,7 +19,7 @@ function edgePath(edge: LayoutEdge, from: LayoutNode, to: LayoutNode) {
   return `M ${ax} ${ay} V ${midY} H ${bx} V ${by}`;
 }
 
-export function FamilyTreeView({ nodes, edges, viewBox, issues = [], selectedPersonId, onSelectPerson }: Props) {
+export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citedPersonIds = new Set(), selectedPersonId, onSelectPerson }: Props) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState<{ x: number; y: number; panX: number; panY: number }>();
@@ -46,6 +46,7 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], selectedPer
         <text x="16" y="28" className="name"><title>{n.label}</title>{formatName(n.label)}</text>
         <text x="16" y="52" className="dates">{formatDates(n.person)}</text>
         <text x="16" y="72" className="meta">{genderLabel[n.person?.gender ?? 'unknown'] ?? '不明'}{n.person?.confidence === 'uncertain' ? ' ・ ?' : ''}{n.person?.review_status === 'unreviewed' ? ' ・ 未確認' : ''}</text>
+        {citedPersonIds.has(n.id) && <text x={n.width - 44} y="24" className="citation-mark">出典</text>}
       </g>)}</g>
     </svg>
   </div>;
