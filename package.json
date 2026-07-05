@@ -25,5 +25,6 @@
     "@types/papaparse": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest"
-  }
+  },
+  "version": "0.1.0"
 }
