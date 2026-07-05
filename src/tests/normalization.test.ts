@@ -1,0 +1,4 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { importSimpleCsv } from '../services/csvImportService';
+describe('normalizeCsvPersons', () => { const data=importSimpleCsv(readFileSync('src/tests/sample_family.csv','utf8')); it('external_idとinternal_idを分離する', () => { expect(data.persons[0].external_id).toBe('P001'); expect(data.persons[0].id).not.toBe('P001'); }); it('片方向・双方向spouse_idsからUnionを重複なしで作成する', () => { const pairs=data.unions.map(u=>[u.partner1_id,u.partner2_id].filter(Boolean).sort().join(':')); expect(new Set(pairs).size).toBe(pairs.length); expect(data.unions.length).toBeGreaterThanOrEqual(4); }); it('father_id / mother_idから親子関係を作成する', () => { expect(data.parentChildRelations.length).toBe(10); }); it('自分自身を配偶者にした場合エラーにできる', () => { const bad=importSimpleCsv('person_id,name,spouse_ids\nP001,A,P001'); expect(bad.issues.some(i=>i.code==='self_spouse')).toBe(true); }); });

@@ -1,0 +1,5 @@
+import { db } from '../dexieDb';
+import type { ImportBatch, ParentChildRelation, Person, Union } from '../../models';
+export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatch: ImportBatch}) { await db.transaction('rw', db.persons, db.unions, db.parentChildRelations, db.importBatches, async () => { await db.importBatches.put(data.importBatch); await db.persons.bulkPut(data.persons); await db.unions.bulkPut(data.unions); await db.parentChildRelations.bulkPut(data.parentChildRelations); }); }
+export async function loadFamilyData() { const [persons, unions, parentChildRelations, importBatches] = await Promise.all([db.persons.toArray(), db.unions.toArray(), db.parentChildRelations.toArray(), db.importBatches.toArray()]); return { persons, unions, parentChildRelations, importBatches }; }
+export async function clearFamilyData() { await db.transaction('rw', db.persons, db.unions, db.parentChildRelations, db.importBatches, async () => { await db.persons.clear(); await db.unions.clear(); await db.parentChildRelations.clear(); await db.importBatches.clear(); }); }
