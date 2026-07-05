@@ -3,8 +3,8 @@ import { analyzeMappedCsv, convertCsvToStandardRows, SAMPLE_CSV, suggestColumnMa
 
 describe('csvMappingService', () => {
   it('日本語列名が自動マッピングされる', () => {
-    const mapping = suggestColumnMapping(['人物ID', '氏名', '父', '母', '生年']);
-    expect(mapping).toMatchObject({ 人物ID: 'person_id', 氏名: 'name', 父: 'father_id', 母: 'mother_id', 生年: 'birth_date' });
+    const mapping = suggestColumnMapping(['人物ID', '氏名', '父', '母', '配偶者', '生年']);
+    expect(mapping).toMatchObject({ 人物ID: 'person_id', 氏名: 'name', 父: 'father_id', 母: 'mother_id', 配偶者: 'spouse_ids', 生年: 'birth_date' });
   });
 
   it('必須列未マッピング時にエラーになる', () => {
