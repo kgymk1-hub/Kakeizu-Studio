@@ -8,6 +8,7 @@ import { exportSimpleCsv } from './services/csvExportService';
 import { buildFamilyLayout } from './services/layoutService';
 import { createJsonBackup, parseJsonBackup } from './services/backupService';
 import { downloadElementAsPdf, downloadElementAsPng } from './services/exportImageService';
+import { download } from './utils/download';
 import { clearFamilyData, loadFamilyData, saveBackupData, saveFamilyData, updatePerson } from './db/repositories/familyRepository';
 import type { NormalizedFamilyData } from './services/normalizationService';
 import './styles/app.css';
@@ -39,7 +40,6 @@ export default function App() {
 
   const layout = useMemo(() => buildFamilyLayout(persons, unions, relations), [persons, unions, relations]);
   const selected = persons.find((p) => p.id === selectedId);
-  const download = (name: string, content: string, type='text/plain') => { const a=document.createElement('a'); a.download=name; a.href=URL.createObjectURL(new Blob([content],{type})); a.click(); URL.revokeObjectURL(a.href); };
 
   const handleImported = async (data: NormalizedFamilyData) => {
     setIssues(data.issues);
