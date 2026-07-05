@@ -1,1 +1,1 @@
-{"name":"Kakeizu Studio","short_name":"Kakeizu","start_url":"/","display":"standalone","background_color":"#f7f2e8","theme_color":"#6f4e37","icons":[]}
+{"name":"Kakeizu Studio","short_name":"Kakeizu","start_url":"/","display":"standalone","background_color":"#f8f3e8","theme_color":"#10233f","icons":[{"src":"/icons/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"},{"src":"/icons/maskable-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"maskable"}]}
