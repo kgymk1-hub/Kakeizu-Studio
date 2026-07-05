@@ -179,3 +179,29 @@ npm test
 npm run build
 npm run preview
 ```
+
+## v0.1.0 MVP公開確認
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.1.0>
+
+### v0.1.0 MVP確認項目
+
+- アプリが起動する
+- サンプルCSVを取り込める
+- 家系図が表示される
+- 人物詳細を編集できる
+- 資料と出典を登録できる
+- JSONバックアップを出力できる
+- 標準CSVセットをエクスポートできる
+
+### v0.1.0 タグ作成手順
+
+v0.1.0として区切る場合は、内容確認後に以下を実行してください。
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub上でReleaseを作る場合は、tag `v0.1.0` を使ってReleaseを作成してください。Release本文の下書きは `RELEASE_NOTES.md` の「GitHub Release body」を利用できます。
