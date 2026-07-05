@@ -7,6 +7,8 @@ export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; 
     await db.unions.clear();
     await db.parentChildRelations.clear();
     await db.importBatches.clear();
+    await db.sources.clear();
+    await db.citations.clear();
     await db.importBatches.put(data.importBatch);
     await db.persons.bulkPut(data.persons);
     await db.unions.bulkPut(data.unions);
