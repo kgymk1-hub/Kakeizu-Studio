@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Kakeizu Studio maskable icon</title>
+  <desc id="desc">A safe-area family network icon without external images.</desc>
+  <rect width="512" height="512" fill="#10233f"/>
+  <circle cx="256" cy="122" r="44" fill="#fff7ea" stroke="#f28c28" stroke-width="14"/>
+  <circle cx="164" cy="302" r="40" fill="#fff7ea" stroke="#f28c28" stroke-width="12"/>
+  <circle cx="348" cy="302" r="40" fill="#fff7ea" stroke="#f28c28" stroke-width="12"/>
+  <circle cx="256" cy="386" r="38" fill="#fff7ea" stroke="#f28c28" stroke-width="12"/>
+  <path d="M256 166v58M164 224h184M164 224v38M348 224v38M164 342v44h54M348 342v44h-54" fill="none" stroke="#fff7ea" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="224" r="18" fill="#f28c28"/>
+</svg>
