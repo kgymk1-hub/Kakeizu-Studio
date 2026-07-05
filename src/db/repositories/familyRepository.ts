@@ -49,6 +49,15 @@ export async function updatePerson(person: Person) {
   await db.persons.put(person);
 }
 
+export async function saveKosekiEntryData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; citations: Citation[]}) {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.citations], async () => {
+    await db.persons.bulkPut(data.persons);
+    await db.unions.bulkPut(data.unions);
+    await db.parentChildRelations.bulkPut(data.parentChildRelations);
+    await db.citations.bulkPut(data.citations);
+  });
+}
+
 export async function addOrUpdatePersons(persons: Person[]) {
   await db.persons.bulkPut(persons);
 }

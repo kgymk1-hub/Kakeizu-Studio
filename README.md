@@ -34,11 +34,13 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 - 戸籍資料は Source として登録します。資料種別は現在戸籍、除籍、改製原戸籍、その他を選べます。
 - 戸籍資料を選択した状態で人物を追加・更新すると、その人物に対する Citation が自動作成されます。
-- 同じ Source と Person の Citation がすでにある場合は重複作成せず、既存Citationを更新します。
+- 既存人物更新時は、空欄の入力項目では既存値を消さず、入力された項目だけを更新します。
+- 同じ Source と Person の Citation がすでにある場合は重複作成せず、created_at を維持して既存Citationを更新します。
 - 父・母・配偶者を任意で選択し、ParentChildRelation や Union を同時に作成できます。既存の同一関係がある場合は重複作成しません。
 - 現時点では人物単位Citationのみ対応です。親子関係・夫婦関係へのCitation自動付与は未対応です。
 - 出生・死亡・婚姻・転籍などの Event 管理は将来対応です。今回の最小版では Event モデルを追加していません。
-- OCRやAI読み取り、戸籍画像添付には未対応です。
+- OCRやAI読み取り、戸籍画像添付には未対応です。戸籍入力モードは手入力支援です。
+- 戸籍入力モードで作成した Person / Source / Citation / ParentChildRelation / Union は、JSONバックアップと標準CSVセットに含まれます。
 
 ## 使い方
 
@@ -173,7 +175,7 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 - ZIP読込は現時点では無圧縮ZIP前提です。
 - 外部編集後は再ZIP化より複数ファイル直接インポートを推奨します。
 - 現時点のCitation UIは人物単位中心です。
-- 関係単位Citation、戸籍入力モード、GEDCOM、OCR、メディア添付は将来対応です。
+- 関係単位Citation、GEDCOM、OCR、メディア添付は将来対応です。
 - Shift_JIS CSV自動判定は未対応です。CSVはUTF-8で保存してください。
 - PWAとしての高度なオフライン対応は今後調整します。
 - Excel xlsx の直接入出力には未対応です。CSVを利用してください。
@@ -182,7 +184,7 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 
 - 複雑な家系図レイアウトへの対応強化
 - 関係単位Citation、イベント、場所、氏名単位CitationのUI追加
-- 戸籍入力モード、GEDCOM、OCR、AI読み取り、メディア添付の検討
+- GEDCOM、OCR、AI読み取り、メディア添付の検討
 - PWA / オフライン体験の改善
 
 ## 開発コマンド

@@ -42,6 +42,32 @@ describe('kosekiEntryService', () => {
     expect(result.citations[0]).toMatchObject({ id: 'c1', confidence: 'confirmed', quote_text: '原文' });
   });
 
+  it('既存Person更新時は空欄項目で既存値を消さない', () => {
+    const existing: Person = { ...person('p1', '旧名'), birth_date_text: '明治10年', death_date_text: '昭和5年', generation_no: 2, rank_title: '戸主', note: '既存メモ', confidence: 'likely' };
+    const result = applyKosekiPersonEntry(base({ persons: [existing] }), { mode: 'update', sourceId: 's1', personId: 'p1', display_name: '', birth_date_text: '', death_date_text: '', rank_title: '', note: '', confidence: 'confirmed' });
+    expect(result.person).toMatchObject({ display_name: '旧名', birth_date_text: '明治10年', death_date_text: '昭和5年', generation_no: 2, rank_title: '戸主', note: '既存メモ' });
+  });
+
+  it('既存Citation更新時はcreated_atを維持しupdated_atだけ更新する', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-03T04:05:06.000Z'));
+    const existing: Citation = { id: 'c1', source_id: 's1', target_type: 'person', target_id: 'p1', confidence: 'uncertain', page_or_location: '1頁', created_at: now, updated_at: now };
+    const result = applyKosekiPersonEntry(base({ persons: [person('p1')], citations: [existing] }), { mode: 'update', sourceId: 's1', personId: 'p1', display_name: '人物', confidence: 'confirmed', quote_text: '原文' });
+    expect(result.citation.created_at).toBe(now);
+    expect(result.citation.updated_at).toBe('2026-02-03T04:05:06.000Z');
+    expect(result.citation.page_or_location).toBe('1頁');
+    vi.useRealTimers();
+  });
+
+  it('人物作成とCitation・親子関係・Union作成を同時に行える', () => {
+    const result = applyKosekiPersonEntry(base(), { mode: 'create', sourceId: 's1', display_name: '子', confidence: 'confirmed', fatherId: 'father', motherId: 'mother', spouseId: 'spouse', page_or_location: '2頁', interpretation: '続柄確認' });
+    expect(result.persons).toHaveLength(4);
+    expect(result.citations).toHaveLength(1);
+    expect(result.parentChildRelations).toHaveLength(2);
+    expect(result.unions).toHaveLength(1);
+    expect(result.citation).toMatchObject({ target_id: result.person.id, page_or_location: '2頁', interpretation: '続柄確認' });
+  });
+
   it('父・母選択でParentChildRelationが作成され重複作成されない', () => {
     const first = applyKosekiPersonEntry(base(), { mode: 'create', sourceId: 's1', display_name: '子', confidence: 'confirmed', fatherId: 'father', motherId: 'mother' });
     expect(first.parentChildRelations).toHaveLength(2);
