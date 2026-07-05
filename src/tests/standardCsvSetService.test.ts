@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Citation, Person, Source } from '../models';
-import { buildStandardCsvSetFiles, createStandardCsvSetZip, parseStandardCsvSetFiles, readStoredZip } from '../services/standardCsvSetService';
+import { buildStandardCsvSetFiles, createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetFiles, parseStandardCsvSetZip, readStandardCsvSetFromFiles, readStandardCsvSetFromZip, readStoredZip } from '../services/standardCsvSetService';
 
 const now = '2026-07-06T00:00:00.000Z';
 const person: Person = { id:'p1', external_id:'P-1', display_name:'山田 太郎', gender:'male', created_at:now, updated_at:now };
@@ -10,6 +10,10 @@ const base = { persons:[person], unions:[], parentChildRelations:[], sources:[so
 
 async function zipFiles(data = base) {
   return readStoredZip(new Uint8Array(await (await createStandardCsvSetZip(data)).arrayBuffer()));
+}
+
+function asSelectedFiles(files: Record<string, string>) {
+  return Object.entries(files).map(([name, text]) => new File([text], name, { type: name.endsWith('.json') ? 'application/json' : 'text/csv' }));
 }
 
 describe('standardCsvSetService', () => {
@@ -73,5 +77,44 @@ describe('standardCsvSetService', () => {
   it('errorありの場合はインポート不可', () => {
     const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, source_id:'missing' }] }));
     expect(preview.counts.errors).toBeGreaterThan(0);
+  });
+
+
+  it('複数ファイル形式から標準CSVセットを読み込める', async () => {
+    const preview = await parseStandardCsvSetFileList(asSelectedFiles(buildStandardCsvSetFiles(base)));
+    expect(preview.counts.errors).toBe(0);
+    expect(preview.counts.persons).toBe(1);
+    expect(preview.counts.sources).toBe(1);
+    expect(preview.counts.citations).toBe(1);
+  });
+
+  it('複数ファイル直接インポートでもpersons / sources / citationsが復元される', async () => {
+    const preview = await parseStandardCsvSetFileList(asSelectedFiles(buildStandardCsvSetFiles(base)));
+    expect(preview.persons[0].display_name).toBe('山田 太郎');
+    expect(preview.sources[0].title).toBe('本');
+    expect(preview.citations[0].target_id).toBe('p1');
+  });
+
+  it('ZIP読込と複数ファイル読込で同じ検証結果になる', async () => {
+    const files = buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] });
+    const zip = await createStandardCsvSetZip({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] });
+    const zipPreview = await parseStandardCsvSetZip(zip);
+    const filePreview = await parseStandardCsvSetFileList(asSelectedFiles(files));
+    expect(filePreview.counts).toEqual(zipPreview.counts);
+    expect(filePreview.issues.map(({ severity, code, message }) => ({ severity, code, message }))).toEqual(zipPreview.issues.map(({ severity, code, message }) => ({ severity, code, message })));
+  });
+
+  it('ZIP読込と複数ファイル読込はファイル抽出後に同じ検証関数へ渡せる', async () => {
+    const zipFiles = await readStandardCsvSetFromZip(await createStandardCsvSetZip(base));
+    const selectedFiles = await readStandardCsvSetFromFiles(asSelectedFiles(buildStandardCsvSetFiles(base)));
+    expect(parseStandardCsvSetFiles(selectedFiles).counts).toEqual(parseStandardCsvSetFiles(zipFiles).counts);
+  });
+
+  it('外部圧縮ZIP非対応時のエラーメッセージが存在する', () => {
+    const compressedLocalHeader = new Uint8Array(30);
+    const view = new DataView(compressedLocalHeader.buffer);
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(8, 8, true);
+    expect(() => readStoredZip(compressedLocalHeader)).toThrow('圧縮されたZIPは未対応です。標準CSVセットは無圧縮ZIPで読み込んでください。');
   });
 });

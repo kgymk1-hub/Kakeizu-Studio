@@ -15,13 +15,14 @@ export const STANDARD_CSV_COLUMNS = {
 
 export interface StandardCsvSetData { persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; sources: Source[]; citations: Citation[]; importBatches: ImportBatch[]; }
 export interface StandardCsvSetPreview extends StandardCsvSetData { issues: ValidationIssue[]; counts: { persons:number; unions:number; parent_child_relations:number; sources:number; citations:number; warnings:number; errors:number }; }
+export type StandardCsvSetTextFiles = Record<string, string>;
 
 function csv<T extends Record<string, unknown>>(fields: readonly string[], rows: T[]) { return BOM + Papa.unparse({ fields: [...fields], data: rows }, { columns: [...fields], newline: '\r\n' }); }
 const v = (x: unknown) => x == null ? '' : String(x);
 const opt = (x: unknown) => v(x) || undefined;
 const num = (x: unknown) => v(x) ? Number(v(x)) : undefined;
 
-export function buildStandardCsvSetFiles(data: Omit<StandardCsvSetData, 'importBatches'>) {
+export function buildStandardCsvSetFiles(data: Omit<StandardCsvSetData, 'importBatches'>): StandardCsvSetTextFiles {
   const manifest = JSON.stringify({ app:'Kakeizu Studio', format:STANDARD_CSV_SET_FORMAT, schema_version:'1.0', exported_at:new Date().toISOString(), files:[...STANDARD_CSV_SET_FILES] }, null, 2);
   return {
     'manifest.json': manifest,
@@ -39,7 +40,7 @@ function crc32(buf: Uint8Array) { crcTable ??= Uint32Array.from({length:256},(_,
 function u16(n:number){ const b=new Uint8Array(2); new DataView(b.buffer).setUint16(0,n,true); return b; } function u32(n:number){ const b=new Uint8Array(4); new DataView(b.buffer).setUint32(0,n,true); return b; }
 function concat(parts: Uint8Array[]) { const out = new Uint8Array(parts.reduce((s,p)=>s+p.length,0)); let o=0; for (const p of parts){ out.set(p,o); o+=p.length; } return out; }
 
-export function createStoredZip(files: Record<string,string>) {
+export function createStoredZip(files: StandardCsvSetTextFiles) {
   const locals: Uint8Array[] = []; const centrals: Uint8Array[] = []; let offset = 0;
   for (const [name, text] of Object.entries(files)) {
     const nameBytes = te.encode(name), data = te.encode(text), crc = crc32(data);
@@ -54,8 +55,8 @@ export function createStoredZip(files: Record<string,string>) {
 
 export async function createStandardCsvSetZip(data: Omit<StandardCsvSetData, 'importBatches'>) { return createStoredZip(buildStandardCsvSetFiles(data)); }
 
-export function readStoredZip(bytes: Uint8Array) {
-  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength); const files: Record<string,string> = {}; let p = 0;
+export function readStoredZip(bytes: Uint8Array): StandardCsvSetTextFiles {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength); const files: StandardCsvSetTextFiles = {}; let p = 0;
   while (p + 30 <= bytes.length && dv.getUint32(p,true) === 0x04034b50) {
     const method = dv.getUint16(p+8,true), comp = dv.getUint32(p+18,true), uncomp = dv.getUint32(p+22,true), nlen = dv.getUint16(p+26,true), xlen = dv.getUint16(p+28,true);
     const name = td.decode(bytes.slice(p+30,p+30+nlen)); const start = p+30+nlen+xlen; if (method !== 0) throw new Error('圧縮されたZIPは未対応です。標準CSVセットは無圧縮ZIPで読み込んでください。');
@@ -67,7 +68,7 @@ export function readStoredZip(bytes: Uint8Array) {
 function parseRows(text: string) { const parsed = Papa.parse<Record<string,string>>(text.replace(/^\uFEFF/, ''), { header:true, skipEmptyLines:true, transformHeader:h=>h.trim() }); return { rows: parsed.data, errors: parsed.errors }; }
 function req(row: Record<string,string>, field:string, file:string, rowNo:number, issues:ValidationIssue[]) { const value = v(row[field]).trim(); if (!value) issues.push({ severity:'error', code:'required', message:`${file} ${field} は必須です。`, row:rowNo, field }); return value; }
 
-export function parseStandardCsvSetFiles(files: Record<string,string>): StandardCsvSetPreview {
+export function validateStandardCsvSet(files: StandardCsvSetTextFiles): StandardCsvSetPreview {
   const issues: ValidationIssue[] = [];
   if (!files['manifest.json']) issues.push({ severity:'error', code:'missing_manifest', message:'manifest.json がありません。' });
   else { try { const m = JSON.parse(files['manifest.json']); if (m.format !== STANDARD_CSV_SET_FORMAT) issues.push({ severity:'error', code:'invalid_format', message:'manifest.json のformatが標準CSVセットではありません。' }); } catch { issues.push({ severity:'error', code:'invalid_manifest', message:'manifest.json を読み込めません。' }); } }
@@ -90,4 +91,20 @@ export function parseStandardCsvSetFiles(files: Record<string,string>): Standard
   return { persons, unions, parentChildRelations, sources, citations, importBatches:[importBatch], issues, counts:{ persons:persons.length, unions:unions.length, parent_child_relations:parentChildRelations.length, sources:sources.length, citations:citations.length, warnings:issues.filter(i=>i.severity==='warning').length, errors:issues.filter(i=>i.severity==='error').length } };
 }
 
-export async function parseStandardCsvSetZip(file: Blob) { return parseStandardCsvSetFiles(readStoredZip(new Uint8Array(await file.arrayBuffer()))); }
+export function parseStandardCsvSetFiles(files: StandardCsvSetTextFiles) { return validateStandardCsvSet(files); }
+
+export async function readStandardCsvSetFromZip(file: Blob) { return readStoredZip(new Uint8Array(await file.arrayBuffer())); }
+
+function standardCsvSetFileName(file: File) { return file.name.split(/[\\/]/).pop() ?? file.name; }
+
+export async function readStandardCsvSetFromFiles(fileList: FileList | File[] | Iterable<File>): Promise<StandardCsvSetTextFiles> {
+  const files: StandardCsvSetTextFiles = {};
+  for (const file of Array.from(fileList)) {
+    const name = standardCsvSetFileName(file);
+    if (name === 'manifest.json' || (STANDARD_CSV_SET_FILES as readonly string[]).includes(name)) files[name] = (await file.text()).replace(/^\uFEFF/, '');
+  }
+  return files;
+}
+
+export async function parseStandardCsvSetZip(file: Blob) { return validateStandardCsvSet(await readStandardCsvSetFromZip(file)); }
+export async function parseStandardCsvSetFileList(fileList: FileList | File[] | Iterable<File>) { return validateStandardCsvSet(await readStandardCsvSetFromFiles(fileList)); }
