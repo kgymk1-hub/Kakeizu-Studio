@@ -6,6 +6,8 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 **Version 0.1.0 MVP**
 
+> v0.2 development: 戸籍入力モード最小版を追加中です。
+
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
@@ -24,6 +26,19 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 拡大・縮小・全体表示・リセット・ドラッグ移動
 - 人物詳細編集
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
+
+
+## v0.2 development: 戸籍入力モード最小版
+
+戸籍入力モードは、戸籍・除籍・改製原戸籍などの資料を見ながら人物情報を入力するための最小入力モードです。戸籍を完全に構造化するのではなく、既存の Source / Citation 機能を活かして、資料を根拠として人物に紐づけることを目的にしています。
+
+- 戸籍資料は Source として登録します。資料種別は現在戸籍、除籍、改製原戸籍、その他を選べます。
+- 戸籍資料を選択した状態で人物を追加・更新すると、その人物に対する Citation が自動作成されます。
+- 同じ Source と Person の Citation がすでにある場合は重複作成せず、既存Citationを更新します。
+- 父・母・配偶者を任意で選択し、ParentChildRelation や Union を同時に作成できます。既存の同一関係がある場合は重複作成しません。
+- 現時点では人物単位Citationのみ対応です。親子関係・夫婦関係へのCitation自動付与は未対応です。
+- 出生・死亡・婚姻・転籍などの Event 管理は将来対応です。今回の最小版では Event モデルを追加していません。
+- OCRやAI読み取り、戸籍画像添付には未対応です。
 
 ## 使い方
 

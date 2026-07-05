@@ -49,6 +49,18 @@ export async function updatePerson(person: Person) {
   await db.persons.put(person);
 }
 
+export async function addOrUpdatePersons(persons: Person[]) {
+  await db.persons.bulkPut(persons);
+}
+
+export async function addOrUpdateParentChildRelations(relations: ParentChildRelation[]) {
+  await db.parentChildRelations.bulkPut(relations);
+}
+
+export async function addOrUpdateUnions(unions: Union[]) {
+  await db.unions.bulkPut(unions);
+}
+
 export async function clearFamilyData() {
   await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations], async () => {
     await db.persons.clear();
