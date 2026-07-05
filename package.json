@@ -1,0 +1,29 @@
+{
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "dexie": "latest",
+    "html2canvas": "latest",
+    "jspdf": "latest",
+    "nanoid": "latest",
+    "papaparse": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "jsdom": "latest",
+    "@types/node": "latest",
+    "@types/papaparse": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}

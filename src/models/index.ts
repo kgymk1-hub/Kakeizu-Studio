@@ -1,0 +1,16 @@
+export type Gender = 'male' | 'female' | 'unknown' | 'other';
+export type Confidence = 'confirmed' | 'likely' | 'uncertain' | 'disputed';
+export type ReviewStatus = 'unreviewed' | 'reviewed' | 'rejected';
+export type PrivacyLevel = 'public' | 'private' | 'hidden';
+export type UnionType = 'marriage' | 'partner' | 'concubine' | 'unknown' | 'other';
+export type RelationType = 'biological' | 'adoptive' | 'special_adoptive' | 'step' | 'recognized' | 'foster' | 'unknown' | 'disputed';
+export type ValidationSeverity = 'error' | 'warning' | 'info';
+
+export interface Person { id: string; external_id?: string; display_name: string; family_name?: string; given_name?: string; family_name_kana?: string; given_name_kana?: string; birth_family_name?: string; gender?: Gender; birth_date_text?: string; birth_date_from?: string; birth_date_to?: string; death_date_text?: string; death_date_from?: string; death_date_to?: string; birth_place_id?: string; death_place_id?: string; honseki_text?: string; occupation?: string; rank_title?: string; generation_no?: number; is_living?: boolean | 'unknown'; privacy_level?: PrivacyLevel; confidence?: Confidence; review_status?: ReviewStatus; note?: string; import_batch_id?: string; created_at: string; updated_at: string; }
+export interface Union { id: string; external_id?: string; partner1_id: string; partner2_id?: string; union_type: UnionType; marriage_date_text?: string; divorce_date_text?: string; end_date_text?: string; end_reason?: 'divorce' | 'death' | 'unknown' | 'other'; status?: 'married' | 'divorced' | 'widowed' | 'ended' | 'unknown'; confidence?: Confidence; review_status?: ReviewStatus; note?: string; import_batch_id?: string; created_at: string; updated_at: string; }
+export interface ParentChildRelation { id: string; external_id?: string; parent_id: string; child_id: string; union_id?: string; relation_type: RelationType; start_date_text?: string; end_date_text?: string; confidence?: Confidence; review_status?: ReviewStatus; note?: string; import_batch_id?: string; created_at: string; updated_at: string; }
+export interface ImportBatch { id: string; external_id?: string; imported_at: string; import_type: 'csv_simple' | 'csv_standard' | 'json' | 'gedcom' | 'manual'; source_name?: string; imported_count: number; warning_count: number; error_count: number; note?: string; }
+export interface ValidationIssue { severity: ValidationSeverity; code: string; message: string; row?: number; field?: string; external_id?: string; }
+export interface ValidationResult { ok: boolean; issues: ValidationIssue[]; }
+export interface LayoutNode { id: string; type: 'person' | 'union'; x: number; y: number; width: number; height: number; label: string; person?: Person; union?: Union; }
+export interface LayoutEdge { id: string; type: 'spouse' | 'parent-child' | 'union-child'; from: string; to: string; relation_type?: RelationType; confidence?: Confidence; }
