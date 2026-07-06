@@ -4,9 +4,9 @@
 
 Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript + Vite 製のローカルファースト家系図作成アプリです。ブラウザ内の IndexedDB（Dexie）へ保存するため、MVP公開版ではサーバーを使わずに人物・関係・資料・出典を扱えます。
 
-**Version 0.1.0 MVP**
+**Version 0.2.0**
 
-> v0.2 development: 戸籍入力モード最小版、Eventモデル最小版、戸籍入力モードからのEvent作成を追加・検証中です。`package.json` の正式バージョンはリリース固定フェーズまで 0.1.x 系のままです。
+> v0.2.0では、戸籍入力モード、Eventモデル、戸籍入力モードからのEvent作成に対応しました。
 
 ## 公開URL
 
@@ -28,7 +28,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 
 
-## v0.2 development: 戸籍入力モード / Eventモデル
+## v0.2.0: 戸籍入力モード / Eventモデル
 
 戸籍入力モードは、戸籍・除籍・改製原戸籍などの資料を見ながら人物情報を入力するための最小入力モードです。戸籍を完全に構造化するのではなく、既存の Source / Citation 機能を活かして、資料を根拠として人物に紐づけることを目的にしています。
 
@@ -47,7 +47,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 ### Eventモデル最小版
 
-v0.2 development では、人物・関係そのものとは別に「出来事」を記録する Event モデルを追加しています。
+v0.2.0では、人物・関係そのものとは別に「出来事」を記録する Event モデルを追加しています。
 
 - Eventは `event_type`、`target_type`、`target_id`、日付テキスト、場所、説明、確度、メモなどを持ちます。
 - 現在のUIでは人物詳細画面から人物に紐づくEventを追加・編集・削除できます。
@@ -88,7 +88,7 @@ v0.2 development では、人物・関係そのものとは別に「出来事」
 
 - 「JSONバックアップ」でアプリ内部形式の `kakeizu_backup.json` を出力します。
 - 「JSON復元」で現在の人物・Union・親子関係・資料・出典・Event・インポート履歴を全置き換え復元します。
-- v0.2 development のJSONバックアップは `schema_version: "1.2"` として `events` を含みます。Event Citationは `citations` 内に `target_type: "event"` として保存されます。
+- v0.2.0のJSONバックアップは `schema_version: "1.2"` として `events` を含みます。Event Citationは `citations` 内に `target_type: "event"` として保存されます。
 - 旧形式バックアップのように `sources` / `citations` / `events` が存在しないJSONでも、空配列として扱うため復元できます。
 
 ### 4. 資料・出典を登録する
@@ -174,7 +174,7 @@ events.csv: id,external_id,event_type,target_type,target_id,date_text,date_from,
 
 ### JSONバックアップ
 
-JSONバックアップはアプリ内部形式そのものです。v0.2 developmentでは `schema_version` は `1.2` で、`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` / `events` をまとめて保持します。旧 `1.0` / `1.1` JSONで `events` が存在しない場合は空配列として扱います。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
+JSONバックアップはアプリ内部形式そのものです。v0.2.0では `schema_version` は `1.2` で、`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` / `events` をまとめて保持します。旧 `1.0` / `1.1` JSONで `events` が存在しない場合は空配列として扱います。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
 
 ## GitHub Pages公開設定
 
@@ -187,7 +187,7 @@ JSONバックアップはアプリ内部形式そのものです。v0.2 developm
   - `dist/index.html` のJS/CSS参照が `/Kakeizu-Studio/assets/...` になっているか確認する。
   - `manifest.json` や `/Kakeizu-Studio/icons/icon.svg` が404になっていないか確認する。
   - GitHub ActionsのPagesデプロイが成功しているか確認する。
-  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1` のようにクエリを付けて開く。
+  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.2.0` のようにクエリを付けて開く。
 
 ## 既知の制限
 
@@ -218,30 +218,32 @@ npm run build
 npm run preview
 ```
 
-## v0.1.0 MVP公開確認
+## v0.2.0公開確認
 
 - 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
-- キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.1.0>
+- キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.2.0>
 
-### v0.1.0 MVP確認項目
+### v0.2.0確認項目
 
 - アプリが起動する
 - サンプルCSVを取り込める
 - 家系図が表示される
-- 人物詳細を編集できる
-- 資料と出典を登録できる
+- 戸籍入力モードで人物を追加できる
+- 戸籍入力モードでEventを作成できる
+- 人物詳細でEventを追加・編集・削除できる
 - JSONバックアップを出力できる
 - 標準CSVセットをエクスポートできる
+- 標準CSVセットにevents.csvが含まれる
 
-### v0.1.0 タグ作成手順
+### v0.2.0 タグ作成手順
 
 タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
 
-v0.1.0として区切る場合は、mainブランチ上で以下を実行してください。
+v0.2.0として区切る場合は、mainブランチ上で以下を実行してください。
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-GitHub上でReleaseを作る場合は、tag `v0.1.0` を使ってReleaseを作成してください。Release本文の下書きは `RELEASE_NOTES.md` の「GitHub Release body」を利用できます。
+GitHub上でReleaseを作る場合は、tag `v0.2.0` を使ってReleaseを作成してください。Release本文の下書きは `RELEASE_NOTES.md` の「GitHub Release body」を利用できます。
