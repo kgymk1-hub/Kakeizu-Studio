@@ -201,7 +201,7 @@ citations.csv: id,external_id,source_id,target_type,target_id,page_or_location,q
 events.csv: id,external_id,event_type,target_type,target_id,date_text,date_from,date_to,place_text,description,confidence,review_status,note,import_batch_id,created_at,updated_at
 ```
 
-一部の列名は内部フィールドへ対応付けています。たとえば `persons.csv` の `name` は `Person.display_name`、`birth_date` は `Person.birth_date_text`、`title` は `Person.rank_title`、`unions.csv` の `marriage_date_text` は `Union.marriage_date_text` として扱います。旧標準CSVセットの `start_date` / `end_date` も読み込み時は `marriage_date_text` / `end_date_text` として扱います。
+一部の列名は内部フィールドへ対応付けています。たとえば `persons.csv` の `name` は `Person.display_name`、`birth_date` は `Person.birth_date_text`、`title` は `Person.rank_title`、`unions.csv` の `marriage_date_text` は `Union.marriage_date_text` として扱います。旧標準CSVセットの `start_date` / `end_date` も読み込み時は、`unions.csv` では `marriage_date_text` / `end_date_text`、`parent_child_relations.csv` では `start_date_text` / `end_date_text` として扱います。
 
 ### JSONバックアップ
 
@@ -229,7 +229,7 @@ JSONバックアップはアプリ内部形式そのものです。v0.2.0では 
 - v0.3 developmentとして、人物詳細画面に「関係の出典」セクションを追加しました。選択中人物が関係する親子関係（ParentChildRelation）と夫婦関係（Union）について、Citationの確認・追加・編集・削除ができます。同じ関係にSource違いのCitationが複数ある場合はすべて一覧表示し、各Citationごとに編集・削除できます。同一Source/Relation、同一Source/UnionのCitationは重複作成せず既存Citationを更新します。
 - Citation target_typeの使い分けは、`person`: 人物、`event`: 出来事、`relation`: 親子関係、`union`: 夫婦関係です。`name` / `place` は将来用で、今回のUI対象外です。
 - 関係単位CitationはJSONバックアップと標準CSVセットの `citations` / `citations.csv` に含まれます。標準CSVセットのインポート時には `relation` は既存ParentChildRelation、`union` は既存Unionを参照しているか検証します。
-- 関係削除UIは未対応です。削除処理を追加する場合は、対象関係のCitationも同時に削除してください。
+- 関係削除UIに対応しています。人物詳細画面の「関係の出典」から親子関係・夫婦関係を削除でき、対象関係のCitationも同時に削除します。Person自体とEventには影響しません。
 - GEDCOM、OCR、AI戸籍読み取り、戸籍画像添付・メディア添付は将来対応です。
 - Shift_JIS CSV自動判定は未対応です。CSVはUTF-8で保存してください。
 - PWAとしての高度なオフライン対応は今後調整します。
