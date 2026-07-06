@@ -144,3 +144,43 @@ describe('kosekiEntryService Event連携', () => {
     expect(second.citations.filter((c) => c.target_type === 'event' && c.target_id === second.events?.[0].id)).toHaveLength(1);
   });
 });
+
+
+describe('kosekiEntryService 追加Event', () => {
+  it('戸籍入力モードでmarriage Eventを作成できる', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', confidence:'confirmed', additionalEventType:'marriage', additionalEventDateText:'明治20年', additionalEventPlaceText:'東京府', additionalEventDescription:'婚姻届出', additionalEventNote:'追加Eventメモ' });
+    expect(result.events).toHaveLength(1);
+    expect(result.events?.[0]).toMatchObject({ event_type:'marriage', target_type:'person', target_id:result.person.id, date_text:'明治20年', place_text:'東京府', description:'婚姻届出', note:'追加Eventメモ', confidence:'confirmed', review_status:'reviewed' });
+  });
+
+  it('戸籍入力モードでtransfer_registry Eventを作成できる', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', confidence:'likely', additionalEventType:'transfer_registry', additionalEventDateText:'大正3年', additionalEventPlaceText:'大阪市', additionalEventDescription:'転籍' });
+    expect(result.events?.[0]).toMatchObject({ event_type:'transfer_registry', date_text:'大正3年', place_text:'大阪市', description:'転籍', confidence:'likely' });
+  });
+
+  it('追加EventにEvent Citationが作成される', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', confidence:'confirmed', page_or_location:'3頁', quote_text:'原文', interpretation:'解釈', citation_note:'出典メモ', additionalEventType:'marriage', additionalEventDescription:'婚姻' });
+    const event = result.events?.[0];
+    expect(result.citations.find((c) => c.target_type === 'event' && c.target_id === event?.id)).toMatchObject({ source_id:'s1', confidence:'confirmed', page_or_location:'3頁', quote_text:'原文', interpretation:'解釈', note:'出典メモ' });
+  });
+
+  it('追加Eventが空入力なら作成されない', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', confidence:'confirmed', additionalEventType:'marriage', additionalEventDateText:' ', additionalEventPlaceText:' ', additionalEventDescription:' ', additionalEventNote:' ' });
+    expect(result.events).toHaveLength(0);
+    expect(result.citations.filter((c) => c.target_type === 'event')).toHaveLength(0);
+  });
+
+  it('同一Person / event_type / date_text / place_text / description のEventが重複作成されない', () => {
+    const first = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', confidence:'confirmed', additionalEventType:'marriage', additionalEventDateText:'明治20年', additionalEventPlaceText:'東京府', additionalEventDescription:'婚姻' });
+    const second = applyKosekiPersonEntry(first, { mode:'update', sourceId:'s1', personId:first.person.id, display_name:'本人', confidence:'confirmed', additionalEventType:'marriage', additionalEventDateText:'明治20年', additionalEventPlaceText:'東京府', additionalEventDescription:'婚姻', additionalEventNote:'別メモ' });
+    expect(second.events).toHaveLength(1);
+    expect(second.citations.filter((c) => c.target_type === 'event' && c.target_id === second.events?.[0].id)).toHaveLength(1);
+  });
+
+  it('追加EventからUnionやParentChildRelationやPerson基本情報が自動作成・更新されない', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'本人', rank_title:'元の肩書', confidence:'confirmed', additionalEventType:'adoption', additionalEventDateText:'明治20年', additionalEventDescription:'養子縁組' });
+    expect(result.unions).toHaveLength(0);
+    expect(result.parentChildRelations).toHaveLength(0);
+    expect(result.person.rank_title).toBe('元の肩書');
+  });
+});

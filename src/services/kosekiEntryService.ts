@@ -1,4 +1,4 @@
-import type { Citation, Confidence, Event, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
+import type { Citation, Confidence, Event, EventType, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
 
 export const kosekiSourceTypes: SourceType[] = ['current_koseki', 'joseki', 'kaisei_genkoseki', 'other'];
 
@@ -23,6 +23,12 @@ export interface KosekiPersonFormInput {
   spouseId?: string;
   createBirthEvent?: boolean;
   createDeathEvent?: boolean;
+  additionalEventType?: EventType | '';
+  additionalEventDateText?: string;
+  additionalEventPlaceText?: string;
+  additionalEventDescription?: string;
+  additionalEventNote?: string;
+  additionalEventConfidence?: Confidence | '';
 }
 
 export interface KosekiEntryData {
@@ -123,18 +129,24 @@ export function applyKosekiPersonEntry(data: KosekiEntryData, input: KosekiPerso
   const createdEventIds: string[] = [];
   let events = [...(data.events ?? [])];
   let eventCitations = citations;
-  const ensureEvent = (event_type: 'birth' | 'death', date_text?: string) => {
-    const cleanedDate = clean(date_text);
-    if (!cleanedDate) return;
-    const existingEvent = events.find((e) => e.target_type === 'person' && e.target_id === person.id && e.event_type === event_type && e.date_text === cleanedDate);
-    const event = existingEvent ?? { id: uuid(), event_type, target_type: 'person' as const, target_id: person.id, date_text: cleanedDate, confidence: input.confidence, review_status: 'reviewed' as const, created_at: now, updated_at: now };
+  const ensureEvent = (eventInput: { event_type: EventType; date_text?: string; place_text?: string; description?: string; note?: string; confidence?: Confidence }, requireDate = false) => {
+    const cleanedDate = clean(eventInput.date_text);
+    const cleanedPlace = clean(eventInput.place_text);
+    const cleanedDescription = clean(eventInput.description);
+    const cleanedNote = clean(eventInput.note);
+    if (requireDate && !cleanedDate) return;
+    if (!requireDate && ![cleanedDate, cleanedPlace, cleanedDescription, cleanedNote].some(Boolean)) return;
+    const eventConfidence = eventInput.confidence || input.confidence;
+    const existingEvent = events.find((e) => e.target_type === 'person' && e.target_id === person.id && e.event_type === eventInput.event_type && (e.date_text ?? '') === (cleanedDate ?? '') && (e.place_text ?? '') === (cleanedPlace ?? '') && (e.description ?? '') === (cleanedDescription ?? ''));
+    const event = existingEvent ?? { id: uuid(), event_type: eventInput.event_type, target_type: 'person' as const, target_id: person.id, date_text: cleanedDate, place_text: cleanedPlace, description: cleanedDescription, note: cleanedNote, confidence: eventConfidence, review_status: 'reviewed' as const, created_at: now, updated_at: now };
     if (!existingEvent) { events = [...events, event]; createdEventIds.push(event.id); }
     const existingEventCitation = eventCitations.find((c) => c.source_id === input.sourceId && c.target_type === 'event' && c.target_id === event.id);
-    const nextEventCitation: Citation = { ...(existingEventCitation ?? { id: uuid(), source_id: input.sourceId!, target_type: 'event' as const, target_id: event.id, created_at: now }), confidence: input.confidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, existingEventCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, existingEventCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, existingEventCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, existingEventCitation?.note), updated_at: now };
+    const nextEventCitation: Citation = { ...(existingEventCitation ?? { id: uuid(), source_id: input.sourceId!, target_type: 'event' as const, target_id: event.id, created_at: now }), confidence: eventConfidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, existingEventCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, existingEventCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, existingEventCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, existingEventCitation?.note), updated_at: now };
     eventCitations = existingEventCitation ? eventCitations.map((c) => c.id === nextEventCitation.id ? nextEventCitation : c) : [...eventCitations, nextEventCitation];
   };
-  if (input.createBirthEvent) ensureEvent('birth', person.birth_date_text);
-  if (input.createDeathEvent) ensureEvent('death', person.death_date_text);
+  if (input.createBirthEvent) ensureEvent({ event_type: 'birth', date_text: person.birth_date_text, confidence: input.confidence }, true);
+  if (input.createDeathEvent) ensureEvent({ event_type: 'death', date_text: person.death_date_text, confidence: input.confidence }, true);
+  if (input.additionalEventType) ensureEvent({ event_type: input.additionalEventType, date_text: input.additionalEventDateText, place_text: input.additionalEventPlaceText, description: input.additionalEventDescription, note: input.additionalEventNote, confidence: input.additionalEventConfidence || input.confidence });
 
   return { persons, sources: data.sources, citations: eventCitations, parentChildRelations, unions, events, person, citation, createdPerson: !existing, createdCitation: !dupCitation, createdRelationIds, createdUnionIds, createdEventIds };
 }
