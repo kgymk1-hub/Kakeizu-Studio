@@ -60,3 +60,15 @@ describe('PersonDetailPanel relation Citation display', () => {
   });
 
 });
+
+describe('PersonDetailPanel relation deletion UI', () => {
+  it('親子関係・夫婦関係の削除ボタンを表示できる', () => {
+    const parent: Person = { ...person, id: 'p0', display_name: '親' };
+    const relation: ParentChildRelation = { id: 'r1', parent_id: 'p0', child_id: 'p1', relation_type: 'biological', created_at: now, updated_at: now };
+    const union: Union = { id: 'u1', partner1_id: 'p1', partner2_id: 'p0', union_type: 'marriage', created_at: now, updated_at: now };
+    const html = renderToStaticMarkup(<PersonDetailPanel person={person} persons={[person, parent]} relations={[relation]} unions={[union]} sources={[]} citations={[]} onChange={() => undefined} onSaveCitation={() => undefined} onDeleteCitation={() => undefined} onDeleteParentChildRelation={() => undefined} onDeleteUnion={() => undefined} />);
+
+    expect(html).toContain('この親子関係を削除');
+    expect(html).toContain('この夫婦関係を削除');
+  });
+});

@@ -181,3 +181,17 @@ describe('standardCsvSetService', () => {
     expect(() => readStoredZip(compressedLocalHeader)).toThrow('圧縮されたZIPは未対応です。標準CSVセットは無圧縮ZIPで読み込んでください。');
   });
 });
+
+describe('relation deletion standard CSV filtering', () => {
+  it('Relation削除後、標準CSVセット対象からRelation/Citationが消える', () => {
+    const files = buildStandardCsvSetFiles({ ...relationBase, parentChildRelations: [], citations: [] });
+    expect(files['parent_child_relations.csv']).not.toContain('r1');
+    expect(files['citations.csv']).not.toContain('relation,r1');
+  });
+
+  it('Union削除後、標準CSVセット対象からUnion/Citationが消える', () => {
+    const files = buildStandardCsvSetFiles({ ...relationBase, unions: [], citations: [] });
+    expect(files['unions.csv']).not.toContain('u1');
+    expect(files['citations.csv']).not.toContain('union,u1');
+  });
+});

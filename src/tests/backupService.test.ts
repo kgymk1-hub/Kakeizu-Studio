@@ -44,3 +44,17 @@ describe('backupService events', () => {
     expect(parseJsonBackup(JSON.stringify({ schema_version:'1.1' })).events).toEqual([]);
   });
 });
+
+describe('relation deletion backup filtering', () => {
+  it('Relation削除後、JSONバックアップ対象からRelation/Citationが消える', () => {
+    const parsed = JSON.parse(createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [source], citations: [] }));
+    expect(parsed.parent_child_relations).toEqual([]);
+    expect(parsed.citations).toEqual([]);
+  });
+
+  it('Union削除後、JSONバックアップ対象からUnion/Citationが消える', () => {
+    const parsed = JSON.parse(createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [source], citations: [] }));
+    expect(parsed.unions).toEqual([]);
+    expect(parsed.citations).toEqual([]);
+  });
+});

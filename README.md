@@ -26,7 +26,22 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 拡大・縮小・全体表示・リセット・ドラッグ移動
 - 人物詳細編集、人物に紐づくEvent（出生・死亡・婚姻・転籍・入籍・除籍など）の追加・編集・削除
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
+- v0.3 development: 人物詳細の「関係の出典」から親子関係・夫婦関係を削除できる最小UI
 
+
+## v0.3 development: 関係削除UI最小版
+
+人物詳細画面の「関係の出典」に、関係そのものを削除するための最小限の入口を追加しています。これは高度な関係編集UIではなく、誤登録した親子関係・夫婦関係を安全に取り除くためのMVPです。
+
+- 親子関係（ParentChildRelation）は「この親子関係を削除」ボタンから削除できます。
+- 夫婦関係（Union）は「この夫婦関係を削除」ボタンから削除できます。
+- 削除前には確認メッセージが表示され、キャンセルした場合は何も削除されません。
+- 親子関係を削除すると、その関係に紐づく `target_type: "relation"` / `target_id: ParentChildRelation.id` のCitationも同時に削除されます。
+- 夫婦関係を削除すると、そのUnionに紐づく `target_type: "union"` / `target_id: Union.id` のCitationも同時に削除されます。
+- 関係削除はPerson自体を削除するものではありません。選択中人物や関係相手のPersonは残ります。
+- 関係削除はEventには影響しません。人物に紐づくEventやEvent Citationは削除しません。
+- 削除後の状態は、人物詳細・家系図表示・JSONバックアップ・標準CSVセット出力に反映されます。
+- 親・子・配偶者の差し替え、関係種別の高度な編集、Undoなどの関係編集UIはまだ未対応です。
 
 ## v0.2.0: 戸籍入力モード / Eventモデル
 
