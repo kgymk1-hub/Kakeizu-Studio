@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Citation, Event, ParentChildRelation, Person, Source, Union } from '../models';
-import { validateFamilyData } from '../services/validationService';
+import { extractYear, validateFamilyData } from '../services/validationService';
 
 const now = '2026-01-01T00:00:00.000Z';
 const person = (id: string, extra: Partial<Person> = {}): Person => ({ id, display_name: id, created_at: now, updated_at: now, ...extra });
@@ -10,6 +10,27 @@ const event = (id: string, extra: Partial<Event> = {}): Event => ({ id, event_ty
 const source = (id = 's1'): Source => ({ id, source_type: 'book', title: id, created_at: now, updated_at: now });
 const citation = (id: string, extra: Partial<Citation> = {}): Citation => ({ id, source_id: 's1', target_type: 'person', target_id: 'p1', created_at: now, updated_at: now, ...extra });
 const base = () => ({ persons: [person('p1'), person('p2')], unions: [] as Union[], parentChildRelations: [] as ParentChildRelation[], events: [] as Event[], sources: [source()], citations: [] as Citation[] });
+
+
+describe('extractYear', () => {
+  it.each([
+    ['1900', 1900],
+    ['1900年', 1900],
+    ['1900-01-01', 1900],
+    ['1900/01/01', 1900],
+    ['西暦1900年', 1900],
+    ['約1900年', 1900],
+    ['1900年頃', 1900],
+    ['c.1900', 1900],
+    ['ca.1900', 1900],
+  ])('%s から %i を抽出できる', (value, expected) => {
+    expect(extractYear(value)).toBe(expected);
+  });
+
+  it('明治33年はundefinedのまま', () => {
+    expect(extractYear('明治33年')).toBeUndefined();
+  });
+});
 
 describe('validateFamilyData', () => {
   it('出典なしPersonを検出できる', () => {
@@ -64,5 +85,13 @@ describe('validateFamilyData', () => {
   it('子の出生年が親の出生年より前のRelationを検出できる', () => { const input = base(); input.persons = [person('p1', { birth_date_text: '1900' }), person('p2', { birth_date_text: '1899' })]; input.parentChildRelations = [relation('r1')]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'error', category: 'date_inconsistency', target_type: 'relation' })])); });
   it('子の出生時に親が10歳未満の場合warningになる', () => { const input = base(); input.persons = [person('p1', { birth_date_text: '1900' }), person('p2', { birth_date_text: '1909' })]; input.parentChildRelations = [relation('r1')]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'warning', category: 'age_warning' })])); });
   it('子の出生時に親が80歳超の場合warningになる', () => { const input = base(); input.persons = [person('p1', { birth_date_text: '1900' }), person('p2', { birth_date_text: '1981' })]; input.parentChildRelations = [relation('r1')]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'warning', category: 'age_warning' })])); });
+
+  it('離婚年が婚姻年より前のUnionをerrorで検出できる', () => { const input = base(); input.unions = [union('u1', { marriage_date_text: '1900年', divorce_date_text: '1899年' })]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'error', category: 'date_inconsistency', target_type: 'union', target_id: 'u1' })])); });
+  it('終了年が婚姻年より前のUnionをerrorで検出できる', () => { const input = base(); input.unions = [union('u1', { marriage_date_text: '1900年', end_date_text: '1899年' })]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'error', category: 'date_inconsistency', target_type: 'union', target_id: 'u1' })])); });
+  it('終了年が離婚年より前のUnionをwarningで検出できる', () => { const input = base(); input.unions = [union('u1', { divorce_date_text: '1900年', end_date_text: '1899年' })]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'warning', category: 'date_inconsistency', target_type: 'union', target_id: 'u1' })])); });
+  it('birth以外のEventが人物の出生年より前ならwarningになる', () => { const input = base(); input.persons = [person('p1', { birth_date_text: '1900年' })]; input.events = [event('e1', { event_type: 'residence', date_text: '1899年' })]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'warning', category: 'date_inconsistency', target_type: 'event', target_id: 'e1' })])); });
+  it('death以外のEventが人物の死亡年より後ならwarningになる', () => { const input = base(); input.persons = [person('p1', { death_date_text: '1900年' })]; input.events = [event('e1', { event_type: 'residence', date_text: '1901年' })]; expect(validateFamilyData(input)).toEqual(expect.arrayContaining([expect.objectContaining({ severity: 'warning', category: 'date_inconsistency', target_type: 'event', target_id: 'e1' })])); });
+  it('birth Eventは出生年前でも出生前Event warningにしない', () => { const input = base(); input.persons = [person('p1', { birth_date_text: '1900年' })]; input.events = [event('e1', { event_type: 'birth', date_text: '1899年' })]; expect(validateFamilyData(input).filter((i) => i.target_id === 'e1' && i.category === 'date_inconsistency')).toEqual([]); });
+  it('death Eventは死亡年後でも死亡後Event warningにしない', () => { const input = base(); input.persons = [person('p1', { death_date_text: '1900年' })]; input.events = [event('e1', { event_type: 'death', date_text: '1901年' })]; expect(validateFamilyData(input).filter((i) => i.target_id === 'e1' && i.category === 'date_inconsistency')).toEqual([]); });
   it('severity順に並ぶ', () => { const input = base(); input.persons = [person('p1', { review_status: 'unreviewed' })]; input.unions = [union('u1', { partner1_id: 'missing' })]; const ranks = validateFamilyData(input).map((i) => i.severity); expect(ranks.indexOf('error')).toBeLessThan(ranks.indexOf('warning')); });
 });
