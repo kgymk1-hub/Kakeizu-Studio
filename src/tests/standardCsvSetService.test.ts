@@ -40,6 +40,24 @@ describe('standardCsvSetService', () => {
     expect(files['citations.csv']).toContain('id,external_id,source_id,target_type,target_id');
   });
 
+  it('標準CSVセットエクスポートにevents.csvが含まれる', () => {
+    const files = buildStandardCsvSetFiles({ ...base, events:[{ id:'e1', event_type:'birth', target_type:'person', target_id:'p1', date_text:'明治1年', created_at:now, updated_at:now }] });
+    expect(files['events.csv']).toContain('id,external_id,event_type,target_type,target_id,date_text');
+  });
+
+  it('events.csvがない旧標準CSVセットでもインポートできる', () => {
+    const files = buildStandardCsvSetFiles(base);
+    delete (files as Record<string,string>)['events.csv'];
+    const preview = parseStandardCsvSetFiles(files);
+    expect(preview.counts.errors).toBe(0);
+    expect(preview.events).toEqual([]);
+  });
+
+  it('events.csvのperson target_id不整合はerror', () => {
+    const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, events:[{ id:'e1', event_type:'birth', target_type:'person', target_id:'missing', created_at:now, updated_at:now }] }));
+    expect(preview.issues.some(i => i.code === 'missing_person_ref')).toBe(true);
+  });
+
   it('標準CSVセットインポートでpersons / sources / citationsが復元される', () => {
     const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles(base));
     expect(preview.counts.errors).toBe(0);
@@ -68,10 +86,9 @@ describe('standardCsvSetService', () => {
     expect(preview.issues.some(i => i.code === 'missing_person_ref')).toBe(true);
   });
 
-  it('warningのみの場合はインポート可能', () => {
+  it('event targetのcitation.target_id が存在しない場合はerror', () => {
     const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] }));
-    expect(preview.counts.errors).toBe(0);
-    expect(preview.counts.warnings).toBe(1);
+    expect(preview.issues.some(i => i.code === 'missing_event_ref')).toBe(true);
   });
 
   it('errorありの場合はインポート不可', () => {
@@ -96,8 +113,8 @@ describe('standardCsvSetService', () => {
   });
 
   it('ZIP読込と複数ファイル読込で同じ検証結果になる', async () => {
-    const files = buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] });
-    const zip = await createStandardCsvSetZip({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] });
+    const files = buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, target_type:'event', target_id:'missing' }] });
+    const zip = await createStandardCsvSetZip({ ...base, citations:[{ ...citation, target_type:'event', target_id:'missing' }] });
     const zipPreview = await parseStandardCsvSetZip(zip);
     const filePreview = await parseStandardCsvSetFileList(asSelectedFiles(files));
     expect(filePreview.counts).toEqual(zipPreview.counts);

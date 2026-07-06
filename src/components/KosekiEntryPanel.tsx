@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Citation, Confidence, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
+import type { Citation, Confidence, Event, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
 import { sourceTypeLabels } from './SourceManager/SourceManager';
 import { applyKosekiPersonEntry, createKosekiSource, kosekiSourceTypes, type KosekiEntryResult } from '../services/kosekiEntryService';
 
@@ -9,11 +9,12 @@ interface Props {
   citations: Citation[];
   relations: ParentChildRelation[];
   unions: Union[];
+  events: Event[];
   onCreateSource: (source: Source) => Promise<void> | void;
   onApply: (result: KosekiEntryResult) => Promise<void> | void;
 }
 
-export function KosekiEntryPanel({ persons, sources, citations, relations, unions, onCreateSource, onApply }: Props) {
+export function KosekiEntryPanel({ persons, sources, citations, relations, unions, events, onCreateSource, onApply }: Props) {
   const kosekiSources = sources.filter((s) => kosekiSourceTypes.includes(s.source_type));
   const [sourceId, setSourceId] = useState(kosekiSources[0]?.id ?? '');
   const [mode, setMode] = useState<'create' | 'update'>('create');
@@ -39,7 +40,7 @@ export function KosekiEntryPanel({ persons, sources, citations, relations, union
   const submitPerson = async (form: HTMLFormElement) => {
     const fd = new FormData(form);
     try {
-      const result = applyKosekiPersonEntry({ persons, sources, citations, parentChildRelations: relations, unions }, { mode, sourceId, personId: mode === 'update' ? personId : undefined, display_name: String(fd.get('display_name') ?? ''), gender: String(fd.get('gender') ?? 'unknown') as Gender, birth_date_text: String(fd.get('birth_date_text') ?? ''), death_date_text: String(fd.get('death_date_text') ?? ''), generation_no: String(fd.get('generation_no') ?? '').trim() ? Number(fd.get('generation_no')) : undefined, rank_title: String(fd.get('rank_title') ?? ''), note: String(fd.get('note') ?? ''), confidence: String(fd.get('confidence') ?? 'confirmed') as Confidence, page_or_location: String(fd.get('page_or_location') ?? ''), quote_text: String(fd.get('quote_text') ?? ''), interpretation: String(fd.get('interpretation') ?? ''), citation_note: String(fd.get('citation_note') ?? ''), fatherId: String(fd.get('fatherId') ?? '') || undefined, motherId: String(fd.get('motherId') ?? '') || undefined, spouseId: String(fd.get('spouseId') ?? '') || undefined });
+      const result = applyKosekiPersonEntry({ persons, sources, citations, parentChildRelations: relations, unions, events }, { mode, sourceId, personId: mode === 'update' ? personId : undefined, display_name: String(fd.get('display_name') ?? ''), gender: String(fd.get('gender') ?? 'unknown') as Gender, birth_date_text: String(fd.get('birth_date_text') ?? ''), death_date_text: String(fd.get('death_date_text') ?? ''), generation_no: String(fd.get('generation_no') ?? '').trim() ? Number(fd.get('generation_no')) : undefined, rank_title: String(fd.get('rank_title') ?? ''), note: String(fd.get('note') ?? ''), confidence: String(fd.get('confidence') ?? 'confirmed') as Confidence, page_or_location: String(fd.get('page_or_location') ?? ''), quote_text: String(fd.get('quote_text') ?? ''), interpretation: String(fd.get('interpretation') ?? ''), citation_note: String(fd.get('citation_note') ?? ''), fatherId: String(fd.get('fatherId') ?? '') || undefined, motherId: String(fd.get('motherId') ?? '') || undefined, spouseId: String(fd.get('spouseId') ?? '') || undefined, createBirthEvent: fd.get('createBirthEvent') === 'on', createDeathEvent: fd.get('createDeathEvent') === 'on' });
       await onApply(result);
       setPersonId(result.person.id);
       setMode('update');
@@ -63,7 +64,7 @@ export function KosekiEntryPanel({ persons, sources, citations, relations, union
       {mode === 'update' && <label>既存人物選択<select value={personId} onChange={(e)=>setPersonId(e.target.value)}><option value="">選択してください</option>{persons.map((p)=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label>}
       <label>氏名<input name="display_name" defaultValue={selectedPerson?.display_name ?? ''} required={mode==='create'} /></label><label>性別<select name="gender" defaultValue={selectedPerson?.gender ?? 'unknown'}><option value="unknown">不明</option><option value="male">男性</option><option value="female">女性</option><option value="other">その他</option></select></label><label>生年月日・生年テキスト<input name="birth_date_text" defaultValue={selectedPerson?.birth_date_text ?? ''} /></label><label>没年月日・没年テキスト<input name="death_date_text" defaultValue={selectedPerson?.death_date_text ?? ''} /></label><label>世代<input name="generation_no" type="number" defaultValue={selectedPerson?.generation_no ?? ''} /></label><label>肩書・続柄メモ<input name="rank_title" defaultValue={selectedPerson?.rank_title ?? ''} /></label><label>備考<textarea name="note" defaultValue={selectedPerson?.note ?? ''} /></label><label>確度<select name="confidence" defaultValue={selectedPerson?.confidence ?? 'confirmed'}><option value="confirmed">confirmed</option><option value="likely">likely</option><option value="uncertain">uncertain</option><option value="disputed">disputed</option></select></label>
       <label>父<select name="fatherId"><option value="">選択しない</option>{relationCandidates.map((p)=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label><label>母<select name="motherId"><option value="">選択しない</option>{relationCandidates.map((p)=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label><label>配偶者<select name="spouseId"><option value="">選択しない</option>{relationCandidates.map((p)=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label>
-      <label>戸籍内の記載位置<input name="page_or_location" /></label><label>原文メモ<textarea name="quote_text" /></label><label>解釈<textarea name="interpretation" /></label><label>出典メモ<textarea name="citation_note" /></label><button className="primary" type="submit">戸籍資料に基づいて登録</button>
+      <label><input type="checkbox" name="createBirthEvent" /> 出生Eventを作成する</label><label><input type="checkbox" name="createDeathEvent" /> 死亡Eventを作成する</label><label>戸籍内の記載位置<input name="page_or_location" /></label><label>原文メモ<textarea name="quote_text" /></label><label>解釈<textarea name="interpretation" /></label><label>出典メモ<textarea name="citation_note" /></label><button className="primary" type="submit">戸籍資料に基づいて登録</button>
     </form>
   </section>;
 }
