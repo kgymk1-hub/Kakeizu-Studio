@@ -27,7 +27,21 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 人物詳細編集、人物に紐づくEvent（出生・死亡・婚姻・転籍・入籍・除籍など）の追加・編集・削除
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 - v0.3 development: 人物詳細の「関係の出典」から親子関係・夫婦関係を削除できる最小UI
+- v0.3 development: 人物詳細の「関係の出典」から親子関係・夫婦関係の基本属性を編集できる最小UI
 
+
+
+## v0.3 development: 関係編集UI最小版
+
+人物詳細画面の「関係の出典」に、親子関係・夫婦関係の基本属性を編集する最小UIを追加しています。関係単位Citation UIと関係削除UIを土台に、Person自体やEventを編集せず、関係レコードの属性だけを更新します。
+
+- 親子関係（ParentChildRelation）は `relation_type`、開始日、終了日、確度、レビュー状態、メモを編集できます。
+- 夫婦関係（Union）は `union_type`、婚姻日、離婚日、終了日、終了理由、状態、確度、レビュー状態、メモを編集できます。
+- この編集では、親・子・配偶者の相手は変更できません。関係の種別・日付・確度・メモのみ編集できます。
+- 関係編集はPerson自体を編集するものではありません。人物名、生没日、称号などのPerson基本情報とは独立しています。
+- 関係編集はEventには影響しません。marriage Eventやadoption EventからUnion / ParentChildRelationを自動作成・同期する機能も未対応です。
+- 関係Citationは従来どおり維持されます。関係属性を編集しても `target_type: "relation"` / `target_type: "union"` のCitationは削除・差し替えされません。
+- 編集後は `updated_at` を更新し、`created_at` は維持します。人物詳細・家系図表示・JSONバックアップ・標準CSVセット出力に反映されます。
 
 ## v0.3 development: 関係削除UI最小版
 
@@ -180,14 +194,14 @@ events.csv
 
 ```csv
 persons.csv: id,external_id,name,gender,birth_date,death_date,generation_no,title,note,confidence,created_at,updated_at
-unions.csv: id,external_id,partner1_id,partner2_id,union_type,start_date,end_date,note,created_at,updated_at
-parent_child_relations.csv: id,parent_id,child_id,relation_type,confidence,note,created_at,updated_at
+unions.csv: id,external_id,partner1_id,partner2_id,union_type,marriage_date_text,divorce_date_text,end_date_text,end_reason,status,confidence,review_status,note,created_at,updated_at
+parent_child_relations.csv: id,parent_id,child_id,relation_type,start_date_text,end_date_text,confidence,review_status,note,created_at,updated_at
 sources.csv: id,external_id,source_type,title,author_or_issuer,issued_date_text,obtained_date,repository,honseki_text,head_of_registry,registry_type,source_text,url,privacy_level,note,import_batch_id,created_at,updated_at
 citations.csv: id,external_id,source_id,target_type,target_id,page_or_location,quote_text,interpretation,confidence,note,import_batch_id,created_at,updated_at
 events.csv: id,external_id,event_type,target_type,target_id,date_text,date_from,date_to,place_text,description,confidence,review_status,note,import_batch_id,created_at,updated_at
 ```
 
-一部の列名は内部フィールドへ対応付けています。たとえば `persons.csv` の `name` は `Person.display_name`、`birth_date` は `Person.birth_date_text`、`title` は `Person.rank_title`、`unions.csv` の `start_date` は `Union.marriage_date_text` として扱います。
+一部の列名は内部フィールドへ対応付けています。たとえば `persons.csv` の `name` は `Person.display_name`、`birth_date` は `Person.birth_date_text`、`title` は `Person.rank_title`、`unions.csv` の `marriage_date_text` は `Union.marriage_date_text` として扱います。旧標準CSVセットの `start_date` / `end_date` も読み込み時は `marriage_date_text` / `end_date_text` として扱います。
 
 ### JSONバックアップ
 

@@ -1,4 +1,4 @@
-import type { Citation, Event, EventType, ParentChildRelation, Person, Source, Union } from '../../models';
+import type { Citation, Confidence, Event, EventType, ParentChildRelation, Person, RelationType, ReviewStatus, Source, Union, UnionType } from '../../models';
 import { sourceTypeLabels, sourceTypeOptions } from '../SourceManager/SourceManager';
 
 interface Props {
@@ -16,14 +16,21 @@ interface Props {
   onDeleteEvent?: (eventId: string) => void;
   onDeleteParentChildRelation?: (relationId: string) => void;
   onDeleteUnion?: (unionId: string) => void;
+  onSaveParentChildRelation?: (relationId: string, patch: Partial<Omit<ParentChildRelation, 'id' | 'parent_id' | 'child_id' | 'created_at'>>) => void;
+  onSaveUnion?: (unionId: string, patch: Partial<Omit<Union, 'id' | 'partner1_id' | 'partner2_id' | 'created_at'>>) => void;
 }
 
 const eventTypeLabels: Record<EventType, string> = { birth: '出生', death: '死亡', marriage: '婚姻', divorce: '離婚', adoption: '養子縁組', recognition: '認知', entry_registry: '入籍', removal_registry: '除籍', transfer_registry: '転籍', name_change: '改名', residence: '住所', occupation: '職業', title: '称号', other: 'その他' };
 const eventTypeOptions = Object.entries(eventTypeLabels) as [EventType, string][];
 
 const confidenceLabels = { confirmed: '確認済み', likely: '有力', uncertain: '不確か', disputed: '異説あり' } as const;
+const reviewStatusLabels: Record<ReviewStatus, string> = { unreviewed: '未確認', reviewed: '確認済み', rejected: '却下' };
+const relationTypeLabels: Record<RelationType, string> = { biological: '実子', adoptive: '養子', special_adoptive: '特別養子', step: '継子', recognized: '認知', foster: '里子', unknown: '不明', disputed: '異説あり' };
+const unionTypeLabels: Record<UnionType, string> = { marriage: '婚姻', partner: 'パートナー', concubine: '側室', unknown: '不明', other: 'その他' };
+const unionEndReasonLabels: Record<NonNullable<Union['end_reason']>, string> = { divorce: '離婚', death: '死亡', unknown: '不明', other: 'その他' };
+const unionStatusLabels: Record<NonNullable<Union['status']>, string> = { married: '婚姻中', divorced: '離婚', widowed: '死別', ended: '終了', unknown: '不明' };
 
-export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent, onDeleteParentChildRelation, onDeleteUnion }: Props) {
+export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent, onDeleteParentChildRelation, onDeleteUnion, onSaveParentChildRelation, onSaveUnion }: Props) {
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
   const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
   const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
@@ -153,7 +160,8 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
         const parentName = personById.get(relation.parent_id)?.display_name ?? relation.parent_id;
         const childName = personById.get(relation.child_id)?.display_name ?? relation.child_id;
         return <li key={relation.id}><strong>親子関係：{parentName} → {childName}</strong> {relationCitations.length > 0 ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
-          <dl><dt>続柄種別</dt><dd>{relation.relation_type}</dd></dl>
+          <dl><dt>続柄種別</dt><dd>{relation.relation_type}</dd><dt>開始日</dt><dd>{relation.start_date_text || '-'}</dd><dt>終了日</dt><dd>{relation.end_date_text || '-'}</dd><dt>確度</dt><dd>{relation.confidence ?? '-'}</dd><dt>レビュー</dt><dd>{relation.review_status ?? '-'}</dd><dt>メモ</dt><dd>{relation.note || '-'}</dd></dl>
+          <details><summary>関係属性を編集</summary><RelationEditNotice /><ParentChildRelationForm relation={relation} onSubmit={(patch) => onSaveParentChildRelation?.(relation.id, patch)} /></details>
           <button type="button" onClick={() => onDeleteParentChildRelation?.(relation.id)}>この親子関係を削除</button>
           <details><summary>出典を追加</summary><CitationForm sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'relation', relation.id)} /></details>
           {relationCitations.length === 0 ? <p>この親子関係に紐づく出典はありません。</p> : <ul className="citation-list">{relationCitations.map((citation) => {
@@ -172,7 +180,8 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
         const p1 = personById.get(union.partner1_id)?.display_name ?? union.partner1_id;
         const p2 = union.partner2_id ? (personById.get(union.partner2_id)?.display_name ?? union.partner2_id) : '未設定';
         return <li key={union.id}><strong>夫婦関係：{p1} ⇔ {p2}</strong> {unionCitations.length > 0 ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
-          <dl><dt>種別</dt><dd>{union.union_type}</dd></dl>
+          <dl><dt>種別</dt><dd>{union.union_type}</dd><dt>婚姻日</dt><dd>{union.marriage_date_text || '-'}</dd><dt>離婚日</dt><dd>{union.divorce_date_text || '-'}</dd><dt>終了日</dt><dd>{union.end_date_text || '-'}</dd><dt>終了理由</dt><dd>{union.end_reason ?? '-'}</dd><dt>状態</dt><dd>{union.status ?? '-'}</dd><dt>確度</dt><dd>{union.confidence ?? '-'}</dd><dt>レビュー</dt><dd>{union.review_status ?? '-'}</dd><dt>メモ</dt><dd>{union.note || '-'}</dd></dl>
+          <details><summary>関係属性を編集</summary><RelationEditNotice /><UnionForm union={union} onSubmit={(patch) => onSaveUnion?.(union.id, patch)} /></details>
           <button type="button" onClick={() => onDeleteUnion?.(union.id)}>この夫婦関係を削除</button>
           <details><summary>出典を追加</summary><CitationForm sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'union', union.id)} /></details>
           {unionCitations.length === 0 ? <p>この夫婦関係に紐づく出典はありません。</p> : <ul className="citation-list">{unionCitations.map((citation) => {
@@ -220,5 +229,42 @@ function EventForm({ sources, event, citation, onSubmit }: { sources: Source[]; 
       <label>出典メモ<textarea name="citation_note" defaultValue={citation?.note ?? ''} /></label>
     </fieldset>
     <button className="primary" type="submit">Eventを保存</button>
+  </form>;
+}
+
+
+function emptyToUndefined(value: FormDataEntryValue | null) {
+  const text = String(value ?? '').trim();
+  return text || undefined;
+}
+
+function RelationEditNotice() {
+  return <p className="help-text">この編集では、親・子・配偶者の相手は変更できません。関係の種別・日付・確度・メモのみ編集できます。</p>;
+}
+
+function ParentChildRelationForm({ relation, onSubmit }: { relation: ParentChildRelation; onSubmit: (patch: Partial<Omit<ParentChildRelation, 'id' | 'parent_id' | 'child_id' | 'created_at'>>) => void }) {
+  return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); onSubmit({ relation_type: String(fd.get('relation_type') ?? 'unknown') as RelationType, start_date_text: emptyToUndefined(fd.get('start_date_text')), end_date_text: emptyToUndefined(fd.get('end_date_text')), confidence: emptyToUndefined(fd.get('confidence')) as Confidence | undefined, review_status: emptyToUndefined(fd.get('review_status')) as ReviewStatus | undefined, note: emptyToUndefined(fd.get('note')) }); }}>
+    <label>関係種別<select name="relation_type" defaultValue={relation.relation_type}>{Object.entries(relationTypeLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>開始日<input name="start_date_text" defaultValue={relation.start_date_text ?? ''} /></label>
+    <label>終了日<input name="end_date_text" defaultValue={relation.end_date_text ?? ''} /></label>
+    <label>確度<select name="confidence" defaultValue={relation.confidence ?? ''}><option value="">未設定</option>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>レビュー状態<select name="review_status" defaultValue={relation.review_status ?? ''}><option value="">未設定</option>{Object.entries(reviewStatusLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>メモ<textarea name="note" defaultValue={relation.note ?? ''} /></label>
+    <button className="primary" type="submit">親子関係を保存</button>
+  </form>;
+}
+
+function UnionForm({ union, onSubmit }: { union: Union; onSubmit: (patch: Partial<Omit<Union, 'id' | 'partner1_id' | 'partner2_id' | 'created_at'>>) => void }) {
+  return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); onSubmit({ union_type: String(fd.get('union_type') ?? 'unknown') as UnionType, marriage_date_text: emptyToUndefined(fd.get('marriage_date_text')), divorce_date_text: emptyToUndefined(fd.get('divorce_date_text')), end_date_text: emptyToUndefined(fd.get('end_date_text')), end_reason: emptyToUndefined(fd.get('end_reason')) as Union['end_reason'], status: emptyToUndefined(fd.get('status')) as Union['status'], confidence: emptyToUndefined(fd.get('confidence')) as Confidence | undefined, review_status: emptyToUndefined(fd.get('review_status')) as ReviewStatus | undefined, note: emptyToUndefined(fd.get('note')) }); }}>
+    <label>夫婦関係種別<select name="union_type" defaultValue={union.union_type}>{Object.entries(unionTypeLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>婚姻日<input name="marriage_date_text" defaultValue={union.marriage_date_text ?? ''} /></label>
+    <label>離婚日<input name="divorce_date_text" defaultValue={union.divorce_date_text ?? ''} /></label>
+    <label>終了日<input name="end_date_text" defaultValue={union.end_date_text ?? ''} /></label>
+    <label>終了理由<select name="end_reason" defaultValue={union.end_reason ?? ''}><option value="">未設定</option>{Object.entries(unionEndReasonLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>状態<select name="status" defaultValue={union.status ?? ''}><option value="">未設定</option>{Object.entries(unionStatusLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>確度<select name="confidence" defaultValue={union.confidence ?? ''}><option value="">未設定</option>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>レビュー状態<select name="review_status" defaultValue={union.review_status ?? ''}><option value="">未設定</option>{Object.entries(reviewStatusLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
+    <label>メモ<textarea name="note" defaultValue={union.note ?? ''} /></label>
+    <button className="primary" type="submit">夫婦関係を保存</button>
   </form>;
 }

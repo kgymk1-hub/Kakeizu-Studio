@@ -72,3 +72,24 @@ describe('PersonDetailPanel relation deletion UI', () => {
     expect(html).toContain('この夫婦関係を削除');
   });
 });
+
+
+describe('PersonDetailPanel relation edit UI', () => {
+  it('関係編集フォームを表示し、相手変更欄を表示しない', () => {
+    const parent: Person = { ...person, id: 'p0', display_name: '親' };
+    const relation: ParentChildRelation = { id: 'r1', parent_id: 'p0', child_id: 'p1', relation_type: 'biological', start_date_text: '明治1年', end_date_text: '明治2年', confidence: 'likely', review_status: 'unreviewed', note: '親子メモ', created_at: now, updated_at: now };
+    const union: Union = { id: 'u1', partner1_id: 'p1', partner2_id: 'p0', union_type: 'marriage', marriage_date_text: '明治3年', divorce_date_text: '明治4年', end_date_text: '明治5年', end_reason: 'divorce', status: 'divorced', confidence: 'confirmed', review_status: 'reviewed', note: '夫婦メモ', created_at: now, updated_at: now };
+    const html = renderToStaticMarkup(<PersonDetailPanel person={person} persons={[person, parent]} relations={[relation]} unions={[union]} sources={[]} citations={[]} onChange={() => undefined} onSaveCitation={() => undefined} onDeleteCitation={() => undefined} onSaveParentChildRelation={() => undefined} onSaveUnion={() => undefined} />);
+
+    expect(html).toContain('関係属性を編集');
+    expect(html).toContain('親子関係を保存');
+    expect(html).toContain('夫婦関係を保存');
+    expect(html).toContain('この編集では、親・子・配偶者の相手は変更できません');
+    expect(html).toContain('name="relation_type"');
+    expect(html).toContain('name="union_type"');
+    expect(html).not.toContain('name="parent_id"');
+    expect(html).not.toContain('name="child_id"');
+    expect(html).not.toContain('name="partner1_id"');
+    expect(html).not.toContain('name="partner2_id"');
+  });
+});

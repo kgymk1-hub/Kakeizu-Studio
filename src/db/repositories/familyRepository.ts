@@ -53,6 +53,23 @@ export async function updatePerson(person: Person) {
   await db.persons.put(person);
 }
 
+
+export async function updateParentChildRelation(relationId: string, patch: Partial<Omit<ParentChildRelation, 'id' | 'parent_id' | 'child_id' | 'created_at'>>) {
+  const existing = await db.parentChildRelations.get(relationId);
+  if (!existing) return undefined;
+  const next: ParentChildRelation = { ...existing, ...patch, id: existing.id, parent_id: existing.parent_id, child_id: existing.child_id, created_at: existing.created_at, updated_at: new Date().toISOString() };
+  await db.parentChildRelations.put(next);
+  return next;
+}
+
+export async function updateUnion(unionId: string, patch: Partial<Omit<Union, 'id' | 'partner1_id' | 'partner2_id' | 'created_at'>>) {
+  const existing = await db.unions.get(unionId);
+  if (!existing) return undefined;
+  const next: Union = { ...existing, ...patch, id: existing.id, partner1_id: existing.partner1_id, partner2_id: existing.partner2_id, created_at: existing.created_at, updated_at: new Date().toISOString() };
+  await db.unions.put(next);
+  return next;
+}
+
 export async function saveKosekiEntryData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; citations: Citation[]; events?: Event[]}) {
   await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.citations, db.events], async () => {
     await db.persons.bulkPut(data.persons);

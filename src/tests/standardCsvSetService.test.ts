@@ -195,3 +195,22 @@ describe('relation deletion standard CSV filtering', () => {
     expect(files['citations.csv']).not.toContain('union,u1');
   });
 });
+
+
+describe('relation edit standard CSV fields', () => {
+  it('編集後のParentChildRelation属性が標準CSVセットに出力され再インポートできる', () => {
+    const editedRelation: ParentChildRelation = { ...relation, relation_type:'adoptive', start_date_text:'明治1年', end_date_text:'明治2年', confidence:'uncertain', review_status:'reviewed', note:'親子編集' };
+    const files = buildStandardCsvSetFiles({ ...relationBase, parentChildRelations:[editedRelation] });
+    expect(files['parent_child_relations.csv']).toContain('start_date_text,end_date_text,confidence,review_status');
+    expect(files['parent_child_relations.csv']).toContain('adoptive,明治1年,明治2年,uncertain,reviewed,親子編集');
+    expect(parseStandardCsvSetFiles(files).parentChildRelations[0]).toMatchObject({ relation_type:'adoptive', start_date_text:'明治1年', end_date_text:'明治2年', confidence:'uncertain', review_status:'reviewed', note:'親子編集' });
+  });
+
+  it('編集後のUnion属性が標準CSVセットに出力され再インポートできる', () => {
+    const editedUnion: Union = { ...union, union_type:'partner', marriage_date_text:'明治3年', divorce_date_text:'明治4年', end_date_text:'明治5年', end_reason:'divorce', status:'divorced', confidence:'likely', review_status:'rejected', note:'夫婦編集' };
+    const files = buildStandardCsvSetFiles({ ...relationBase, unions:[editedUnion] });
+    expect(files['unions.csv']).toContain('marriage_date_text,divorce_date_text,end_date_text,end_reason,status,confidence,review_status');
+    expect(files['unions.csv']).toContain('partner,明治3年,明治4年,明治5年,divorce,divorced,likely,rejected,夫婦編集');
+    expect(parseStandardCsvSetFiles(files).unions[0]).toMatchObject({ union_type:'partner', marriage_date_text:'明治3年', divorce_date_text:'明治4年', end_date_text:'明治5年', end_reason:'divorce', status:'divorced', confidence:'likely', review_status:'rejected', note:'夫婦編集' });
+  });
+});
