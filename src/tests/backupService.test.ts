@@ -58,3 +58,14 @@ describe('relation deletion backup filtering', () => {
     expect(parsed.citations).toEqual([]);
   });
 });
+
+
+describe('relation edit backup fields', () => {
+  it('編集後のParentChildRelationとUnion属性がJSONバックアップ/復元対象に含まれる', () => {
+    const relation = { id:'r1', parent_id:'p1', child_id:'p2', relation_type:'adoptive' as const, start_date_text:'明治1年', end_date_text:'明治2年', confidence:'uncertain' as const, review_status:'reviewed' as const, note:'親子編集', created_at:now, updated_at:'2026-07-06T00:00:00.000Z' };
+    const union = { id:'u1', partner1_id:'p1', partner2_id:'p2', union_type:'partner' as const, marriage_date_text:'明治3年', divorce_date_text:'明治4年', end_date_text:'明治5年', end_reason:'divorce' as const, status:'divorced' as const, confidence:'likely' as const, review_status:'rejected' as const, note:'夫婦編集', created_at:now, updated_at:'2026-07-06T00:00:00.000Z' };
+    const parsed = parseJsonBackup(createJsonBackup({ persons: [], unions: [union], parent_child_relations: [relation], import_batches: [], sources: [], citations: [] }));
+    expect(parsed.parent_child_relations[0]).toEqual(relation);
+    expect(parsed.unions[0]).toEqual(union);
+  });
+});

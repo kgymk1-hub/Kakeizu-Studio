@@ -18,6 +18,7 @@ function makeTable<T extends Row>(store: Map<string, T>) {
     put: async (item: T) => { store.set(item.id, item); },
     bulkPut: async (items: T[]) => { for (const item of items) store.set(item.id, item); },
     toArray: async () => [...store.values()],
+    get: async (id: string) => store.get(id),
     delete: async (id: string) => { store.delete(id); },
     where: (index: string) => ({
       equals: (value: unknown) => ({
@@ -113,5 +114,31 @@ describe('familyRepository relation deletion', () => {
   it('存在しないRelation/Union削除で落ちない', async () => {
     await expect(repo.deleteParentChildRelationWithCitations('missing')).resolves.toBeUndefined();
     await expect(repo.deleteUnionWithCitations('missing')).resolves.toBeUndefined();
+  });
+});
+
+
+describe('relation update repository', () => {
+  it('ParentChildRelationのrelation_typeと属性を更新しcreated_atを維持してupdated_atを更新する', async () => {
+    stores.parentChildRelations.set('r1', { id: 'r1', parent_id: 'p1', child_id: 'p2', relation_type: 'biological', created_at: now, updated_at: now });
+    const updated = await repo.updateParentChildRelation('r1', { relation_type: 'adoptive', start_date_text: '明治1年', end_date_text: '明治2年', confidence: 'uncertain', review_status: 'reviewed', note: '更新メモ' });
+    expect(updated).toMatchObject({ relation_type: 'adoptive', start_date_text: '明治1年', end_date_text: '明治2年', confidence: 'uncertain', review_status: 'reviewed', note: '更新メモ', created_at: now });
+    expect(updated?.updated_at).not.toBe(now);
+    expect(updated?.parent_id).toBe('p1');
+    expect(updated?.child_id).toBe('p2');
+  });
+
+  it('Unionのunion_typeと属性を更新しcreated_atを維持してupdated_atを更新する', async () => {
+    stores.unions.set('u1', { id: 'u1', partner1_id: 'p1', partner2_id: 'p2', union_type: 'marriage', created_at: now, updated_at: now });
+    const updated = await repo.updateUnion('u1', { union_type: 'partner', marriage_date_text: '明治3年', divorce_date_text: '明治4年', end_date_text: '明治5年', end_reason: 'divorce', status: 'divorced', confidence: 'likely', review_status: 'rejected', note: '夫婦更新メモ' });
+    expect(updated).toMatchObject({ union_type: 'partner', marriage_date_text: '明治3年', divorce_date_text: '明治4年', end_date_text: '明治5年', end_reason: 'divorce', status: 'divorced', confidence: 'likely', review_status: 'rejected', note: '夫婦更新メモ', created_at: now });
+    expect(updated?.updated_at).not.toBe(now);
+    expect(updated?.partner1_id).toBe('p1');
+    expect(updated?.partner2_id).toBe('p2');
+  });
+
+  it('存在しないParentChildRelation/Union更新で落ちない', async () => {
+    await expect(repo.updateParentChildRelation('missing', { relation_type: 'unknown' })).resolves.toBeUndefined();
+    await expect(repo.updateUnion('missing', { union_type: 'unknown' })).resolves.toBeUndefined();
   });
 });
