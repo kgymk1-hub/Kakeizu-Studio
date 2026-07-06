@@ -31,6 +31,23 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 人物詳細の「関係の出典」から親子関係・夫婦関係を編集・削除
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 
+
+## v0.4 development: 検証エンジン最小版
+
+v0.4 development の第1フェーズとして、UI画面を大きく作らず、DBやDexieへ直接依存しない純粋関数 `validateFamilyData` による検証エンジン最小版を追加しました。package.json の version と JSON バックアップの schema_version はこの段階では変更しません。
+
+- 検証対象は Person / Event / Union / ParentChildRelation / Citation です。Source は Citation の `source_id` 参照先として確認します。
+- Person / Event / Union / ParentChildRelation に対応する Citation が1件もない場合、出典なしとして warning を返します。
+- Person / Event / Union / ParentChildRelation の `review_status === "unreviewed"` は、確認作業が必要な項目として warning を返します。既存データでも見落としにくいことを優先し、最小版では info ではなく warning として扱います。
+- `confidence === "uncertain"` または `confidence === "disputed"` は低確度として warning を返します。`likely` は今回の警告対象外です。
+- Union の partner、ParentChildRelation の parent / child / union、Event の target、Citation の source / target が存在しない場合、参照先不明として error を返します。
+- Citation の `target_type: "name"` / `target_type: "place"` は Name / Place モデルが未実装のため、現時点では参照先不明 error にしません。
+- ParentChildRelation の `parent_id === child_id`、Union の `partner1_id === partner2_id` は自己参照として error を返します。
+- Person の `birth_date_text` / `death_date_text` と親子関係に対して、4桁の西暦年が含まれる場合だけ最小限の日付矛盾を検出します。死亡年が出生年より前、子の出生年が親の出生年より前は error、子の出生時に親が10歳未満または80歳超は warning です。
+- 和暦（例: 明治33年、昭和10年）や曖昧日付の本格解析、厳密な月日比較は未対応です。
+- 検証結果は error、warning、info の severity 順で返します。
+- 今回は検証結果画面の本格実装、検索・フィルタ、一覧画面からのジャンプ、自動修正は行いません。
+
 ## v0.3.0: 関係単位Citation UI / 関係削除UI / 関係編集UI
 
 人物詳細画面の「関係の出典」で、人物そのものではなく親子関係（ParentChildRelation）や夫婦関係（Union）に対する根拠を管理できます。
