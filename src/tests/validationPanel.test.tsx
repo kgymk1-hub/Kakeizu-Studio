@@ -40,6 +40,16 @@ describe('ValidationPanel', () => {
     expect(getValidationTargetTypeOptions(issues)).toEqual(['event', 'person', 'relation']);
   });
 
+
+
+  it('date_inconsistency / age_warningをcategoryフィルタ選択肢に出せる', () => {
+    const dateIssues: ValidationIssue[] = [
+      { severity: 'error', category: 'date_inconsistency', target_type: 'union', target_id: 'u1', message: '離婚年が婚姻年より前です。' },
+      { severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: 'r1', message: '子の出生時点で親が8歳です。' },
+    ];
+    expect(getValidationCategoryOptions(dateIssues)).toEqual(['age_warning', 'date_inconsistency']);
+  });
+
   it('フィルタ後0件の場合に一致なしメッセージを表示できる', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'error', category: 'missing_citation' }} />);
     expect(html).toContain('条件に一致する検証結果はありません。');

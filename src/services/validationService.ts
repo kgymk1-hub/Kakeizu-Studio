@@ -17,7 +17,9 @@ const labels: Record<ValidatedTargetType, string> = { person: '人物', event: '
 const citationTargetLabels = { ...labels, citation: 'Citation' } as const;
 
 export function extractYear(value?: string): number | undefined {
-  const match = value?.match(/(?:^|[^0-9])([12][0-9]{3})(?:[^0-9]|$)/);
+  const normalized = value?.trim();
+  if (!normalized) return undefined;
+  const match = normalized.match(/(?:^|[^0-9])([12][0-9]{3})(?!年代)(?:[^0-9]|$)/);
   return match ? Number(match[1]) : undefined;
 }
 
@@ -53,7 +55,7 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     const birthYear = extractYear(p.birth_date_text);
     const deathYear = extractYear(p.death_date_text);
     if (birthYear !== undefined && deathYear !== undefined && deathYear < birthYear) {
-      add({ severity: 'error', category: 'date_inconsistency', target_type: 'person', target_id: p.id, title: '死亡年が出生年より前です', message: `死亡年 ${deathYear} が出生年 ${birthYear} より前です。` });
+      add({ severity: 'error', category: 'date_inconsistency', target_type: 'person', target_id: p.id, title: '死亡年が出生年より前です', message: `死亡年が出生年より前です。（出生年: ${birthYear} / 死亡年: ${deathYear}）`, related_ids: [p.id] });
     }
   });
 
@@ -62,6 +64,18 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (e.target_type === 'person' && !personIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しないPerson ${e.target_id} を参照しています。`, [e.target_id]);
     if (e.target_type === 'union' && !unionIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しないUnion ${e.target_id} を参照しています。`, [e.target_id]);
     if (e.target_type === 'relation' && !relationIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しない親子関係 ${e.target_id} を参照しています。`, [e.target_id]);
+    if (e.target_type === 'person') {
+      const targetPerson = personById.get(e.target_id);
+      const eventYear = extractYear(e.date_text);
+      const birthYear = extractYear(targetPerson?.birth_date_text);
+      const deathYear = extractYear(targetPerson?.death_date_text);
+      if (eventYear !== undefined && birthYear !== undefined && e.event_type !== 'birth' && eventYear < birthYear) {
+        add({ severity: 'warning', category: 'date_inconsistency', target_type: 'event', target_id: e.id, title: '出来事が人物の出生年より前です', message: `この出来事は人物の出生年より前です。（出生年: ${birthYear} / 出来事の年: ${eventYear}）`, related_ids: [e.target_id] });
+      }
+      if (eventYear !== undefined && deathYear !== undefined && e.event_type !== 'death' && eventYear > deathYear) {
+        add({ severity: 'warning', category: 'date_inconsistency', target_type: 'event', target_id: e.id, title: '出来事が人物の死亡年より後です', message: `この出来事は人物の死亡年より後です。（死亡年: ${deathYear} / 出来事の年: ${eventYear}）`, related_ids: [e.target_id] });
+      }
+    }
   });
 
   unions.forEach((u) => {
@@ -69,6 +83,18 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (!personIds.has(u.partner1_id)) addBroken('union', u.id, `partner1_id が存在しないPerson ${u.partner1_id} を参照しています。`, [u.partner1_id]);
     if (u.partner2_id && !personIds.has(u.partner2_id)) addBroken('union', u.id, `partner2_id が存在しないPerson ${u.partner2_id} を参照しています。`, [u.partner2_id]);
     if (u.partner2_id && u.partner1_id === u.partner2_id) add({ severity: 'error', category: 'self_reference', target_type: 'union', target_id: u.id, title: '夫婦関係が自己参照しています', message: 'partner1_id と partner2_id が同一です。', related_ids: [u.partner1_id] });
+    const marriageYear = extractYear(u.marriage_date_text);
+    const divorceYear = extractYear(u.divorce_date_text);
+    const endYear = extractYear(u.end_date_text);
+    if (marriageYear !== undefined && divorceYear !== undefined && divorceYear < marriageYear) {
+      add({ severity: 'error', category: 'date_inconsistency', target_type: 'union', target_id: u.id, title: '離婚年が婚姻年より前です', message: `離婚年が婚姻年より前です。（婚姻年: ${marriageYear} / 離婚年: ${divorceYear}）`, related_ids: [u.partner1_id, ...(u.partner2_id ? [u.partner2_id] : [])] });
+    }
+    if (marriageYear !== undefined && endYear !== undefined && endYear < marriageYear) {
+      add({ severity: 'error', category: 'date_inconsistency', target_type: 'union', target_id: u.id, title: '関係終了年が婚姻年より前です', message: `関係終了年が婚姻年より前です。（婚姻年: ${marriageYear} / 終了年: ${endYear}）`, related_ids: [u.partner1_id, ...(u.partner2_id ? [u.partner2_id] : [])] });
+    }
+    if (divorceYear !== undefined && endYear !== undefined && endYear < divorceYear) {
+      add({ severity: 'warning', category: 'date_inconsistency', target_type: 'union', target_id: u.id, title: '関係終了年が離婚年より前です', message: `関係終了年が離婚年より前です。日付の意味を確認してください。（離婚年: ${divorceYear} / 終了年: ${endYear}）`, related_ids: [u.partner1_id, ...(u.partner2_id ? [u.partner2_id] : [])] });
+    }
   });
 
   parentChildRelations.forEach((r) => {
@@ -82,8 +108,8 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (parentYear !== undefined && childYear !== undefined) {
       if (childYear < parentYear) add({ severity: 'error', category: 'date_inconsistency', target_type: 'relation', target_id: r.id, title: '子の出生年が親の出生年より前です', message: `子の出生年 ${childYear} が親の出生年 ${parentYear} より前です。`, related_ids: [r.parent_id, r.child_id] });
       const age = childYear - parentYear;
-      if (age < 10) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が低すぎる可能性があります', message: `子の出生時の親の年齢が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
-      if (age > 80) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が高すぎる可能性があります', message: `子の出生時の親の年齢が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
+      if (age < 10) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が低すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
+      if (age > 80) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が高すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
     }
   });
 
