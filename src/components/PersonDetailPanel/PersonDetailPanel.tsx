@@ -22,8 +22,8 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
   const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
   const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
+  const sourceById = new Map(sources.map((source) => [source.id, source]));
   const personCitations = citations.filter((c) => c.target_type === 'person' && c.target_id === person.id);
-  const sourceById = new Map(sources.map((s) => [s.id, s]));
   const update=(k:keyof Person,v:string)=>onChange({...person,[k]:v,updated_at:new Date().toISOString()});
   const saveCitation = (form: HTMLFormElement, existing?: Citation) => {
     const fd = new FormData(form);
@@ -97,8 +97,8 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
       <details><summary>この人物にEventを追加</summary><EventForm sources={sources} onSubmit={(form) => saveEvent(form)} /></details>
       {personEvents.length === 0 ? <p>この人物に紐づくEventはありません。</p> : <ul className="citation-list">{personEvents.map((event) => {
         const eventCitation = eventCitationById.get(event.id);
-        return <li key={event.id}><strong>{eventTypeLabels[event.event_type]}</strong> {eventCitation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
-          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
+        return <li key={event.id}><strong>{eventTypeLabels[event.event_type] ?? event.event_type}</strong> {eventCitation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
+          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>出典</dt><dd>{eventCitation ? (sourceById.get(eventCitation.source_id)?.title ?? '参照先資料なし') : 'なし'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
           <details><summary>編集</summary><EventForm event={event} citation={eventCitation} sources={sources} onSubmit={(form) => saveEvent(form, event)} /></details>
           <button type="button" onClick={() => onDeleteEvent?.(event.id)}>Eventを削除</button>
         </li>;

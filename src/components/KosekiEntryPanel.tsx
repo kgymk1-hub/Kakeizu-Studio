@@ -51,8 +51,8 @@ export function KosekiEntryPanel({ persons, sources, citations, relations, union
   const selectedPerson = persons.find((p) => p.id === personId);
   const relationCandidates = persons.filter((p) => p.id !== selectedPerson?.id);
   return <section className="panel koseki-entry"><h2>戸籍入力モード</h2>
-    <p className="help-text">戸籍・除籍・改製原戸籍などの資料を見ながら手入力する支援モードです。OCRやAI読み取りは行わず、人物に対するCitationのみ自動で紐づけます。</p>
-    <p className="help-text">親子関係・配偶者関係へのCitation付与は未対応です。既存人物更新では、空欄の項目は既存値を保持します。</p>
+    <p className="help-text">戸籍・除籍・改製原戸籍などの資料を見ながら手入力する支援モードです。OCRやAI読み取りは行わず、人物と任意作成した出生・死亡EventにCitationを紐づけます。</p>
+    <p className="help-text">親子関係・配偶者関係へのCitation付与は未対応です。既存人物更新では、空欄の項目は既存値を保持します。出生Event / 死亡EventのチェックがONでも、対応する日付テキストが空の場合はEventを作成しません。</p>
     <p className="notice">v0.2 development: 戸籍入力モード最小版</p>
     {message && <p className="notice">{message}</p>}{error && <p className="error">{error}</p>}
     <label>使用する戸籍資料<select value={sourceId} onChange={(e)=>setSourceId(e.target.value)}><option value="">選択してください</option>{kosekiSources.map((s)=><option key={s.id} value={s.id}>{s.title}（{sourceTypeLabels[s.source_type]}）</option>)}</select></label>

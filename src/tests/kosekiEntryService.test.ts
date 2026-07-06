@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Citation, ParentChildRelation, Person, Source, Union } from '../models';
+import type { Citation, Event, ParentChildRelation, Person, Source, Union } from '../models';
 import { applyKosekiPersonEntry, createKosekiSource } from '../services/kosekiEntryService';
 
 const now = '2026-01-01T00:00:00.000Z';
 const person = (id: string, display_name = id): Person => ({ id, display_name, gender: 'unknown', created_at: now, updated_at: now });
 const source = (id = 's1'): Source => ({ id, title: '戸籍', source_type: 'current_koseki', created_at: now, updated_at: now });
-const base = (overrides: Partial<{ persons: Person[]; sources: Source[]; citations: Citation[]; parentChildRelations: ParentChildRelation[]; unions: Union[] }> = {}) => ({ persons: [person('father'), person('mother'), person('spouse')], sources: [source()], citations: [], parentChildRelations: [], unions: [], ...overrides });
+const base = (overrides: Partial<{ persons: Person[]; sources: Source[]; citations: Citation[]; parentChildRelations: ParentChildRelation[]; unions: Union[]; events: Event[] }> = {}) => ({ persons: [person('father'), person('mother'), person('spouse')], sources: [source()], citations: [], parentChildRelations: [], unions: [], events: [], ...overrides });
 
 let seq = 0;
 beforeEach(() => {
@@ -109,6 +109,32 @@ describe('kosekiEntryService Event連携', () => {
   it('戸籍入力モードで死亡Eventを作成できる', () => {
     const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', death_date_text:'昭和1年', confidence:'likely', createDeathEvent:true });
     expect(result.events?.[0]).toMatchObject({ event_type:'death', date_text:'昭和1年', confidence:'likely' });
+  });
+
+
+  it('出生日付テキストが空なら出生Event作成ONでもEventを作らない', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', birth_date_text:'', confidence:'confirmed', createBirthEvent:true });
+    expect(result.events).toHaveLength(0);
+    expect(result.citations.filter((c) => c.target_type === 'event')).toHaveLength(0);
+  });
+
+  it('死亡日付テキストが空なら死亡Event作成ONでもEventを作らない', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', death_date_text:'', confidence:'confirmed', createDeathEvent:true });
+    expect(result.events).toHaveLength(0);
+    expect(result.citations.filter((c) => c.target_type === 'event')).toHaveLength(0);
+  });
+
+  it('既存Event Citation更新時はcreated_atを維持しupdated_atだけ更新する', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-03T04:05:06.000Z'));
+    const existingEvent: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', date_text:'明治1年', created_at:now, updated_at:now };
+    const existingCitation: Citation = { id:'c-event', source_id:'s1', target_type:'event', target_id:'e1', confidence:'uncertain', created_at:now, updated_at:now };
+    const result = applyKosekiPersonEntry(base({ persons:[person('p1')], events:[existingEvent], citations:[existingCitation] }), { mode:'update', sourceId:'s1', personId:'p1', display_name:'子', birth_date_text:'明治1年', confidence:'confirmed', createBirthEvent:true });
+    const eventCitation = result.citations.find((c) => c.id === 'c-event');
+    expect(eventCitation?.created_at).toBe(now);
+    expect(eventCitation?.updated_at).toBe('2026-02-03T04:05:06.000Z');
+    expect(eventCitation?.confidence).toBe('confirmed');
+    vi.useRealTimers();
   });
 
   it('同一Person / event_type / date_text のEventを重複作成せずCitationも重複作成しない', () => {
