@@ -22,7 +22,8 @@ export function KosekiEntryPanel({ persons, sources, citations, relations, union
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!sourceId && kosekiSources[0]) setSourceId(kosekiSources[0].id);
+    if (sourceId && kosekiSources.some((source) => source.id === sourceId)) return;
+    setSourceId(kosekiSources[0]?.id ?? '');
   }, [kosekiSources, sourceId]);
 
   const makeSource = async (form: HTMLFormElement) => {
