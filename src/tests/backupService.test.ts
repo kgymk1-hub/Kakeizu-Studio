@@ -9,7 +9,7 @@ const citation: Citation = { id: 'c1', source_id: 's1', target_type: 'person', t
 describe('backupService Source/Citation', () => {
   it('JSONバックアップにsources/citationsが含まれる', () => {
     const parsed = JSON.parse(createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [source], citations: [citation] }));
-    expect(parsed.schema_version).toBe('1.1');
+    expect(parsed.schema_version).toBe('1.2');
     expect(parsed.sources).toEqual([source]);
     expect(parsed.citations).toEqual([citation]);
   });
@@ -18,5 +18,22 @@ describe('backupService Source/Citation', () => {
     const backup = parseJsonBackup(JSON.stringify({ schema_version: '1.0', exported_at: now, persons: [], unions: [], parent_child_relations: [], import_batches: [] }));
     expect(backup.sources).toEqual([]);
     expect(backup.citations).toEqual([]);
+  });
+});
+
+
+import type { Event } from '../models';
+
+describe('backupService events', () => {
+  it('JSONバックアップにeventsが含まれる', () => {
+    const event: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', created_at:'2026-01-01T00:00:00.000Z', updated_at:'2026-01-01T00:00:00.000Z' };
+    const parsed = JSON.parse(createJsonBackup({ persons:[], unions:[], parent_child_relations:[], import_batches:[], sources:[], citations:[], events:[event] }));
+    expect(parsed.schema_version).toBe('1.2');
+    expect(parsed.events).toEqual([event]);
+  });
+
+  it('旧1.0 / 1.1 JSONでeventsがなくても復元できる', () => {
+    expect(parseJsonBackup(JSON.stringify({ schema_version:'1.0' })).events).toEqual([]);
+    expect(parseJsonBackup(JSON.stringify({ schema_version:'1.1' })).events).toEqual([]);
   });
 });

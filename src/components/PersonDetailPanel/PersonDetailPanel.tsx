@@ -1,4 +1,4 @@
-import type { Citation, Person, Source } from '../../models';
+import type { Citation, Event, EventType, Person, Source } from '../../models';
 import { sourceTypeLabels, sourceTypeOptions } from '../SourceManager/SourceManager';
 
 interface Props {
@@ -8,12 +8,20 @@ interface Props {
   onChange: (p: Person) => void;
   onSaveCitation: (citation: Citation, newSource?: Source) => void;
   onDeleteCitation: (citationId: string) => void;
+  events?: Event[];
+  onSaveEvent?: (event: Event, citation?: Citation) => void;
+  onDeleteEvent?: (eventId: string) => void;
 }
+
+const eventTypeLabels: Record<EventType, string> = { birth: '出生', death: '死亡', marriage: '婚姻', divorce: '離婚', adoption: '養子縁組', recognition: '認知', entry_registry: '入籍', removal_registry: '除籍', transfer_registry: '転籍', name_change: '改名', residence: '住所', occupation: '職業', title: '称号', other: 'その他' };
+const eventTypeOptions = Object.entries(eventTypeLabels) as [EventType, string][];
 
 const confidenceLabels = { confirmed: '確認済み', likely: '有力', uncertain: '不確か', disputed: '異説あり' } as const;
 
-export function PersonDetailPanel({ person, sources, citations, onChange, onSaveCitation, onDeleteCitation }: Props) {
+export function PersonDetailPanel({ person, sources, citations, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent }: Props) {
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
+  const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
+  const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
   const personCitations = citations.filter((c) => c.target_type === 'person' && c.target_id === person.id);
   const sourceById = new Map(sources.map((s) => [s.id, s]));
   const update=(k:keyof Person,v:string)=>onChange({...person,[k]:v,updated_at:new Date().toISOString()});
@@ -43,12 +51,59 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
     form.reset();
   };
 
+
+  const saveEvent = (form: HTMLFormElement, existing?: Event) => {
+    const fd = new FormData(form);
+    const now = new Date().toISOString();
+    const event: Event = {
+      ...(existing ?? { id: crypto.randomUUID(), target_type: 'person' as const, target_id: person.id, created_at: now }),
+      event_type: String(fd.get('event_type') ?? 'other') as EventType,
+      target_type: 'person',
+      target_id: person.id,
+      date_text: String(fd.get('date_text') ?? '').trim() || undefined,
+      place_text: String(fd.get('place_text') ?? '').trim() || undefined,
+      description: String(fd.get('description') ?? '').trim() || undefined,
+      confidence: String(fd.get('confidence') ?? 'confirmed') as Event['confidence'],
+      note: String(fd.get('note') ?? '').trim() || undefined,
+      updated_at: now,
+    };
+    const sourceId = String(fd.get('event_source_id') ?? '');
+    const existingCitation = citations.find((c) => c.source_id === sourceId && c.target_type === 'event' && c.target_id === event.id);
+    const citation = sourceId ? {
+      ...(existingCitation ?? { id: crypto.randomUUID(), source_id: sourceId, target_type: 'event' as const, target_id: event.id, created_at: now }),
+      source_id: sourceId,
+      target_type: 'event' as const,
+      target_id: event.id,
+      page_or_location: String(fd.get('page_or_location') ?? '').trim() || existingCitation?.page_or_location,
+      quote_text: String(fd.get('quote_text') ?? '').trim() || existingCitation?.quote_text,
+      interpretation: String(fd.get('interpretation') ?? '').trim() || existingCitation?.interpretation,
+      confidence: String(fd.get('citation_confidence') ?? event.confidence ?? 'confirmed') as Citation['confidence'],
+      note: String(fd.get('citation_note') ?? '').trim() || existingCitation?.note,
+      updated_at: now,
+    } : undefined;
+    onSaveEvent?.(event, citation);
+    form.reset();
+  };
+
   return <aside className="detail"><h2>人物詳細 {personCitations.length > 0 && <span className="badge">出典あり</span>}</h2>
     <label>表示名<input value={person.display_name} onChange={(e)=>update('display_name',e.target.value)}/></label>
     <label>生年月日<input value={person.birth_date_text ?? ''} onChange={(e)=>update('birth_date_text',e.target.value)}/></label>
     <label>没年月日<input value={person.death_date_text ?? ''} onChange={(e)=>update('death_date_text',e.target.value)}/></label>
     <label>称号<input value={person.rank_title ?? ''} onChange={(e)=>update('rank_title',e.target.value)}/></label>
     <label>備考<textarea value={person.note ?? ''} onChange={(e)=>update('note',e.target.value)}/></label>
+
+    <section className="citation-section"><h3>出来事（Event）</h3>
+      <p className="help-text">出生・死亡・婚姻・転籍・入籍・除籍などを人物に紐づけて記録します。家系図ノード上にはまだ表示しません。</p>
+      <details><summary>この人物にEventを追加</summary><EventForm sources={sources} onSubmit={(form) => saveEvent(form)} /></details>
+      {personEvents.length === 0 ? <p>この人物に紐づくEventはありません。</p> : <ul className="citation-list">{personEvents.map((event) => {
+        const eventCitation = eventCitationById.get(event.id);
+        return <li key={event.id}><strong>{eventTypeLabels[event.event_type]}</strong> {eventCitation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
+          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
+          <details><summary>編集</summary><EventForm event={event} citation={eventCitation} sources={sources} onSubmit={(form) => saveEvent(form, event)} /></details>
+          <button type="button" onClick={() => onDeleteEvent?.(event.id)}>Eventを削除</button>
+        </li>;
+      })}</ul>}
+    </section>
     <section className="citation-section"><h3>出典</h3>
       <p className="help-text">出典は、選択中の人物にどの資料を根拠として紐づけるかを記録します。現時点では人物単位が中心で、親子関係・婚姻関係への紐づけは将来対応です。</p>
       <details><summary>この人物に出典を追加</summary><CitationForm sources={sources} onSubmit={(form) => saveCitation(form)} /></details>
@@ -75,5 +130,26 @@ function CitationForm({ sources, citation, onSubmit }: { sources: Source[]; cita
     <label>確度<select name="confidence" defaultValue={citation?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>メモ<textarea name="note" defaultValue={citation?.note ?? ''} /></label>
     <button className="primary" type="submit">保存</button>
+  </form>;
+}
+
+
+function EventForm({ sources, event, citation, onSubmit }: { sources: Source[]; event?: Event; citation?: Citation; onSubmit: (form: HTMLFormElement) => void }) {
+  return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
+    <label>出来事種別<select name="event_type" defaultValue={event?.event_type ?? 'birth'}>{eventTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <label>日付テキスト<input name="date_text" defaultValue={event?.date_text ?? ''} /></label>
+    <label>場所<input name="place_text" defaultValue={event?.place_text ?? ''} /></label>
+    <label>説明<textarea name="description" defaultValue={event?.description ?? ''} /></label>
+    <label>確度<select name="confidence" defaultValue={event?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <label>メモ<textarea name="note" defaultValue={event?.note ?? ''} /></label>
+    <fieldset><legend>Event出典（任意）</legend>
+      <label>資料<select name="event_source_id" defaultValue={citation?.source_id ?? ''}><option value="">作成しない</option>{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>
+      <label>ページ・位置<input name="page_or_location" defaultValue={citation?.page_or_location ?? ''} /></label>
+      <label>引用<textarea name="quote_text" defaultValue={citation?.quote_text ?? ''} /></label>
+      <label>解釈<textarea name="interpretation" defaultValue={citation?.interpretation ?? ''} /></label>
+      <label>出典確度<select name="citation_confidence" defaultValue={citation?.confidence ?? event?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>出典メモ<textarea name="citation_note" defaultValue={citation?.note ?? ''} /></label>
+    </fieldset>
+    <button className="primary" type="submit">Eventを保存</button>
   </form>;
 }

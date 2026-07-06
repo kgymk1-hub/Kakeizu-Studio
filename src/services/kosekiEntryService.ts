@@ -1,4 +1,4 @@
-import type { Citation, Confidence, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
+import type { Citation, Confidence, Event, Gender, ParentChildRelation, Person, Source, SourceType, Union } from '../models';
 
 export const kosekiSourceTypes: SourceType[] = ['current_koseki', 'joseki', 'kaisei_genkoseki', 'other'];
 
@@ -21,6 +21,8 @@ export interface KosekiPersonFormInput {
   fatherId?: string;
   motherId?: string;
   spouseId?: string;
+  createBirthEvent?: boolean;
+  createDeathEvent?: boolean;
 }
 
 export interface KosekiEntryData {
@@ -29,6 +31,7 @@ export interface KosekiEntryData {
   citations: Citation[];
   parentChildRelations: ParentChildRelation[];
   unions: Union[];
+  events?: Event[];
 }
 
 export interface KosekiEntryResult extends KosekiEntryData {
@@ -38,6 +41,7 @@ export interface KosekiEntryResult extends KosekiEntryData {
   createdCitation: boolean;
   createdRelationIds: string[];
   createdUnionIds: string[];
+  createdEventIds: string[];
 }
 
 const nowIso = () => new Date().toISOString();
@@ -116,5 +120,21 @@ export function applyKosekiPersonEntry(data: KosekiEntryData, input: KosekiPerso
     }
   }
 
-  return { persons, sources: data.sources, citations, parentChildRelations, unions, person, citation, createdPerson: !existing, createdCitation: !dupCitation, createdRelationIds, createdUnionIds };
+  const createdEventIds: string[] = [];
+  let events = [...(data.events ?? [])];
+  let eventCitations = citations;
+  const ensureEvent = (event_type: 'birth' | 'death', date_text?: string) => {
+    const cleanedDate = clean(date_text);
+    if (!cleanedDate) return;
+    const existingEvent = events.find((e) => e.target_type === 'person' && e.target_id === person.id && e.event_type === event_type && e.date_text === cleanedDate);
+    const event = existingEvent ?? { id: uuid(), event_type, target_type: 'person' as const, target_id: person.id, date_text: cleanedDate, confidence: input.confidence, review_status: 'reviewed' as const, created_at: now, updated_at: now };
+    if (!existingEvent) { events = [...events, event]; createdEventIds.push(event.id); }
+    const existingEventCitation = eventCitations.find((c) => c.source_id === input.sourceId && c.target_type === 'event' && c.target_id === event.id);
+    const nextEventCitation: Citation = { ...(existingEventCitation ?? { id: uuid(), source_id: input.sourceId!, target_type: 'event' as const, target_id: event.id, created_at: now }), confidence: input.confidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, existingEventCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, existingEventCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, existingEventCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, existingEventCitation?.note), updated_at: now };
+    eventCitations = existingEventCitation ? eventCitations.map((c) => c.id === nextEventCitation.id ? nextEventCitation : c) : [...eventCitations, nextEventCitation];
+  };
+  if (input.createBirthEvent) ensureEvent('birth', person.birth_date_text);
+  if (input.createDeathEvent) ensureEvent('death', person.death_date_text);
+
+  return { persons, sources: data.sources, citations: eventCitations, parentChildRelations, unions, events, person, citation, createdPerson: !existing, createdCitation: !dupCitation, createdRelationIds, createdUnionIds, createdEventIds };
 }

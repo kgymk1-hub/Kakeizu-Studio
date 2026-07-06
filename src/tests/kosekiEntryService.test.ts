@@ -97,3 +97,24 @@ describe('kosekiEntryService', () => {
     expect(() => applyKosekiPersonEntry(base({ persons: [person('p1')] }), { mode: 'update', sourceId: 's1', personId: 'p1', display_name: '本人', confidence: 'confirmed', spouseId: 'p1' })).toThrow('自分自身');
   });
 });
+
+describe('kosekiEntryService Event連携', () => {
+  it('戸籍入力モードで出生Eventを作成できる', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', birth_date_text:'明治1年', confidence:'confirmed', createBirthEvent:true });
+    expect(result.events).toHaveLength(1);
+    expect(result.events?.[0]).toMatchObject({ event_type:'birth', target_type:'person', target_id:result.person.id, date_text:'明治1年' });
+    expect(result.citations.some((c) => c.target_type === 'event' && c.target_id === result.events?.[0].id)).toBe(true);
+  });
+
+  it('戸籍入力モードで死亡Eventを作成できる', () => {
+    const result = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', death_date_text:'昭和1年', confidence:'likely', createDeathEvent:true });
+    expect(result.events?.[0]).toMatchObject({ event_type:'death', date_text:'昭和1年', confidence:'likely' });
+  });
+
+  it('同一Person / event_type / date_text のEventを重複作成せずCitationも重複作成しない', () => {
+    const first = applyKosekiPersonEntry(base(), { mode:'create', sourceId:'s1', display_name:'子', birth_date_text:'明治1年', confidence:'confirmed', createBirthEvent:true });
+    const second = applyKosekiPersonEntry(first, { mode:'update', sourceId:'s1', personId:first.person.id, display_name:'子', birth_date_text:'明治1年', confidence:'confirmed', createBirthEvent:true });
+    expect(second.events).toHaveLength(1);
+    expect(second.citations.filter((c) => c.target_type === 'event' && c.target_id === second.events?.[0].id)).toHaveLength(1);
+  });
+});

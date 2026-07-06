@@ -19,12 +19,12 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 単一CSV（`family_simple.csv`）インポート、CSVプレビュー、検証、列マッピング
 - 日本語列名CSVの自動マッピング候補
 - Person / Union / ParentChildRelation の管理
-- Source / Citation の管理、資料一覧、人物単位Citation
-- JSONバックアップ出力・復元（旧1.0 JSONも `sources` / `citations` なしとして復元）
+- Source / Citation の管理、資料一覧、人物単位Citation、Event単位Citation
+- JSONバックアップ出力・復元（eventsを含む。旧1.0/1.1 JSONも `events` なしとして復元）
 - 標準CSVセット（複数CSV + `manifest.json`）のZIPエクスポート、ZIPインポート、複数ファイル直接インポート
 - SVG家系図表示、人物クリック選択、出典あり人物の印、選択人物ハイライト
 - 拡大・縮小・全体表示・リセット・ドラッグ移動
-- 人物詳細編集
+- 人物詳細編集、人物に紐づくEvent（出生・死亡・婚姻・転籍・入籍・除籍など）の追加・編集・削除
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 
 
@@ -37,10 +37,10 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 既存人物更新時は、空欄の入力項目では既存値を消さず、入力された項目だけを更新します。
 - 同じ Source と Person の Citation がすでにある場合は重複作成せず、created_at を維持して既存Citationを更新します。
 - 父・母・配偶者を任意で選択し、ParentChildRelation や Union を同時に作成できます。既存の同一関係がある場合は重複作成しません。
-- 現時点では人物単位Citationのみ対応です。親子関係・夫婦関係へのCitation自動付与は未対応です。
-- 出生・死亡・婚姻・転籍などの Event 管理は将来対応です。今回の最小版では Event モデルを追加していません。
+- 現時点では人物単位Citationに加えて、任意作成した出生・死亡Eventにも戸籍資料Citationを自動付与できます。親子関係・夫婦関係へのCitation自動付与は未対応です。
+- 出生Eventを作成する / 死亡Eventを作成するチェックを使うと、birth_date_text / death_date_text から人物紐づきEventを任意作成できます。既存の同一Person・event_type・date_textのEventは重複作成しません。
 - OCRやAI読み取り、戸籍画像添付には未対応です。戸籍入力モードは手入力支援です。
-- 戸籍入力モードで作成した Person / Source / Citation / ParentChildRelation / Union は、JSONバックアップと標準CSVセットに含まれます。
+- 戸籍入力モードで作成した Person / Source / Citation / Event / ParentChildRelation / Union は、JSONバックアップと標準CSVセットに含まれます。
 
 ## 使い方
 
@@ -58,13 +58,13 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 ### 2. 標準CSVセットで出し入れする
 
-標準CSVセットは、人物・夫婦関係・親子関係・資料・出典をまとめて移行・外部編集するための形式です。
+標準CSVセットは、人物・夫婦関係・親子関係・資料・出典・Eventをまとめて移行・外部編集するための形式です。
 
 - 「標準CSVセットをエクスポート」で `kakeizu_standard_csv_set.zip` を出力できます。
 - Kakeizu Studioが出力したZIPは「標準CSVセットZIPをインポート」から再インポートできます。
-- Excel等で編集する場合は、ZIPを展開してCSVを編集し、再ZIP化せず `manifest.json` と5つのCSVを「標準CSVセットの複数ファイルをインポート」からまとめて選択する方法を推奨します。
+- Excel等で編集する場合は、ZIPを展開してCSVを編集し、再ZIP化せず `manifest.json` と6つのCSVを「標準CSVセットの複数ファイルをインポート」からまとめて選択する方法を推奨します。
 - インポート前にプレビューと issue 一覧を表示します。error がある場合は反映不可、warning のみの場合は確認後に反映できます。
-- 反映時は人物・夫婦関係・親子関係・資料・出典・インポート履歴を全置き換えします。
+- 反映時は人物・夫婦関係・親子関係・資料・出典・Event・インポート履歴を全置き換えします。
 
 現時点のZIP読込は**無圧縮ZIP前提**です。Kakeizu Studioが出力したZIPは再インポート可能ですが、外部ツールで再圧縮したZIPは読めない場合があります。その場合は複数ファイル直接インポートを使ってください。
 
@@ -120,6 +120,7 @@ unions.csv
 parent_child_relations.csv
 sources.csv
 citations.csv
+events.csv
 ```
 
 `manifest.json` は以下の形式です。
@@ -135,7 +136,8 @@ citations.csv
     "unions.csv",
     "parent_child_relations.csv",
     "sources.csv",
-    "citations.csv"
+    "citations.csv",
+    "events.csv"
   ]
 }
 ```
@@ -148,13 +150,14 @@ unions.csv: id,external_id,partner1_id,partner2_id,union_type,start_date,end_dat
 parent_child_relations.csv: id,parent_id,child_id,relation_type,confidence,note,created_at,updated_at
 sources.csv: id,external_id,source_type,title,author_or_issuer,issued_date_text,obtained_date,repository,honseki_text,head_of_registry,registry_type,source_text,url,privacy_level,note,import_batch_id,created_at,updated_at
 citations.csv: id,external_id,source_id,target_type,target_id,page_or_location,quote_text,interpretation,confidence,note,import_batch_id,created_at,updated_at
+events.csv: id,external_id,event_type,target_type,target_id,date_text,date_from,date_to,place_text,description,confidence,review_status,note,import_batch_id,created_at,updated_at
 ```
 
 一部の列名は内部フィールドへ対応付けています。たとえば `persons.csv` の `name` は `Person.display_name`、`birth_date` は `Person.birth_date_text`、`title` は `Person.rank_title`、`unions.csv` の `start_date` は `Union.marriage_date_text` として扱います。
 
 ### JSONバックアップ
 
-JSONバックアップはアプリ内部形式そのものです。`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` をまとめて保持します。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
+JSONバックアップはアプリ内部形式そのものです。`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` / `events` をまとめて保持します。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
 
 ## GitHub Pages公開設定
 
@@ -174,7 +177,8 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 - レイアウトはMVP簡易レイアウトであり、複雑な再婚・養子・異説・大規模家系図は将来改善予定です。
 - ZIP読込は現時点では無圧縮ZIP前提です。
 - 外部編集後は再ZIP化より複数ファイル直接インポートを推奨します。
-- 現時点のCitation UIは人物単位中心です。
+- Eventは人物詳細パネルで確認・編集できますが、家系図ノード上にはまだ表示しません。
+- 現時点のCitation UIは人物単位とEvent単位が中心です。
 - 関係単位Citation、GEDCOM、OCR、メディア添付は将来対応です。
 - Shift_JIS CSV自動判定は未対応です。CSVはUTF-8で保存してください。
 - PWAとしての高度なオフライン対応は今後調整します。
@@ -183,7 +187,7 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 ## 今後の予定
 
 - 複雑な家系図レイアウトへの対応強化
-- 関係単位Citation、イベント、場所、氏名単位CitationのUI追加
+- 関係単位Citation、Eventの高度検索・タイムライン、場所、氏名単位CitationのUI追加
 - GEDCOM、OCR、AI読み取り、メディア添付の検討
 - PWA / オフライン体験の改善
 

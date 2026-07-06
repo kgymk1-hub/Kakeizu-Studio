@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Citation, ImportBatch, ParentChildRelation, Person, Source, Union } from '../models';
+import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union } from '../models';
 
 type Row = { id: string };
 const stores = {
@@ -9,6 +9,7 @@ const stores = {
   importBatches: new Map<string, ImportBatch>(),
   sources: new Map<string, Source>(),
   citations: new Map<string, Citation>(),
+  events: new Map<string, Event>(),
 };
 
 function makeTable<T extends Row>(store: Map<string, T>) {
@@ -28,6 +29,7 @@ vi.mock('../db/dexieDb', () => ({
     importBatches: makeTable(stores.importBatches),
     sources: makeTable(stores.sources),
     citations: makeTable(stores.citations),
+    events: makeTable(stores.events),
     transaction: async (_mode: string, _tables: unknown[], cb: () => Promise<void>) => { await cb(); },
   },
 }));
