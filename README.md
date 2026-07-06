@@ -46,7 +46,21 @@ v0.4 development の第1フェーズとして、UI画面を大きく作らず、
 - Person の `birth_date_text` / `death_date_text` と親子関係に対して、4桁の西暦年が含まれる場合だけ最小限の日付矛盾を検出します。死亡年が出生年より前、子の出生年が親の出生年より前は error、子の出生時に親が10歳未満または80歳超は warning です。
 - 和暦（例: 明治33年、昭和10年）や曖昧日付の本格解析、厳密な月日比較は未対応です。
 - 検証結果は error、warning、info の severity 順で返します。
-- 今回は検証結果画面の本格実装、検索・フィルタ、一覧画面からのジャンプ、自動修正は行いません。
+
+### v0.4 development 第2フェーズ: 検証結果UI最小版
+
+v0.4 development の第2フェーズとして、現在アプリ内で保持している Person / Event / Union / ParentChildRelation / Source / Citation を `validateFamilyData` に渡し、その結果を既存UI内の簡素な「検証結果」パネルで確認できるようにしました。package.json の version と JSON バックアップの schema_version はこの段階では変更しません。
+
+- `validateFamilyData` の結果を画面上で確認できます。
+- error / warning / info / total の件数を表示できます。
+- issue一覧で severity、カテゴリ、タイトル、メッセージを確認できます。
+- issue一覧で `target_type` / `target_id` / `message` を確認できます。
+- 対象が Person の場合は、IDだけでなく人物名も表示します。
+- 検証結果が0件の場合は「問題は見つかりませんでした。」と表示します。
+- MVPでは画面負荷を避けるため、issue一覧は最初の50件まで表示します。
+- MVPでは issue から対象へのジャンプ、issueクリックによる人物選択、自動修正は未対応です。
+- 大量issue向けの高度な検索・フィルタUIは未対応です。
+- 今回は検証ロジックの大幅追加、DBテーブル追加、JSON schema_version 変更は行いません。
 
 ## v0.3.0: 関係単位Citation UI / 関係削除UI / 関係編集UI
 
