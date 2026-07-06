@@ -18,6 +18,16 @@ function makeTable<T extends Row>(store: Map<string, T>) {
     put: async (item: T) => { store.set(item.id, item); },
     bulkPut: async (items: T[]) => { for (const item of items) store.set(item.id, item); },
     toArray: async () => [...store.values()],
+    delete: async (id: string) => { store.delete(id); },
+    where: (index: string) => ({
+      equals: (value: unknown) => ({
+        delete: async () => {
+          for (const item of [...store.values()]) {
+            if (index === '[target_type+target_id]' && Array.isArray(value) && 'target_type' in item && 'target_id' in item && (item as { target_type: string; target_id: string }).target_type === value[0] && (item as { target_type: string; target_id: string }).target_id === value[1]) store.delete(item.id);
+          }
+        },
+      }),
+    }),
   };
 }
 
@@ -70,5 +80,38 @@ describe('familyRepository Source/Citation cleanup', () => {
     expect(saved.sources).toEqual([]);
     expect(saved.citations).toEqual([]);
     expect(saved.events).toEqual([]);
+  });
+});
+
+
+describe('familyRepository relation deletion', () => {
+  const relation: ParentChildRelation = { id: 'r1', parent_id: 'p1', child_id: 'p2', relation_type: 'biological', created_at: now, updated_at: now };
+  const union: Union = { id: 'u1', partner1_id: 'p1', partner2_id: 'p2', union_type: 'marriage', created_at: now, updated_at: now };
+  const relationCitation: Citation = { id: 'cr1', source_id: 's1', target_type: 'relation', target_id: 'r1', created_at: now, updated_at: now };
+  const unionCitation: Citation = { id: 'cu1', source_id: 's1', target_type: 'union', target_id: 'u1', created_at: now, updated_at: now };
+
+  it('ParentChildRelationを削除し、relation Citationも削除する', async () => {
+    stores.parentChildRelations.set(relation.id, relation);
+    stores.citations.set(relationCitation.id, relationCitation);
+
+    await repo.deleteParentChildRelationWithCitations('r1');
+
+    expect([...stores.parentChildRelations.values()]).toEqual([]);
+    expect([...stores.citations.values()]).toEqual([]);
+  });
+
+  it('Unionを削除し、union Citationも削除する', async () => {
+    stores.unions.set(union.id, union);
+    stores.citations.set(unionCitation.id, unionCitation);
+
+    await repo.deleteUnionWithCitations('u1');
+
+    expect([...stores.unions.values()]).toEqual([]);
+    expect([...stores.citations.values()]).toEqual([]);
+  });
+
+  it('存在しないRelation/Union削除で落ちない', async () => {
+    await expect(repo.deleteParentChildRelationWithCitations('missing')).resolves.toBeUndefined();
+    await expect(repo.deleteUnionWithCitations('missing')).resolves.toBeUndefined();
   });
 });

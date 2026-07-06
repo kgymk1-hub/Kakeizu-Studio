@@ -86,3 +86,18 @@ export async function clearFamilyData() {
     await db.events.clear();
   });
 }
+
+
+export async function deleteParentChildRelationWithCitations(relationId: string) {
+  await db.transaction('rw', [db.parentChildRelations, db.citations], async () => {
+    await db.parentChildRelations.delete(relationId);
+    await db.citations.where('[target_type+target_id]').equals(['relation', relationId]).delete();
+  });
+}
+
+export async function deleteUnionWithCitations(unionId: string) {
+  await db.transaction('rw', [db.unions, db.citations], async () => {
+    await db.unions.delete(unionId);
+    await db.citations.where('[target_type+target_id]').equals(['union', unionId]).delete();
+  });
+}

@@ -14,6 +14,8 @@ interface Props {
   events?: Event[];
   onSaveEvent?: (event: Event, citation?: Citation) => void;
   onDeleteEvent?: (eventId: string) => void;
+  onDeleteParentChildRelation?: (relationId: string) => void;
+  onDeleteUnion?: (unionId: string) => void;
 }
 
 const eventTypeLabels: Record<EventType, string> = { birth: '出生', death: '死亡', marriage: '婚姻', divorce: '離婚', adoption: '養子縁組', recognition: '認知', entry_registry: '入籍', removal_registry: '除籍', transfer_registry: '転籍', name_change: '改名', residence: '住所', occupation: '職業', title: '称号', other: 'その他' };
@@ -21,7 +23,7 @@ const eventTypeOptions = Object.entries(eventTypeLabels) as [EventType, string][
 
 const confidenceLabels = { confirmed: '確認済み', likely: '有力', uncertain: '不確か', disputed: '異説あり' } as const;
 
-export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent }: Props) {
+export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent, onDeleteParentChildRelation, onDeleteUnion }: Props) {
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
   const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
   const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
@@ -152,6 +154,7 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
         const childName = personById.get(relation.child_id)?.display_name ?? relation.child_id;
         return <li key={relation.id}><strong>親子関係：{parentName} → {childName}</strong> {relationCitations.length > 0 ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
           <dl><dt>続柄種別</dt><dd>{relation.relation_type}</dd></dl>
+          <button type="button" onClick={() => onDeleteParentChildRelation?.(relation.id)}>この親子関係を削除</button>
           <details><summary>出典を追加</summary><CitationForm sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'relation', relation.id)} /></details>
           {relationCitations.length === 0 ? <p>この親子関係に紐づく出典はありません。</p> : <ul className="citation-list">{relationCitations.map((citation) => {
             const source = sourceById.get(citation.source_id);
@@ -170,6 +173,7 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
         const p2 = union.partner2_id ? (personById.get(union.partner2_id)?.display_name ?? union.partner2_id) : '未設定';
         return <li key={union.id}><strong>夫婦関係：{p1} ⇔ {p2}</strong> {unionCitations.length > 0 ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
           <dl><dt>種別</dt><dd>{union.union_type}</dd></dl>
+          <button type="button" onClick={() => onDeleteUnion?.(union.id)}>この夫婦関係を削除</button>
           <details><summary>出典を追加</summary><CitationForm sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'union', union.id)} /></details>
           {unionCitations.length === 0 ? <p>この夫婦関係に紐づく出典はありません。</p> : <ul className="citation-list">{unionCitations.map((citation) => {
             const source = sourceById.get(citation.source_id);
