@@ -1,3 +1,102 @@
+# Kakeizu Studio v0.3.0 Release Notes
+
+## バージョン
+
+- Version: `v0.3.0`
+- Package version: `0.3.0`
+- Release type: 関係単位Citation UI / 関係削除UI / 関係編集UI 正式区切り版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.3.0>
+
+## 主な追加機能
+
+- 関係単位Citation UIに対応しました。
+- 親子関係Citation（`target_type: "relation"` / `target_id: ParentChildRelation.id`）に対応しました。
+- 夫婦関係Citation（`target_type: "union"` / `target_id: Union.id`）に対応しました。
+- Source違いの複数Citation表示に対応しました。
+- 関係Citationの追加・編集・削除に対応しました。
+- 同一Source/Relation、同一Source/UnionのCitation重複回避に対応しました。
+- Source欠損時の安全表示に対応しました。
+- 戸籍入力モードで父・母・配偶者登録時に関係Citationを自動作成または更新します。
+- 関係削除UIに対応しました。
+- 関係削除時のCitation同時削除に対応しました。
+- 関係編集UIに対応しました。
+- 親子関係属性編集（`relation_type`、開始日、終了日、確度、レビュー状態、メモ）に対応しました。
+- 夫婦関係属性編集（`union_type`、婚姻日、離婚日、終了日、終了理由、状態、確度、レビュー状態、メモ）に対応しました。
+- 標準CSVセットの `parent_child_relations.csv` / `unions.csv` を関係属性列へ拡張しました。
+- 旧 `start_date` / `end_date` 列の読み込み互換を維持しました。
+
+## v0.2.0からの変更点
+
+- v0.2.0の人物・Event中心の出典管理に加えて、親子関係と夫婦関係そのものへ根拠を残せるようにしました。
+- 戸籍入力モードで人物・Eventだけでなく、父・母・配偶者登録で作成または更新される関係にもCitationを付与できるようにしました。
+- 人物詳細画面から誤登録した親子関係・夫婦関係を削除できるようにし、紐づく関係Citationも同時に削除するようにしました。
+- 人物詳細画面から親子関係・夫婦関係の基本属性を編集できるようにしました。
+- JSONバックアップと標準CSVセットで、関係・関係Citation・関係属性を維持できるようにしました。
+
+## データ形式の変更
+
+- JSON `schema_version` は必要がなければ `"1.2"` のままです。
+- 関係Citationは既存 `citations` 配列に `target_type: "relation"` / `target_type: "union"` として保存されます。
+- 親子関係Citationは `target_type: "relation"` / `target_id: ParentChildRelation.id` です。
+- 夫婦関係Citationは `target_type: "union"` / `target_id: Union.id` です。
+- 標準CSVセットの `citations.csv` に relation / union Citation が含まれます。
+- `parent_child_relations.csv` に `start_date_text` / `end_date_text` / `review_status` が含まれます。
+- `unions.csv` に `marriage_date_text` / `divorce_date_text` / `end_date_text` / `end_reason` / `status` / `review_status` が含まれます。
+- 旧 `start_date` / `end_date` 列も読み込み互換があります。
+
+## 既知の制限
+
+- 親・子・配偶者の相手変更は未対応です。
+- 関係編集のUndoは未対応です。
+- Person削除は未対応です。
+- EventからPerson基本情報への自動同期は未対応です。
+- marriage EventからUnion自動作成は未対応です。
+- adoption EventからParentChildRelation自動作成は未対応です。
+- Eventは家系図ノード上にはまだ表示しません。
+- Timeline表示、Event検索・フィルタは未対応です。
+- 戸籍画像添付は未対応です。
+- OCR / AI戸籍読み取りは未対応です。
+- GEDCOMは未対応です。
+- ELK.js、React Flow、Excel xlsx直接入出力、大規模UIリデザインは未対応です。
+
+## 次フェーズ候補
+
+- 関係単位Citationのさらなる強化
+- Eventの高度検索・タイムライン
+- 場所、氏名単位CitationのUI追加
+- 戸籍画像添付、OCR / AI戸籍読み取り
+- GEDCOM入出力
+- 複雑な家系図レイアウト改善
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.3.0
+git push origin v0.3.0
+```
+
+GitHub上でReleaseを作る場合は、tag `v0.3.0` を使ってReleaseを作成してください。
+
+## GitHub Release body
+
+Kakeizu Studio v0.3.0を公開します。
+
+公開URL: https://kgymk1-hub.github.io/Kakeizu-Studio/
+
+v0.3.0では、関係単位Citation UI、関係削除UI、関係編集UIに対応しました。人物詳細画面の「関係の出典」から、親子関係Citation（target_type: relation）と夫婦関係Citation（target_type: union）を表示・追加・編集・削除できます。Source違いの複数Citation表示、同一Source/Relation・同一Source/Unionの重複回避、Source欠損時の安全表示にも対応しています。
+
+戸籍入力モードでは、父・母・配偶者登録時に関係Citationを自動作成または更新します。親子関係・夫婦関係の削除UIでは、対象関係に紐づくCitationも同時に削除します。関係編集UIでは、親子関係の relation_type / 日付 / 確度 / レビュー / メモ、夫婦関係の union_type / 婚姻日 / 離婚日 / 終了日 / 状態 / 確度 / レビュー / メモを編集できます。親・子・配偶者の相手変更は未対応です。
+
+データ形式として、JSON schema_version は必要がなければ 1.2 のままです。関係Citationは既存 citations 配列に target_type: relation / union として保存され、標準CSVセットの citations.csv にも含まれます。parent_child_relations.csv は start_date_text / end_date_text / review_status、unions.csv は marriage_date_text / divorce_date_text / end_date_text / end_reason / status / review_status を含み、旧 start_date / end_date 列の読み込み互換も維持しています。
+
+既知の制限として、親・子・配偶者の相手変更、関係編集のUndo、Person削除、EventからPerson基本情報への自動同期、marriage EventからUnion自動作成、adoption EventからParentChildRelation自動作成、家系図ノード上へのEvent表示、Timeline表示、Event検索・フィルタ、戸籍画像添付、OCR / AI戸籍読み取り、GEDCOMは未対応です。
+
 # Kakeizu Studio v0.2.0 Release Notes
 
 ## バージョン
