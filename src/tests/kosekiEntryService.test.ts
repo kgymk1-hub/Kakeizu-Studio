@@ -62,7 +62,9 @@ describe('kosekiEntryService', () => {
   it('人物作成とCitation・親子関係・Union作成を同時に行える', () => {
     const result = applyKosekiPersonEntry(base(), { mode: 'create', sourceId: 's1', display_name: '子', confidence: 'confirmed', fatherId: 'father', motherId: 'mother', spouseId: 'spouse', page_or_location: '2頁', interpretation: '続柄確認' });
     expect(result.persons).toHaveLength(4);
-    expect(result.citations).toHaveLength(1);
+    expect(result.citations.filter((c) => c.target_type === 'person')).toHaveLength(1);
+    expect(result.citations.filter((c) => c.target_type === 'relation')).toHaveLength(2);
+    expect(result.citations.filter((c) => c.target_type === 'union')).toHaveLength(1);
     expect(result.parentChildRelations).toHaveLength(2);
     expect(result.unions).toHaveLength(1);
     expect(result.citation).toMatchObject({ target_id: result.person.id, page_or_location: '2頁', interpretation: '続柄確認' });
@@ -81,6 +83,25 @@ describe('kosekiEntryService', () => {
     expect(first.unions[0]).toMatchObject({ union_type: 'marriage', partner2_id: 'spouse' });
     const second = applyKosekiPersonEntry(first, { mode: 'update', sourceId: 's1', personId: first.person.id, display_name: '本人', confidence: 'confirmed', spouseId: 'spouse' });
     expect(second.unions).toHaveLength(1);
+  });
+
+  it('戸籍入力モードで父・母・配偶者の関係Citationが作成され重複せず更新される', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-03T04:05:06.000Z'));
+    const first = applyKosekiPersonEntry(base(), { mode: 'create', sourceId: 's1', display_name: '子', confidence: 'likely', fatherId: 'father', motherId: 'mother', spouseId: 'spouse', page_or_location: '1頁' });
+    expect(first.citations.filter((c) => c.target_type === 'relation')).toHaveLength(2);
+    expect(first.citations.filter((c) => c.target_type === 'union')).toHaveLength(1);
+    const existingRelationCitation = first.citations.find((c) => c.target_type === 'relation' && c.target_id === first.parentChildRelations[0].id)!;
+    const second = applyKosekiPersonEntry(first, { mode: 'update', sourceId: 's1', personId: first.person.id, display_name: '子', confidence: 'confirmed', fatherId: 'father', motherId: 'mother', spouseId: 'spouse', quote_text: '原文' });
+    expect(second.parentChildRelations).toHaveLength(2);
+    expect(second.unions).toHaveLength(1);
+    expect(second.citations.filter((c) => c.target_type === 'relation')).toHaveLength(2);
+    expect(second.citations.filter((c) => c.target_type === 'union')).toHaveLength(1);
+    const updatedRelationCitation = second.citations.find((c) => c.id === existingRelationCitation.id)!;
+    expect(updatedRelationCitation.created_at).toBe(existingRelationCitation.created_at);
+    expect(updatedRelationCitation.updated_at).toBe('2026-02-03T04:05:06.000Z');
+    expect(updatedRelationCitation.quote_text).toBe('原文');
+    vi.useRealTimers();
   });
 
   it('Source未選択では登録不可', () => {

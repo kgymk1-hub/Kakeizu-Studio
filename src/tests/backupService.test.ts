@@ -14,6 +14,13 @@ describe('backupService Source/Citation', () => {
     expect(parsed.citations).toEqual([citation]);
   });
 
+  it('JSONバックアップ/復元でrelation / union Citationが維持される', () => {
+    const relationCitation: Citation = { ...citation, id: 'cr1', target_type: 'relation', target_id: 'r1' };
+    const unionCitation: Citation = { ...citation, id: 'cu1', target_type: 'union', target_id: 'u1' };
+    const parsed = parseJsonBackup(createJsonBackup({ persons: [], unions: [{ id:'u1', partner1_id:'p1', union_type:'marriage', created_at:now, updated_at:now }], parent_child_relations: [{ id:'r1', parent_id:'p1', child_id:'p2', relation_type:'biological', created_at:now, updated_at:now }], import_batches: [], sources: [source], citations: [relationCitation, unionCitation] }));
+    expect(parsed.citations).toEqual([relationCitation, unionCitation]);
+  });
+
   it('sources/citationsがない旧形式JSONでも復元できる', () => {
     const backup = parseJsonBackup(JSON.stringify({ schema_version: '1.0', exported_at: now, persons: [], unions: [], parent_child_relations: [], import_batches: [] }));
     expect(backup.sources).toEqual([]);
