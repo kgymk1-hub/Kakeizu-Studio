@@ -41,24 +41,27 @@ const person: Person = { id: 'p1', external_id: 'P001', display_name: '人物A',
 const importBatch: ImportBatch = { id: 'b1', imported_at: now, import_type: 'csv_simple', source_name: 'test.csv', imported_count: 1, warning_count: 0, error_count: 0 };
 const source: Source = { id: 's1', source_type: 'book', title: '本', created_at: now, updated_at: now };
 const citation: Citation = { id: 'c1', source_id: 's1', target_type: 'person', target_id: 'p1', created_at: now, updated_at: now };
+const event: Event = { id: 'e1', event_type: 'birth', target_type: 'person', target_id: 'p1', created_at: now, updated_at: now };
 
 beforeEach(() => { Object.values(stores).forEach((store) => store.clear()); });
 
 describe('familyRepository Source/Citation cleanup', () => {
-  it('clearFamilyDataがsources/citationsも削除する', async () => {
+  it('clearFamilyDataがsources/citations/eventsも削除する', async () => {
     stores.persons.set(person.id, person);
     stores.importBatches.set(importBatch.id, importBatch);
     stores.sources.set(source.id, source);
     stores.citations.set(citation.id, citation);
+    stores.events.set(event.id, event);
 
     await repo.clearFamilyData();
 
-    expect(await repo.loadFamilyData()).toMatchObject({ persons: [], importBatches: [], sources: [], citations: [] });
+    expect(await repo.loadFamilyData()).toMatchObject({ persons: [], importBatches: [], sources: [], citations: [], events: [] });
   });
 
-  it('CSVインポートの全置き換え保存で既存sources/citationsも削除する', async () => {
+  it('CSVインポートの全置き換え保存で既存sources/citations/eventsも削除する', async () => {
     stores.sources.set(source.id, source);
     stores.citations.set(citation.id, citation);
+    stores.events.set(event.id, event);
 
     await repo.saveFamilyData({ persons: [person], unions: [], parentChildRelations: [], importBatch });
 
@@ -66,5 +69,6 @@ describe('familyRepository Source/Citation cleanup', () => {
     expect(saved.persons).toEqual([person]);
     expect(saved.sources).toEqual([]);
     expect(saved.citations).toEqual([]);
+    expect(saved.events).toEqual([]);
   });
 });

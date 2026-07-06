@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { Citation, Person, Source } from '../models';
+import type { Citation, Event, Person, Source } from '../models';
 import { buildStandardCsvSetFiles, createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetFiles, parseStandardCsvSetZip, readStandardCsvSetFromFiles, readStandardCsvSetFromZip, readStoredZip } from '../services/standardCsvSetService';
 
 const now = '2026-07-06T00:00:00.000Z';
 const person: Person = { id:'p1', external_id:'P-1', display_name:'山田 太郎', gender:'male', created_at:now, updated_at:now };
 const source: Source = { id:'s1', source_type:'book', title:'本', created_at:now, updated_at:now };
 const citation: Citation = { id:'c1', source_id:'s1', target_type:'person', target_id:'p1', created_at:now, updated_at:now };
+const event: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', date_text:'明治1年', created_at:now, updated_at:now };
 const base = { persons:[person], unions:[], parentChildRelations:[], sources:[source], citations:[citation] };
 
 async function zipFiles(data = base) {
@@ -41,7 +42,7 @@ describe('standardCsvSetService', () => {
   });
 
   it('標準CSVセットエクスポートにevents.csvが含まれる', () => {
-    const files = buildStandardCsvSetFiles({ ...base, events:[{ id:'e1', event_type:'birth', target_type:'person', target_id:'p1', date_text:'明治1年', created_at:now, updated_at:now }] });
+    const files = buildStandardCsvSetFiles({ ...base, events:[event] });
     expect(files['events.csv']).toContain('id,external_id,event_type,target_type,target_id,date_text');
   });
 
@@ -56,6 +57,28 @@ describe('standardCsvSetService', () => {
   it('events.csvのperson target_id不整合はerror', () => {
     const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, events:[{ id:'e1', event_type:'birth', target_type:'person', target_id:'missing', created_at:now, updated_at:now }] }));
     expect(preview.issues.some(i => i.code === 'missing_person_ref')).toBe(true);
+  });
+
+
+  it('manifest.jsonのfilesにevents.csvが含まれる', () => {
+    const files = buildStandardCsvSetFiles(base);
+    const manifest = JSON.parse(files['manifest.json']);
+    expect(manifest.files).toContain('events.csv');
+  });
+
+  it("Event Citationがcitations.csvにtarget_type='event'で出力される", () => {
+    const files = buildStandardCsvSetFiles({ ...base, events:[event], citations:[{ ...citation, target_type:'event', target_id:'e1' }] });
+    expect(files['citations.csv']).toContain('event,e1');
+  });
+
+  it('events.csvのunion target_id不整合はerror', () => {
+    const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, events:[{ ...event, target_type:'union', target_id:'missing' }] }));
+    expect(preview.issues.some(i => i.code === 'missing_union_ref')).toBe(true);
+  });
+
+  it('events.csvのrelation target_id不整合はerror', () => {
+    const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, events:[{ ...event, target_type:'relation', target_id:'missing' }] }));
+    expect(preview.issues.some(i => i.code === 'missing_relation_ref')).toBe(true);
   });
 
   it('標準CSVセットインポートでpersons / sources / citationsが復元される', () => {
