@@ -6,7 +6,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 **Version 0.1.0 MVP**
 
-> v0.2 development: 戸籍入力モード最小版を追加中です。
+> v0.2 development: 戸籍入力モード最小版、Eventモデル最小版、戸籍入力モードからのEvent作成を追加・検証中です。`package.json` の正式バージョンはリリース固定フェーズまで 0.1.x 系のままです。
 
 ## 公開URL
 
@@ -28,7 +28,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 
 
-## v0.2 development: 戸籍入力モード最小版
+## v0.2 development: 戸籍入力モード / Eventモデル
 
 戸籍入力モードは、戸籍・除籍・改製原戸籍などの資料を見ながら人物情報を入力するための最小入力モードです。戸籍を完全に構造化するのではなく、既存の Source / Citation 機能を活かして、資料を根拠として人物に紐づけることを目的にしています。
 
@@ -45,6 +45,19 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - OCRやAI読み取り、戸籍画像添付には未対応です。戸籍入力モードは手入力支援です。
 - 戸籍入力モードで作成した Person / Source / Citation / Event / ParentChildRelation / Union は、JSONバックアップと標準CSVセットに含まれます。
 
+### Eventモデル最小版
+
+v0.2 development では、人物・関係そのものとは別に「出来事」を記録する Event モデルを追加しています。
+
+- Eventは `event_type`、`target_type`、`target_id`、日付テキスト、場所、説明、確度、メモなどを持ちます。
+- 現在のUIでは人物詳細画面から人物に紐づくEventを追加・編集・削除できます。
+- EventにはEvent単位Citationを紐づけられます。同じSource/EventのCitationは重複作成せず更新します。
+- Event削除時は、そのEventに紐づくEvent Citationも削除します。
+- 未知のEvent種別やSource欠損Citationがあっても、画面が落ちないように安全表示します。
+- 家系図ノード上にはEventを表示しません。家系図上の表示はv0.1.0と同じく人物・Union・親子関係が中心です。
+- Personの `birth_date_text` / `death_date_text` と出生・死亡Eventは自動同期しません。どちらかを編集しても、もう一方は自動更新されません。
+- marriage EventからUnionを自動作成したり、adoption EventからParentChildRelationを自動作成したりする機能は未対応です。
+
 ## 使い方
 
 ### 1. 単一CSVで取り込む
@@ -55,7 +68,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 4. 検証結果で warning / error 件数、人物数、Union数、親子関係数を確認します。
 5. error がない場合のみ「家系図・資料・出典を置き換えてインポート実行」できます。warning のみの場合は確認ダイアログ後に反映できます。
 
-単一CSVインポートは手軽な人物投入用です。Source / Citation / Event は単一CSVに含まれないため、実行すると現在の家系図データと資料・出典・EventはCSVの内容で全置き換えされ、既存の資料・出典・Eventは削除されます。資料・出典・Eventを保持した移行には、JSONバックアップまたは標準CSVセットを使ってください。
+単一CSVインポートは手軽な人物投入用です。Source / Citation / Event は単一CSVに含まれません。実行すると現在の人物・夫婦関係・親子関係・資料・出典・Event・インポート履歴はCSVの内容で全置き換えされ、既存の資料・出典・Eventも削除されます。資料・出典・Eventを保持した移行には、JSONバックアップまたは標準CSVセットを使ってください。
 
 「サンプルCSVをダウンロード」から `kakeizu_sample_family.csv` を保存できます。「ChatGPT用プロンプトをコピー」も利用できます。
 
@@ -74,8 +87,9 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 ### 3. JSONバックアップを使う
 
 - 「JSONバックアップ」でアプリ内部形式の `kakeizu_backup.json` を出力します。
-- 「JSON復元」で現在の人物・Union・親子関係・資料・出典・インポート履歴を全置き換え復元します。
-- 旧形式バックアップのように `sources` / `citations` が存在しないJSONでも、空配列として扱うため復元できます。
+- 「JSON復元」で現在の人物・Union・親子関係・資料・出典・Event・インポート履歴を全置き換え復元します。
+- v0.2 development のJSONバックアップは `schema_version: "1.2"` として `events` を含みます。Event Citationは `citations` 内に `target_type: "event"` として保存されます。
+- 旧形式バックアップのように `sources` / `citations` / `events` が存在しないJSONでも、空配列として扱うため復元できます。
 
 ### 4. 資料・出典を登録する
 
@@ -160,7 +174,7 @@ events.csv: id,external_id,event_type,target_type,target_id,date_text,date_from,
 
 ### JSONバックアップ
 
-JSONバックアップはアプリ内部形式そのものです。`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` / `events` をまとめて保持します。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
+JSONバックアップはアプリ内部形式そのものです。v0.2 developmentでは `schema_version` は `1.2` で、`persons` / `unions` / `parent_child_relations` / `import_batches` / `sources` / `citations` / `events` をまとめて保持します。旧 `1.0` / `1.1` JSONで `events` が存在しない場合は空配列として扱います。普段のバックアップや、Kakeizu Studio間で完全に復元したい場合に向いています。
 
 ## GitHub Pages公開設定
 
@@ -182,7 +196,7 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 - 外部編集後は再ZIP化より複数ファイル直接インポートを推奨します。
 - Eventは人物詳細パネルで確認・編集できますが、家系図ノード上にはまだ表示しません。Personのbirth/deathテキストとEventは現時点では自動同期しません。戸籍入力モードの追加Eventも人物基本情報や家系図関係へ自動反映しません。
 - 現時点のCitation UIは人物単位とEvent単位が中心です。
-- 関係単位Citation、GEDCOM、OCR、メディア添付は将来対応です。
+- 関係単位Citation、GEDCOM、OCR、AI戸籍読み取り、戸籍画像添付・メディア添付は将来対応です。
 - Shift_JIS CSV自動判定は未対応です。CSVはUTF-8で保存してください。
 - PWAとしての高度なオフライン対応は今後調整します。
 - Excel xlsx の直接入出力には未対応です。CSVを利用してください。
