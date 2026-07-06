@@ -37,8 +37,11 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 既存人物更新時は、空欄の入力項目では既存値を消さず、入力された項目だけを更新します。
 - 同じ Source と Person の Citation がすでにある場合は重複作成せず、created_at を維持して既存Citationを更新します。
 - 父・母・配偶者を任意で選択し、ParentChildRelation や Union を同時に作成できます。既存の同一関係がある場合は重複作成しません。
-- 現時点では人物単位Citationに加えて、任意作成した出生・死亡Eventにも戸籍資料Citationを自動付与できます。親子関係・夫婦関係へのCitation自動付与は未対応です。
+- 現時点では人物単位Citationに加えて、任意作成した出生・死亡Eventと追加Eventにも選択中戸籍資料へのCitationを自動付与できます。親子関係・夫婦関係へのCitation自動付与は未対応です。
 - 出生Eventを作成する / 死亡Eventを作成するチェックを使うと、birth_date_text / death_date_text から人物紐づきEventを任意作成できます。既存の同一Person・event_type・date_textのEventは重複作成しません。
+- 「追加Event」セクションから、出生・死亡以外の戸籍上の出来事を人物に紐づくEventとして追加できます。対応種別は marriage（婚姻）、divorce（離婚）、adoption（養子縁組）、recognition（認知）、entry_registry（入籍）、removal_registry（除籍）、transfer_registry（転籍）、name_change（氏名変更）、residence（居住）、occupation（職業）、title（称号・肩書）、other（その他）です。
+- 追加Eventは、Event種別を選択し、日付テキスト・場所・説明・メモのいずれかを入力した場合だけ作成されます。同一Person・target_type・event_type・date_text・place_text・descriptionのEventが既にある場合は重複作成しません。
+- 追加Eventは人物に紐づく出来事として保存されます。現時点では、追加Eventから人物基本情報や家系図関係（Union / ParentChildRelation）へ自動反映しません。
 - OCRやAI読み取り、戸籍画像添付には未対応です。戸籍入力モードは手入力支援です。
 - 戸籍入力モードで作成した Person / Source / Citation / Event / ParentChildRelation / Union は、JSONバックアップと標準CSVセットに含まれます。
 
@@ -177,7 +180,7 @@ JSONバックアップはアプリ内部形式そのものです。`persons` / `
 - レイアウトはMVP簡易レイアウトであり、複雑な再婚・養子・異説・大規模家系図は将来改善予定です。
 - ZIP読込は現時点では無圧縮ZIP前提です。
 - 外部編集後は再ZIP化より複数ファイル直接インポートを推奨します。
-- Eventは人物詳細パネルで確認・編集できますが、家系図ノード上にはまだ表示しません。Personのbirth/deathテキストとEventは現時点では自動同期しません。
+- Eventは人物詳細パネルで確認・編集できますが、家系図ノード上にはまだ表示しません。Personのbirth/deathテキストとEventは現時点では自動同期しません。戸籍入力モードの追加Eventも人物基本情報や家系図関係へ自動反映しません。
 - 現時点のCitation UIは人物単位とEvent単位が中心です。
 - 関係単位Citation、GEDCOM、OCR、メディア添付は将来対応です。
 - Shift_JIS CSV自動判定は未対応です。CSVはUTF-8で保存してください。
