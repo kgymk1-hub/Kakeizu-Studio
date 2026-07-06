@@ -103,7 +103,12 @@ export default function App() {
     const exists = citations.some((c) => c.id === citation.id);
     const nextCitation = duplicate ? { ...citation, id: duplicate.id, created_at: duplicate.created_at } : citation;
     if (duplicate || exists) await updateCitation(nextCitation); else await addCitation(nextCitation);
-    setCitations((prev) => (duplicate || exists) ? prev.map((c) => c.id === nextCitation.id ? nextCitation : c) : [...prev, nextCitation]);
+    if (duplicate && duplicate.id !== citation.id && exists) await deleteCitation(citation.id);
+    setCitations((prev) => {
+      if (!duplicate && !exists) return [...prev, nextCitation];
+      const withoutMergedOriginal = duplicate && duplicate.id !== citation.id ? prev.filter((c) => c.id !== citation.id) : prev;
+      return withoutMergedOriginal.map((c) => c.id === nextCitation.id ? nextCitation : c);
+    });
     setStatus('出典を保存しました。');
   };
 

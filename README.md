@@ -197,7 +197,7 @@ JSONバックアップはアプリ内部形式そのものです。v0.2.0では 
 - ZIP読込は現時点では無圧縮ZIP前提です。
 - 外部編集後は再ZIP化より複数ファイル直接インポートを推奨します。
 - Eventは人物詳細パネルで確認・編集できますが、家系図ノード上にはまだ表示しません。Personのbirth/deathテキストとEventは現時点では自動同期しません。戸籍入力モードの追加Eventも人物基本情報や家系図関係へ自動反映しません。
-- v0.3 developmentとして、人物詳細画面に「関係の出典」セクションを追加しました。選択中人物が関係する親子関係（ParentChildRelation）と夫婦関係（Union）について、Citationの確認・追加・編集・削除ができます。
+- v0.3 developmentとして、人物詳細画面に「関係の出典」セクションを追加しました。選択中人物が関係する親子関係（ParentChildRelation）と夫婦関係（Union）について、Citationの確認・追加・編集・削除ができます。同じ関係にSource違いのCitationが複数ある場合はすべて一覧表示し、各Citationごとに編集・削除できます。同一Source/Relation、同一Source/UnionのCitationは重複作成せず既存Citationを更新します。
 - Citation target_typeの使い分けは、`person`: 人物、`event`: 出来事、`relation`: 親子関係、`union`: 夫婦関係です。`name` / `place` は将来用で、今回のUI対象外です。
 - 関係単位CitationはJSONバックアップと標準CSVセットの `citations` / `citations.csv` に含まれます。標準CSVセットのインポート時には `relation` は既存ParentChildRelation、`union` は既存Unionを参照しているか検証します。
 - 関係削除UIは未対応です。削除処理を追加する場合は、対象関係のCitationも同時に削除してください。
