@@ -1,10 +1,13 @@
-import type { Citation, Event, EventType, Person, Source } from '../../models';
+import type { Citation, Event, EventType, ParentChildRelation, Person, Source, Union } from '../../models';
 import { sourceTypeLabels, sourceTypeOptions } from '../SourceManager/SourceManager';
 
 interface Props {
   person?: Person;
   sources: Source[];
   citations: Citation[];
+  persons?: Person[];
+  relations?: ParentChildRelation[];
+  unions?: Union[];
   onChange: (p: Person) => void;
   onSaveCitation: (citation: Citation, newSource?: Source) => void;
   onDeleteCitation: (citationId: string) => void;
@@ -18,12 +21,17 @@ const eventTypeOptions = Object.entries(eventTypeLabels) as [EventType, string][
 
 const confidenceLabels = { confirmed: '確認済み', likely: '有力', uncertain: '不確か', disputed: '異説あり' } as const;
 
-export function PersonDetailPanel({ person, sources, citations, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent }: Props) {
+export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent }: Props) {
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
   const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
   const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
   const sourceById = new Map(sources.map((source) => [source.id, source]));
+  const personById = new Map((persons ?? [person]).map((p) => [p.id, p]));
   const personCitations = citations.filter((c) => c.target_type === 'person' && c.target_id === person.id);
+  const relationItems = (relations ?? []).filter((r) => r.parent_id === person.id || r.child_id === person.id);
+  const unionItems = (unions ?? []).filter((u) => u.partner1_id === person.id || u.partner2_id === person.id);
+  const relationCitationById = new Map(citations.filter((c) => c.target_type === 'relation').map((c) => [c.target_id, c]));
+  const unionCitationById = new Map(citations.filter((c) => c.target_type === 'union').map((c) => [c.target_id, c]));
   const update=(k:keyof Person,v:string)=>onChange({...person,[k]:v,updated_at:new Date().toISOString()});
   const saveCitation = (form: HTMLFormElement, existing?: Citation) => {
     const fd = new FormData(form);
@@ -48,6 +56,27 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
       note: String(fd.get('note') ?? '').trim() || undefined,
       updated_at: now,
     }, newSource);
+    form.reset();
+  };
+
+  const saveTargetCitation = (form: HTMLFormElement, targetType: 'relation' | 'union', targetId: string, existing?: Citation) => {
+    const fd = new FormData(form);
+    const now = new Date().toISOString();
+    const sourceId = String(fd.get('source_id') ?? '');
+    if (!sourceId || sourceId === '__new__') return;
+    const duplicate = citations.find((c) => c.source_id === sourceId && c.target_type === targetType && c.target_id === targetId);
+    onSaveCitation({
+      ...(existing ?? duplicate ?? { id: crypto.randomUUID(), created_at: now }),
+      source_id: sourceId,
+      target_type: targetType,
+      target_id: targetId,
+      page_or_location: String(fd.get('page_or_location') ?? '').trim() || undefined,
+      quote_text: String(fd.get('quote_text') ?? '').trim() || undefined,
+      interpretation: String(fd.get('interpretation') ?? '').trim() || undefined,
+      confidence: String(fd.get('confidence') ?? 'confirmed') as Citation['confidence'],
+      note: String(fd.get('note') ?? '').trim() || undefined,
+      updated_at: now,
+    });
     form.reset();
   };
 
@@ -105,7 +134,7 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
       })}</ul>}
     </section>
     <section className="citation-section"><h3>出典</h3>
-      <p className="help-text">出典は、選択中の人物にどの資料を根拠として紐づけるかを記録します。現時点では人物単位が中心で、親子関係・婚姻関係への紐づけは将来対応です。</p>
+      <p className="help-text">出典は、選択中の人物にどの資料を根拠として紐づけるかを記録します。</p>
       <details><summary>この人物に出典を追加</summary><CitationForm sources={sources} onSubmit={(form) => saveCitation(form)} /></details>
       {personCitations.length === 0 ? <p>この人物に紐づく出典はありません。</p> : <ul className="citation-list">{personCitations.map((citation) => {
         const source = sourceById.get(citation.source_id);
@@ -116,14 +145,39 @@ export function PersonDetailPanel({ person, sources, citations, onChange, onSave
         </li>;
       })}</ul>}
     </section>
+    <section className="citation-section"><h3>関係の出典</h3>
+      <h4>親子関係</h4>
+      {relationItems.length === 0 ? <p>この人物に関係する親子関係はありません。</p> : <ul className="citation-list">{relationItems.map((relation) => {
+        const citation = relationCitationById.get(relation.id);
+        const source = citation ? sourceById.get(citation.source_id) : undefined;
+        const parentName = personById.get(relation.parent_id)?.display_name ?? relation.parent_id;
+        const childName = personById.get(relation.child_id)?.display_name ?? relation.child_id;
+        return <li key={relation.id}><strong>親子関係：{parentName} → {childName}</strong> {citation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
+          <dl><dt>続柄種別</dt><dd>{relation.relation_type}</dd><dt>出典</dt><dd>{citation ? (source?.title ?? '参照先資料なし') : 'なし'}</dd><dt>ページ・位置</dt><dd>{citation?.page_or_location || '-'}</dd><dt>引用</dt><dd>{citation?.quote_text || '-'}</dd><dt>解釈</dt><dd>{citation?.interpretation || '-'}</dd><dt>確度</dt><dd>{citation?.confidence ? confidenceLabels[citation.confidence] : '-'}</dd><dt>メモ</dt><dd>{citation?.note || '-'}</dd></dl>
+          <details><summary>{citation ? '編集' : '出典を追加'}</summary><CitationForm citation={citation} sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'relation', relation.id, citation)} /></details>
+          {citation && <button type="button" onClick={() => onDeleteCitation(citation.id)}>関係出典を削除</button>}
+        </li>;
+      })}</ul>}
+      <h4>夫婦関係</h4>
+      {unionItems.length === 0 ? <p>この人物に関係する夫婦関係はありません。</p> : <ul className="citation-list">{unionItems.map((union) => {
+        const citation = unionCitationById.get(union.id);
+        const source = citation ? sourceById.get(citation.source_id) : undefined;
+        const p1 = personById.get(union.partner1_id)?.display_name ?? union.partner1_id;
+        const p2 = union.partner2_id ? (personById.get(union.partner2_id)?.display_name ?? union.partner2_id) : '未設定';
+        return <li key={union.id}><strong>夫婦関係：{p1} ⇔ {p2}</strong> {citation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
+          <dl><dt>種別</dt><dd>{union.union_type}</dd><dt>出典</dt><dd>{citation ? (source?.title ?? '参照先資料なし') : 'なし'}</dd><dt>ページ・位置</dt><dd>{citation?.page_or_location || '-'}</dd><dt>引用</dt><dd>{citation?.quote_text || '-'}</dd><dt>解釈</dt><dd>{citation?.interpretation || '-'}</dd><dt>確度</dt><dd>{citation?.confidence ? confidenceLabels[citation.confidence] : '-'}</dd><dt>メモ</dt><dd>{citation?.note || '-'}</dd></dl>
+          <details><summary>{citation ? '編集' : '出典を追加'}</summary><CitationForm citation={citation} sources={sources} allowNewSource={false} onSubmit={(form) => saveTargetCitation(form, 'union', union.id, citation)} /></details>
+          {citation && <button type="button" onClick={() => onDeleteCitation(citation.id)}>関係出典を削除</button>}
+        </li>;
+      })}</ul>}
+    </section>
   </aside>;
 }
 
-function CitationForm({ sources, citation, onSubmit }: { sources: Source[]; citation?: Citation; onSubmit: (form: HTMLFormElement) => void }) {
+function CitationForm({ sources, citation, allowNewSource = true, onSubmit }: { sources: Source[]; citation?: Citation; allowNewSource?: boolean; onSubmit: (form: HTMLFormElement) => void }) {
   return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
-    <label>既存資料<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? '__new__'}>{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}<option value="__new__">新しい簡易Sourceを作成</option></select></label>
-    <label>新規資料名<input name="new_source_title" placeholder="既存Sourceがない場合のみ" /></label>
-    <label>新規資料種別<select name="new_source_type" defaultValue="other">{sourceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <label>既存資料<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? (allowNewSource ? '__new__' : '')}>{!allowNewSource && <option value="">選択してください</option>}{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}{allowNewSource && <option value="__new__">新しい簡易Sourceを作成</option>}</select></label>
+    {allowNewSource && <><label>新規資料名<input name="new_source_title" placeholder="既存Sourceがない場合のみ" /></label><label>新規資料種別<select name="new_source_type" defaultValue="other">{sourceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></>}
     <label>ページ・位置<input name="page_or_location" defaultValue={citation?.page_or_location ?? ''} /></label>
     <label>引用<textarea name="quote_text" defaultValue={citation?.quote_text ?? ''} /></label>
     <label>解釈<textarea name="interpretation" defaultValue={citation?.interpretation ?? ''} /></label>

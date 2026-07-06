@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Citation, Event, Person, Source } from '../models';
+import type { Citation, Event, ParentChildRelation, Person, Source, Union } from '../models';
 import { buildStandardCsvSetFiles, createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetFiles, parseStandardCsvSetZip, readStandardCsvSetFromFiles, readStandardCsvSetFromZip, readStoredZip } from '../services/standardCsvSetService';
 
 const now = '2026-07-06T00:00:00.000Z';
@@ -7,7 +7,11 @@ const person: Person = { id:'p1', external_id:'P-1', display_name:'山田 太郎
 const source: Source = { id:'s1', source_type:'book', title:'本', created_at:now, updated_at:now };
 const citation: Citation = { id:'c1', source_id:'s1', target_type:'person', target_id:'p1', created_at:now, updated_at:now };
 const event: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', date_text:'明治1年', created_at:now, updated_at:now };
+const spouse: Person = { id:'p2', display_name:'山田 花子', created_at:now, updated_at:now };
+const union: Union = { id:'u1', partner1_id:'p1', partner2_id:'p2', union_type:'marriage', created_at:now, updated_at:now };
+const relation: ParentChildRelation = { id:'r1', parent_id:'p1', child_id:'p2', relation_type:'biological', created_at:now, updated_at:now };
 const base = { persons:[person], unions:[], parentChildRelations:[], sources:[source], citations:[citation] };
+const relationBase = { persons:[person, spouse], unions:[union], parentChildRelations:[relation], sources:[source], citations:[] as Citation[] };
 
 async function zipFiles(data = base) {
   return readStoredZip(new Uint8Array(await (await createStandardCsvSetZip(data)).arrayBuffer()));
@@ -112,6 +116,25 @@ describe('standardCsvSetService', () => {
   it('event targetのcitation.target_id が存在しない場合はerror', () => {
     const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...base, citations:[{ ...citation, target_type:'event', target_id:'e1' }] }));
     expect(preview.issues.some(i => i.code === 'missing_event_ref')).toBe(true);
+  });
+
+  it("citations.csvにtarget_type='relation' / 'union'が出力され参照検証できる", () => {
+    const relationCitation: Citation = { ...citation, id:'cr1', target_type:'relation', target_id:'r1' };
+    const unionCitation: Citation = { ...citation, id:'cu1', target_type:'union', target_id:'u1' };
+    const files = buildStandardCsvSetFiles({ ...relationBase, citations:[relationCitation, unionCitation] });
+    expect(files['citations.csv']).toContain('relation,r1');
+    expect(files['citations.csv']).toContain('union,u1');
+    expect(parseStandardCsvSetFiles(files).counts.errors).toBe(0);
+  });
+
+  it("citation target_type='relation' のtarget_id不整合はerror", () => {
+    const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...relationBase, citations:[{ ...citation, target_type:'relation', target_id:'missing' }] }));
+    expect(preview.issues.some(i => i.code === 'missing_relation_ref')).toBe(true);
+  });
+
+  it("citation target_type='union' のtarget_id不整合はerror", () => {
+    const preview = parseStandardCsvSetFiles(buildStandardCsvSetFiles({ ...relationBase, citations:[{ ...citation, target_type:'union', target_id:'missing' }] }));
+    expect(preview.issues.some(i => i.code === 'missing_union_ref')).toBe(true);
   });
 
   it('errorありの場合はインポート不可', () => {

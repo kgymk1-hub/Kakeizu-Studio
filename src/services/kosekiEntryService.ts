@@ -103,27 +103,37 @@ export function applyKosekiPersonEntry(data: KosekiEntryData, input: KosekiPerso
 
   const dupCitation = data.citations.find((c) => c.source_id === input.sourceId && c.target_type === 'person' && c.target_id === person.id);
   const citation: Citation = { ...(dupCitation ?? { id: uuid(), source_id: input.sourceId, target_type: 'person' as const, target_id: person.id, created_at: now }), confidence: input.confidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, dupCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, dupCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, dupCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, dupCitation?.note), updated_at: now };
-  const citations = dupCitation ? data.citations.map((c) => c.id === citation.id ? citation : c) : [...data.citations, citation];
+  let citations = dupCitation ? data.citations.map((c) => c.id === citation.id ? citation : c) : [...data.citations, citation];
+
+  const upsertRelationCitation = (targetType: 'relation' | 'union', targetId: string) => {
+    const existingCitation = citations.find((c) => c.source_id === input.sourceId && c.target_type === targetType && c.target_id === targetId);
+    const nextCitation: Citation = { ...(existingCitation ?? { id: uuid(), source_id: input.sourceId!, target_type: targetType, target_id: targetId, created_at: now }), confidence: input.confidence, page_or_location: cleanKeepExistingWhenBlank(input.page_or_location, existingCitation?.page_or_location), quote_text: cleanKeepExistingWhenBlank(input.quote_text, existingCitation?.quote_text), interpretation: cleanKeepExistingWhenBlank(input.interpretation, existingCitation?.interpretation), note: cleanKeepExistingWhenBlank(input.citation_note, existingCitation?.note), updated_at: now };
+    citations = existingCitation ? citations.map((c) => c.id === nextCitation.id ? nextCitation : c) : [...citations, nextCitation];
+  };
 
   const createdRelationIds: string[] = [];
   let parentChildRelations = [...data.parentChildRelations];
   for (const parentId of [input.fatherId, input.motherId].filter(Boolean) as string[]) {
-    if (!parentChildRelations.some((r) => r.parent_id === parentId && r.child_id === person.id)) {
-      const rel: ParentChildRelation = { id: uuid(), parent_id: parentId, child_id: person.id, relation_type: 'biological', confidence: input.confidence, review_status: 'reviewed', created_at: now, updated_at: now };
+    let rel = parentChildRelations.find((r) => r.parent_id === parentId && r.child_id === person.id);
+    if (!rel) {
+      rel = { id: uuid(), parent_id: parentId, child_id: person.id, relation_type: 'biological', confidence: input.confidence, review_status: 'reviewed', created_at: now, updated_at: now };
       parentChildRelations = [...parentChildRelations, rel];
       createdRelationIds.push(rel.id);
     }
+    upsertRelationCitation('relation', rel.id);
   }
 
   const createdUnionIds: string[] = [];
   let unions = [...data.unions];
   if (input.spouseId) {
     const pair = [person.id, input.spouseId].sort().join(':');
-    if (!unions.some((u) => [u.partner1_id, u.partner2_id].filter(Boolean).sort().join(':') === pair)) {
-      const union: Union = { id: uuid(), partner1_id: person.id, partner2_id: input.spouseId, union_type: 'marriage', confidence: input.confidence, review_status: 'reviewed', created_at: now, updated_at: now };
+    let union = unions.find((u) => [u.partner1_id, u.partner2_id].filter(Boolean).sort().join(':') === pair);
+    if (!union) {
+      union = { id: uuid(), partner1_id: person.id, partner2_id: input.spouseId, union_type: 'marriage', confidence: input.confidence, review_status: 'reviewed', created_at: now, updated_at: now };
       unions = [...unions, union];
       createdUnionIds.push(union.id);
     }
+    upsertRelationCitation('union', union.id);
   }
 
   const createdEventIds: string[] = [];
