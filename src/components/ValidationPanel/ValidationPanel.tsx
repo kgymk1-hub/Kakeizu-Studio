@@ -1,13 +1,21 @@
+import { useState } from 'react';
 import type { Person, ValidationIssue, ValidationSeverity, ValidationTargetType } from '../../models';
 
 export const VALIDATION_PANEL_DISPLAY_LIMIT = 50;
 
 type ValidationCounts = Record<ValidationSeverity, number> & { total: number };
 
+export interface ValidationIssueFilters {
+  severity?: ValidationSeverity | 'all';
+  category?: string | 'all';
+  targetType?: ValidationTargetType | 'all';
+}
+
 interface ValidationPanelProps {
   issues: ValidationIssue[];
   persons: Person[];
   displayLimit?: number;
+  initialFilters?: ValidationIssueFilters;
 }
 
 const severityDescriptions: Record<ValidationSeverity, string> = {
@@ -32,6 +40,27 @@ export function countValidationIssues(issues: ValidationIssue[]): ValidationCoun
   }, { error: 0, warning: 0, info: 0, total: 0 });
 }
 
+export function filterValidationIssues(issues: ValidationIssue[], filters: ValidationIssueFilters = {}): ValidationIssue[] {
+  const severity = filters.severity ?? 'all';
+  const category = filters.category ?? 'all';
+  const targetType = filters.targetType ?? 'all';
+
+  return issues.filter((issue) => {
+    if (severity !== 'all' && issue.severity !== severity) return false;
+    if (category !== 'all' && (issue.category ?? '未分類') !== category) return false;
+    if (targetType !== 'all' && (issue.target_type ?? '不明') !== targetType) return false;
+    return true;
+  });
+}
+
+export function getValidationCategoryOptions(issues: ValidationIssue[]): string[] {
+  return Array.from(new Set(issues.map((issue) => issue.category ?? '未分類'))).sort();
+}
+
+export function getValidationTargetTypeOptions(issues: ValidationIssue[]): string[] {
+  return Array.from(new Set(issues.map((issue) => issue.target_type ?? '不明'))).sort();
+}
+
 export function formatValidationTarget(issue: ValidationIssue, persons: Person[]): string {
   const targetType = issue.target_type;
   const targetId = issue.target_id;
@@ -45,25 +74,54 @@ export function formatValidationTarget(issue: ValidationIssue, persons: Person[]
   return `対象: ${label}${targetId ? ` ${targetId}` : ''}`;
 }
 
-export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PANEL_DISPLAY_LIMIT }: ValidationPanelProps) {
+export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PANEL_DISPLAY_LIMIT, initialFilters = {} }: ValidationPanelProps) {
+  const [severityFilter, setSeverityFilter] = useState<ValidationSeverity | 'all'>(initialFilters.severity ?? 'all');
+  const [categoryFilter, setCategoryFilter] = useState<string>(initialFilters.category ?? 'all');
+  const [targetTypeFilter, setTargetTypeFilter] = useState<ValidationTargetType | 'all'>(initialFilters.targetType ?? 'all');
   const counts = countValidationIssues(issues);
-  const visibleIssues = issues.slice(0, displayLimit);
-  const isLimited = issues.length > visibleIssues.length;
+  const categoryOptions = getValidationCategoryOptions(issues);
+  const targetTypeOptions = getValidationTargetTypeOptions(issues);
+  const filteredIssues = filterValidationIssues(issues, { severity: severityFilter, category: categoryFilter, targetType: targetTypeFilter });
+  const visibleIssues = filteredIssues.slice(0, displayLimit);
+  const isLimited = filteredIssues.length > visibleIssues.length;
 
   return <section className="panel validation-panel" aria-labelledby="validation-panel-title">
-    <h2 id="validation-panel-title">検証結果</h2>
+    <h2 id="validation-panel-title">データ検証結果</h2>
     <div className="validation-counts" aria-label="検証結果件数">
       <span className="error">error: {counts.error}</span>
       <span className="warning">warning: {counts.warning}</span>
       <span className="info">info: {counts.info}</span>
       <span>total: {counts.total}</span>
     </div>
+    <div className="validation-filters" aria-label="検証結果フィルタ">
+      <label>severity
+        <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as ValidationSeverity | 'all')}>
+          <option value="all">すべて</option>
+          <option value="error">error</option>
+          <option value="warning">warning</option>
+          <option value="info">info</option>
+        </select>
+      </label>
+      <label>category
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="all">すべて</option>
+          {categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
+        </select>
+      </label>
+      <label>target_type
+        <select value={targetTypeFilter} onChange={(e) => setTargetTypeFilter(e.target.value as ValidationTargetType | 'all')}>
+          <option value="all">すべて</option>
+          {targetTypeOptions.map((targetType) => <option key={targetType} value={targetType}>{targetType}</option>)}
+        </select>
+      </label>
+    </div>
+    <p className="validation-visible-count">表示中: {filteredIssues.length}件 / 全体: {counts.total}件</p>
     <dl className="validation-help">
       <div><dt>error</dt><dd>{severityDescriptions.error}</dd></div>
       <div><dt>warning</dt><dd>{severityDescriptions.warning}</dd></div>
       <div><dt>info</dt><dd>{severityDescriptions.info}</dd></div>
     </dl>
-    {issues.length === 0 ? <p className="success">問題は見つかりませんでした。</p> : <>
+    {issues.length === 0 ? <p className="success">問題は見つかりませんでした。</p> : filteredIssues.length === 0 ? <p className="notice">条件に一致する検証結果はありません。</p> : <>
       {isLimited && <p className="notice">最初の{displayLimit}件を表示しています。</p>}
       <ul className="validation-issue-list">
         {visibleIssues.map((issue, index) => <li key={issue.id ?? `${issue.severity}-${issue.target_type}-${issue.target_id}-${index}`} className={`validation-issue ${issue.severity}`}>

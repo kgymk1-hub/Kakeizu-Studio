@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ValidationPanel, countValidationIssues, formatValidationTarget } from '../components/ValidationPanel/ValidationPanel';
+import { ValidationPanel, countValidationIssues, filterValidationIssues, formatValidationTarget, getValidationCategoryOptions, getValidationTargetTypeOptions } from '../components/ValidationPanel/ValidationPanel';
 import type { Person, ValidationIssue } from '../models';
 
 const now = '2026-07-06T00:00:00.000Z';
@@ -13,6 +13,59 @@ const issues: ValidationIssue[] = [
 ];
 
 describe('ValidationPanel', () => {
+
+  it('severityでerrorだけに絞り込める', () => {
+    expect(filterValidationIssues(issues, { severity: 'error' })).toEqual([issues[0]]);
+  });
+
+  it('severityでwarningだけに絞り込める', () => {
+    expect(filterValidationIssues(issues, { severity: 'warning' })).toEqual([issues[1]]);
+  });
+
+  it('categoryでmissing_citationだけに絞り込める', () => {
+    expect(filterValidationIssues(issues, { category: 'missing_citation' })).toEqual([issues[1]]);
+  });
+
+  it('target_typeでpersonだけに絞り込める', () => {
+    expect(filterValidationIssues(issues, { targetType: 'person' })).toEqual([issues[1]]);
+  });
+
+  it('severity + category + target_type の組み合わせで絞り込める', () => {
+    expect(filterValidationIssues(issues, { severity: 'warning', category: 'missing_citation', targetType: 'person' })).toEqual([issues[1]]);
+    expect(filterValidationIssues(issues, { severity: 'error', category: 'missing_citation', targetType: 'person' })).toEqual([]);
+  });
+
+  it('categoryとtarget_typeの選択肢をissueから自動生成できる', () => {
+    expect(getValidationCategoryOptions(issues)).toEqual(['broken_reference', 'missing_citation', 'unreviewed']);
+    expect(getValidationTargetTypeOptions(issues)).toEqual(['event', 'person', 'relation']);
+  });
+
+  it('フィルタ後0件の場合に一致なしメッセージを表示できる', () => {
+    const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'error', category: 'missing_citation' }} />);
+    expect(html).toContain('条件に一致する検証結果はありません。');
+    expect(html).toContain('表示中: 0件 / 全体: 3件');
+  });
+
+  it('表示中件数 / 全体件数が表示される', () => {
+    const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'warning' }} />);
+    expect(html).toContain('表示中: 1件 / 全体: 3件');
+  });
+
+  it('表示上限がフィルタ後の結果に対して適用される', () => {
+    const manyIssues = Array.from({ length: 4 }, (_, index): ValidationIssue => ({ severity: index === 0 ? 'error' : 'warning', category: 'missing_citation', target_type: 'person', target_id: `p${index}`, message: `issue ${index}` }));
+    const html = renderToStaticMarkup(<ValidationPanel issues={manyIssues} persons={persons} displayLimit={2} initialFilters={{ severity: 'warning' }} />);
+    expect(html).toContain('表示中: 3件 / 全体: 4件');
+    expect(html).toContain('最初の2件を表示しています。');
+    expect(html).toContain('issue 1');
+    expect(html).toContain('issue 2');
+    expect(html).not.toContain('issue 3');
+  });
+
+  it('既存パネルとValidationPanelの見出しが同じ検証結果になっていない', () => {
+    const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} />);
+    expect(html).toContain('データ検証結果');
+    expect(html).not.toContain('<h2 id="validation-panel-title">検証結果</h2>');
+  });
   it('error / warning / info件数を表示できる', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} />);
     expect(html).toContain('error: 1');
