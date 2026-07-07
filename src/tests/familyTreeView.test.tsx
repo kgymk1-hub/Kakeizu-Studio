@@ -172,6 +172,8 @@ describe('FamilyTreeView export appearance', () => {
     const appSource = readFileSync('src/App.tsx', 'utf8');
     expect(appSource).toContain('PNG出力');
     expect(appSource).toContain('PDF出力');
+    expect(appSource).toContain('SVG出力');
+    expect(appSource).toContain('downloadSvgFromElement');
     expect(appSource).toContain('ref={treeRef}');
   });
 });
