@@ -32,6 +32,33 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
+
+## v0.5 development: 家系図ノード表示強化
+
+v0.5 development の第1フェーズでは、データ管理機能やレイアウトエンジンを増やす前に、既存のSVG家系図ビュー上の人物ノードの見た目と情報量を強化しています。package.json の version は `0.4.0` のまま変更していません。
+
+- 家系図ビューの表示密度を `compact` / `standard` / `detailed` で切り替えられます。初期値は `standard` です。
+- `compact` は氏名中心の省スペース表示、`standard` は氏名・生没年・最小ステータス、`detailed` は氏名・生没年・称号/肩書・確度・確認状態・出典状態を表示します。
+- 人物ノードでは `birth_date_text` / `death_date_text` から生没年を `1900 - 1970`、`1900 - `、`? - 1970` のように確認できます。
+- `detailed` では `rank_title`、`confidence`、`review_status`、Person Citation の有無をノード上で確認できます。
+- 出典なし、未確認、低確度（要確認）、異説ありは、文字表示とノードの強調スタイルで見分けやすくしています。
+- 今回は既存SVG家系図表示の範囲でノード表示を整え、レイアウトエンジンの大幅変更は行っていません。
+- ELK.js / React Flow / 複数ビュー本格対応、縦型・横型・直系祖先図・子孫図などの本格ビュー切替は未対応です。
+- PNG/PDF出力設定の本格追加は行っていません。現在表示中の家系図を出力する既存導線を維持しています。
+
+
+### v0.5 development 第2フェーズ: 関係線の表示強化
+
+第2フェーズでは、人物ノードだけでなく、既存SVG家系図上の親子線・夫婦/パートナー線も関係種別や状態が分かるように強化しています。package.json の version は `0.4.0` のまま変更していません。
+
+- 親子関係は `relation_type` に応じて線種や強調を変えます。実親子は実線、養親子・特別養親子・認知は破線系、継親子・養育は点線系、不明は薄い線、異説ありは警告色で見分けやすくしています。
+- ParentChildRelation の `confidence` / `review_status` も線の見た目へ反映し、低確度・異説あり・未確認の関係を線上でも確認できます。
+- Union は `union_type` / `status` / `end_reason` に応じて夫婦・パートナー線を変えます。婚姻は橙の実線、パートナーは破線、側室・内縁は点線系、不明・その他は薄い線で表します。
+- `status === "divorced"` または `end_reason === "divorce"`、`status === "widowed"` または `end_reason === "death"`、`status === "ended"` を線色・破線・薄さで見分けやすくしています。
+- Unionノードも union_type、離婚、死別、不明、異説ありを控えめに反映します。
+- 家系図ビューには最小限の凡例を常時表示し、実親子・養親子・継親子・婚姻・離婚/終了・異説ありが分かるようにしています。
+- 今回も既存SVG家系図表示の範囲で対応し、ELK.js / React Flow / 複数ビュー本格対応は未対応です。
+
 ## v0.4.0 確認用URL
 
 - 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>

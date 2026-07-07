@@ -61,12 +61,12 @@ export function buildFamilyLayout(persons: Person[], unions: Union[], relations:
 
   const edges: LayoutEdge[] = [];
   unions.forEach((u) => {
-    if (personIds.has(u.partner1_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.partner1_id}-${u.id}`, type: 'spouse', from: u.partner1_id, to: u.id });
-    if (u.partner2_id && personIds.has(u.partner2_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.id}-${u.partner2_id}`, type: 'spouse', from: u.id, to: u.partner2_id });
+    if (personIds.has(u.partner1_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.partner1_id}-${u.id}`, type: 'spouse', from: u.partner1_id, to: u.id, union_type: u.union_type, status: u.status, end_reason: u.end_reason, confidence: u.confidence, review_status: u.review_status });
+    if (u.partner2_id && personIds.has(u.partner2_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.id}-${u.partner2_id}`, type: 'spouse', from: u.id, to: u.partner2_id, union_type: u.union_type, status: u.status, end_reason: u.end_reason, confidence: u.confidence, review_status: u.review_status });
   });
   relations.forEach((r) => {
     const from = r.union_id && unionIds.has(r.union_id) ? r.union_id : r.parent_id;
-    if (personIds.has(r.child_id) && (unionIds.has(from) || personIds.has(from))) edges.push({ id: `e-${from}-${r.child_id}`, type: r.union_id ? 'union-child' : 'parent-child', from, to: r.child_id, relation_type: r.relation_type, confidence: r.confidence });
+    if (personIds.has(r.child_id) && (unionIds.has(from) || personIds.has(from))) edges.push({ id: `e-${from}-${r.child_id}`, type: r.union_id ? 'union-child' : 'parent-child', from, to: r.child_id, relation_type: r.relation_type, confidence: r.confidence, review_status: r.review_status });
   });
 
   return { layoutNodes: nodes, layoutEdges: edges, viewBox: calculateLayoutViewBox(nodes), issues };
