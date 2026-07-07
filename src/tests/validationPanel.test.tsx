@@ -53,18 +53,18 @@ describe('ValidationPanel', () => {
   it('フィルタ後0件の場合に一致なしメッセージを表示できる', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'error', category: 'missing_citation' }} />);
     expect(html).toContain('条件に一致する検証結果はありません。');
-    expect(html).toContain('表示中: 0件 / 全体: 3件');
+    expect(html).toContain('条件一致: 0件 / 全体: 3件');
   });
 
-  it('表示中件数 / 全体件数が表示される', () => {
+  it('条件一致件数 / 全体件数が表示される', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'warning' }} />);
-    expect(html).toContain('表示中: 1件 / 全体: 3件');
+    expect(html).toContain('条件一致: 1件 / 全体: 3件');
   });
 
   it('表示上限がフィルタ後の結果に対して適用される', () => {
     const manyIssues = Array.from({ length: 4 }, (_, index): ValidationIssue => ({ severity: index === 0 ? 'error' : 'warning', category: 'missing_citation', target_type: 'person', target_id: `p${index}`, message: `issue ${index}` }));
     const html = renderToStaticMarkup(<ValidationPanel issues={manyIssues} persons={persons} displayLimit={2} initialFilters={{ severity: 'warning' }} />);
-    expect(html).toContain('表示中: 3件 / 全体: 4件');
+    expect(html).toContain('条件一致: 3件 / 全体: 4件');
     expect(html).toContain('最初の2件を表示しています。');
     expect(html).toContain('issue 1');
     expect(html).toContain('issue 2');
