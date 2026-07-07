@@ -106,10 +106,14 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     const parentYear = extractYear(personById.get(r.parent_id)?.birth_date_text);
     const childYear = extractYear(personById.get(r.child_id)?.birth_date_text);
     if (parentYear !== undefined && childYear !== undefined) {
-      if (childYear < parentYear) add({ severity: 'error', category: 'date_inconsistency', target_type: 'relation', target_id: r.id, title: '子の出生年が親の出生年より前です', message: `子の出生年 ${childYear} が親の出生年 ${parentYear} より前です。`, related_ids: [r.parent_id, r.child_id] });
-      const age = childYear - parentYear;
-      if (age < 10) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が低すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
-      if (age > 80) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が高すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
+      if (childYear < parentYear) {
+        add({ severity: 'error', category: 'date_inconsistency', target_type: 'relation', target_id: r.id, title: '子の出生年が親の出生年より前です', message: `子の出生年 ${childYear} が親の出生年 ${parentYear} より前です。`, related_ids: [r.parent_id, r.child_id] });
+      } else {
+        // 明確な年順序エラーがある場合は、同じ親子関係に対する年齢warningの重複を避ける。
+        const age = childYear - parentYear;
+        if (age < 10) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が低すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
+        if (age > 80) add({ severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: r.id, title: '親の年齢が高すぎる可能性があります', message: `子の出生時点で親が ${age} 歳です。`, related_ids: [r.parent_id, r.child_id] });
+      }
     }
   });
 
