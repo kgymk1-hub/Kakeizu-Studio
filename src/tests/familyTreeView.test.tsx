@@ -2,8 +2,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { FamilyTreeView, formatLifeDates, getConfidenceLabel, getReviewStatusLabel, hasPersonCitation } from '../components/FamilyTreeView/FamilyTreeView';
-import type { Citation, LayoutNode, Person } from '../models';
+import { FamilyTreeView, formatLifeDates, getConfidenceLabel, getEdgeClassName, getReviewStatusLabel, hasPersonCitation } from '../components/FamilyTreeView/FamilyTreeView';
+import type { Citation, LayoutEdge, LayoutNode, Person } from '../models';
 
 const now = '2026-07-07T00:00:00.000Z';
 const person: Person = { id: 'p1', display_name: '山田太郎', gender: 'male', birth_date_text: '1900', death_date_text: '1970', rank_title: '戸主', confidence: 'uncertain', review_status: 'unreviewed', created_at: now, updated_at: now };
@@ -88,5 +88,64 @@ describe('FamilyTreeView display modes', () => {
     expect(host.textContent).toContain('戸主');
     act(() => { root.unmount(); });
     host.remove();
+  });
+});
+
+
+describe('FamilyTreeView relation edge styles', () => {
+  const parentEdge = (relation_type: LayoutEdge['relation_type'], extra: Partial<LayoutEdge> = {}): LayoutEdge => ({ id: `e-${relation_type}`, type: 'parent-child', from: 'p1', to: 'p2', relation_type, ...extra });
+  const unionEdge = (extra: Partial<LayoutEdge> = {}): LayoutEdge => ({ id: 'e-union', type: 'spouse', from: 'p1', to: 'u1', union_type: 'marriage', ...extra });
+
+  it('biologicalの親子線が実線系クラスになる', () => {
+    expect(getEdgeClassName(parentEdge('biological'))).toContain('edge-relation-biological');
+  });
+
+  it('adoptiveの親子線が破線系クラスになる', () => {
+    expect(getEdgeClassName(parentEdge('adoptive'))).toContain('edge-relation-adoptive');
+  });
+
+  it('stepの親子線が点線系クラスになる', () => {
+    expect(getEdgeClassName(parentEdge('step'))).toContain('edge-relation-step');
+  });
+
+  it('disputedの親子線が警告系クラスになる', () => {
+    expect(getEdgeClassName(parentEdge('disputed'))).toContain('edge-relation-disputed');
+  });
+
+  it('confidence === uncertain の関係線に注意系クラスが付く', () => {
+    expect(getEdgeClassName(parentEdge('biological', { confidence: 'uncertain' }))).toContain('edge-confidence-uncertain');
+  });
+
+  it('confidence === disputed の関係線に異説/警告系クラスが付く', () => {
+    expect(getEdgeClassName(parentEdge('biological', { confidence: 'disputed' }))).toContain('edge-confidence-disputed');
+  });
+
+  it('review_status === unreviewed の関係線に未確認系クラスが付く', () => {
+    expect(getEdgeClassName(parentEdge('biological', { review_status: 'unreviewed' }))).toContain('edge-review-unreviewed');
+  });
+
+  it('marriageのUnion線が通常婚姻系クラスになる', () => {
+    expect(getEdgeClassName(unionEdge({ union_type: 'marriage' }))).toContain('edge-union-marriage');
+  });
+
+  it('partnerのUnion線がパートナー系クラスになる', () => {
+    expect(getEdgeClassName(unionEdge({ union_type: 'partner' }))).toContain('edge-union-partner');
+  });
+
+  it('divorced / end_reason divorce のUnion線が離婚系クラスになる', () => {
+    expect(getEdgeClassName(unionEdge({ status: 'divorced' }))).toContain('edge-union-divorced');
+    expect(getEdgeClassName(unionEdge({ end_reason: 'divorce' }))).toContain('edge-union-divorced');
+  });
+
+  it('widowed / end_reason death のUnion線が死別系クラスになる', () => {
+    expect(getEdgeClassName(unionEdge({ status: 'widowed' }))).toContain('edge-union-widowed');
+    expect(getEdgeClassName(unionEdge({ end_reason: 'death' }))).toContain('edge-union-widowed');
+  });
+
+  it('凡例が表示される', () => {
+    const html = render('standard');
+    expect(html).toContain('凡例:');
+    expect(html).toContain('養親子 = 破線');
+    expect(html).toContain('離婚/終了 = 警告色・破線');
   });
 });

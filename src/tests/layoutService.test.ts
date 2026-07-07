@@ -43,6 +43,15 @@ describe('layoutService', () => {
     expect(layout.issues.map((i) => i.code)).toContain('LAYOUT_MISSING_UNION');
   });
 
+
+  it('描画用に親子線とUnion線へ関係状態を渡す', () => {
+    const u: Union = { ...union('u1', 'father', 'mother'), union_type: 'partner', status: 'divorced', end_reason: 'divorce', confidence: 'uncertain', review_status: 'unreviewed' };
+    const r: ParentChildRelation = { ...relation('r1', 'father', 'child', 'u1'), relation_type: 'adoptive', confidence: 'disputed', review_status: 'unreviewed' };
+    const layout = buildFamilyLayout([person('father'), person('mother'), person('child')], [u], [r]);
+    expect(layout.layoutEdges.find((e) => e.type === 'spouse')).toMatchObject({ union_type: 'partner', status: 'divorced', end_reason: 'divorce', confidence: 'uncertain', review_status: 'unreviewed' });
+    expect(layout.layoutEdges.find((e) => e.type === 'union-child')).toMatchObject({ relation_type: 'adoptive', confidence: 'disputed', review_status: 'unreviewed' });
+  });
+
   it('selected person IDが存在しない場合は安全にundefinedへ正規化する', () => {
     expect(sanitizeSelectedPersonId('p1', [person('p1')])).toBe('p1');
     expect(sanitizeSelectedPersonId('missing', [person('p1')])).toBeUndefined();
