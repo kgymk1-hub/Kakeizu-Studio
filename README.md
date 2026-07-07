@@ -35,6 +35,21 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 
 
+
+## v0.6 development: Event一覧 第3フェーズ
+
+v0.6 development 第3フェーズでは、登録済みEventを一覧表示し、Event種別フィルタと簡易検索から対象を探して、第1フェーズの共通選択基盤へ接続する導線を追加しました。
+
+- Event一覧を追加し、`event_type`、`date_text`、関連人物名、`description`、`confidence`、`review_status`、備考の一部を確認できます。
+- `event_type` フィルタに対応しました。選択肢は `birth` / `death` / `marriage` / `divorce` / `adoption` / `recognition` / `entry_registry` / `removal_registry` / `transfer_registry` / `name_change` / `residence` / `occupation` / `title` / `other` です。
+- `event_type` / `date_text` / `description` / `note` / 関連人物の `display_name` / `family_name` / `given_name` / Union配偶者名 / Relation親子名の簡易検索に対応しました。
+- Eventクリックで `target_type: "event"` / `target_id` を第1フェーズの共通選択基盤 `selectTarget` へ渡し、person対象Eventは既存の人物詳細へジャンプできます。
+- union / relation 対象Eventは一覧上で関連人物名を表示し、今後の詳細導線でジャンプ先解決を拡張予定です。現時点ではクラッシュしない安全表示を優先しています。
+- 新しいDBテーブルは追加していません。
+- JSON `schema_version` は変更していません。
+- Dexie schema version は変更していません。
+- `package.json` version は `0.5.0` のまま変更していません。
+
 ## v0.6 development: 人物一覧・検索 第2フェーズ
 
 v0.6 development 第2フェーズでは、人物データを一覧表示し、検索・簡易フィルタから既存の人物詳細パネルへ移動できる導線を追加しました。第1フェーズで追加した共通選択基盤を使い、一覧クリック時に `target_type: "person"` / `target_id` を渡して人物詳細へジャンプします。
