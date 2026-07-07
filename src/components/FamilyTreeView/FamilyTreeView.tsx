@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, RelationType, ReviewStatus, Union, UnionType, ValidationIssue } from '../../models';
+import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, ReviewStatus, ValidationIssue } from '../../models';
 import type { LayoutViewBox } from '../../services/layoutService';
 
 export type FamilyTreeDisplayMode = 'compact' | 'standard' | 'detailed';
@@ -12,8 +12,6 @@ const reviewStatusLabels: Record<ReviewStatus, string> = { reviewed: '確認済'
 const displayModeLabels: Record<FamilyTreeDisplayMode, string> = { compact: 'コンパクト', standard: '標準', detailed: '詳細' };
 const displayModes: FamilyTreeDisplayMode[] = ['compact', 'standard', 'detailed'];
 
-const relationTypeLabels: Record<RelationType, string> = { biological: '実親子', adoptive: '養親子', special_adoptive: '特別養親子', step: '継親子', recognized: '認知', foster: '養育', unknown: '不明', disputed: '異説あり' };
-const unionTypeLabels: Record<UnionType, string> = { marriage: '婚姻', partner: 'パートナー', concubine: '側室・内縁', unknown: '不明', other: 'その他' };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const formatName = (name: string) => (name.length > 11 ? `${name.slice(0, 10)}…` : name);
 
@@ -26,74 +24,6 @@ export const formatLifeDates = (person?: Pick<Person, 'birth_date_text' | 'death
 export const hasPersonCitation = (personId: string, citations: Pick<Citation, 'target_type' | 'target_id'>[] = []) => citations.some((c) => c.target_type === 'person' && c.target_id === personId);
 export const getConfidenceLabel = (confidence?: Confidence) => confidence ? confidenceLabels[confidence] : '確度未設定';
 export const getReviewStatusLabel = (reviewStatus?: ReviewStatus) => reviewStatus ? reviewStatusLabels[reviewStatus] : '確認状態未設定';
-
-
-export function getEdgeClassName(edge: LayoutEdge) {
-  const flags = ['edge', `edge-${edge.type}`];
-  if (edge.type === 'spouse') {
-    flags.push(`edge-union-${edge.union_type ?? 'unknown'}`);
-    if (edge.status) flags.push(`edge-status-${edge.status}`);
-    if (edge.end_reason) flags.push(`edge-end-${edge.end_reason}`);
-    if (edge.status === 'divorced' || edge.end_reason === 'divorce') flags.push('edge-union-divorced');
-    if (edge.status === 'widowed' || edge.end_reason === 'death') flags.push('edge-union-widowed');
-    if (edge.status === 'ended') flags.push('edge-union-ended');
-  } else {
-    flags.push(`edge-relation-${edge.relation_type ?? 'unknown'}`);
-  }
-  if (edge.confidence) flags.push(`edge-confidence-${edge.confidence}`);
-  if (edge.review_status) flags.push(`edge-review-${edge.review_status}`);
-  return flags.filter(Boolean).join(' ');
-}
-
-export function getEdgeDashArray(edge: LayoutEdge) {
-  if (edge.confidence === 'disputed' || edge.relation_type === 'disputed') return '10 4 2 4';
-  if (edge.type === 'spouse') {
-    if (edge.status === 'divorced' || edge.end_reason === 'divorce') return '10 5';
-    if (edge.status === 'ended') return '8 4';
-    if (edge.union_type === 'partner') return '9 5';
-    if (edge.union_type === 'concubine') return '3 5';
-    return undefined;
-  }
-  switch (edge.relation_type) {
-    case 'adoptive': return '8 5';
-    case 'special_adoptive': return '12 4';
-    case 'step': return '2 5';
-    case 'recognized': return '7 4';
-    case 'foster': return '1 5';
-    default: return undefined;
-  }
-}
-
-export function getEdgeStrokeWidth(edge: LayoutEdge) {
-  if (edge.relation_type === 'special_adoptive' || edge.confidence === 'disputed') return 3.4;
-  if (edge.relation_type === 'foster') return 1.7;
-  if (edge.type === 'spouse') return 3;
-  return undefined;
-}
-
-export function getEdgeTitle(edge: LayoutEdge) {
-  const confidence = edge.confidence ? ` / 確度: ${getConfidenceLabel(edge.confidence)}` : '';
-  const review = edge.review_status ? ` / 確認: ${getReviewStatusLabel(edge.review_status)}` : '';
-  if (edge.type === 'spouse') {
-    const union = unionTypeLabels[edge.union_type ?? 'unknown'];
-    const state = edge.status || edge.end_reason ? ` / 状態: ${edge.status ?? '-'} / 終了理由: ${edge.end_reason ?? '-'}` : '';
-    return `夫婦・パートナー関係: ${union}${state}${confidence}${review}`;
-  }
-  return `親子関係: ${relationTypeLabels[edge.relation_type ?? 'unknown']}${confidence}${review}`;
-}
-
-export function getUnionNodeClassName(union?: Union) {
-  const flags = [
-    'union-node',
-    `union-type-${union?.union_type ?? 'unknown'}`,
-    union?.status ? `union-status-${union.status}` : '',
-    union?.end_reason ? `union-end-${union.end_reason}` : '',
-    union?.confidence ? `union-confidence-${union.confidence}` : '',
-    union?.status === 'divorced' || union?.end_reason === 'divorce' ? 'union-ended-divorce' : '',
-    union?.status === 'widowed' || union?.end_reason === 'death' ? 'union-ended-death' : '',
-  ];
-  return flags.filter(Boolean).join(' ');
-}
 
 export function getPersonNodeClassName(person: Person | undefined, hasCitation: boolean, selected: boolean, displayMode: FamilyTreeDisplayMode) {
   const flags = [
@@ -140,11 +70,10 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
       <label className="display-mode-control">表示密度:<select aria-label="表示密度" value={displayMode} onChange={(e) => setDisplayMode(e.target.value as FamilyTreeDisplayMode)}>{displayModes.map((mode) => <option key={mode} value={mode}>{displayModeLabels[mode]}</option>)}</select></label>
     </div>
     {hasMissing && <div className="tree-warning">参照不整合があります。表示可能な人物・関係だけで家系図を描画しています。</div>}
-    <div className="tree-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span className="legend-sample relation-biological">実親子 = 実線</span><span className="legend-sample relation-adoptive">養親子 = 破線</span><span className="legend-sample relation-step">継親子 = 点線</span><span className="legend-sample union-marriage">婚姻 = 橙の実線</span><span className="legend-sample union-ended">離婚/終了 = 警告色・破線</span><span className="legend-sample relation-disputed">異説あり = 警告色</span></div>
     <svg className={`tree-svg display-${displayMode}`} viewBox={actualViewBox} role="img" aria-label="家系図" onMouseDown={(e) => setDragStart({ x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y })} onMouseMove={(e) => { if (!dragStart) return; const scaleX = viewBox.width / zoom / e.currentTarget.clientWidth; const scaleY = viewBox.height / zoom / e.currentTarget.clientHeight; setPan({ x: dragStart.panX - (e.clientX - dragStart.x) * scaleX, y: dragStart.panY - (e.clientY - dragStart.y) * scaleY }); }} onMouseUp={() => setDragStart(undefined)} onMouseLeave={() => setDragStart(undefined)}>
-      <g>{edges.map((e) => { const a = byId.get(e.from), b = byId.get(e.to); if (!a || !b) return null; return <path key={e.id} d={edgePath(e, a, b)} className={getEdgeClassName(e)} data-relation-type={e.relation_type ?? 'unknown'} data-union-type={e.union_type ?? 'unknown'} data-union-status={e.status ?? 'unknown'} data-end-reason={e.end_reason ?? 'unknown'} strokeDasharray={getEdgeDashArray(e)} strokeWidth={getEdgeStrokeWidth(e)} aria-label={getEdgeTitle(e)}><title>{getEdgeTitle(e)}</title></path>; })}</g>
+      <g>{edges.map((e) => { const a = byId.get(e.from), b = byId.get(e.to); if (!a || !b) return null; const dashed = e.relation_type && e.relation_type !== 'biological'; return <path key={e.id} d={edgePath(e, a, b)} className={`edge edge-${e.type}`} data-relation-type={e.relation_type ?? 'unknown'} strokeDasharray={dashed ? '7 5' : undefined} />; })}</g>
       <g>{nodes.map((n) => {
-        if (n.type === 'union') return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={getUnionNodeClassName(n.union)} data-union-type={n.union?.union_type} data-union-status={n.union?.status} data-end-reason={n.union?.end_reason}><rect x="1" y="1" width={n.width - 2} height={n.height - 2} transform={`rotate(45 ${n.width / 2} ${n.height / 2})`} rx="3"/><title>{getEdgeTitle({ id: n.id, type: 'spouse', from: n.id, to: n.id, union_type: n.union?.union_type, status: n.union?.status, end_reason: n.union?.end_reason, confidence: n.union?.confidence, review_status: n.union?.review_status })}</title></g>;
+        if (n.type === 'union') return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className="union-node" data-union-type={n.union?.union_type}><rect x="1" y="1" width={n.width - 2} height={n.height - 2} transform={`rotate(45 ${n.width / 2} ${n.height / 2})`} rx="3"/><title>{n.label}</title></g>;
         const personHasCitation = citedPersonIds.has(n.id) || hasPersonCitation(n.id, citations);
         return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={getPersonNodeClassName(n.person, personHasCitation, selectedPersonId === n.id, displayMode)} onClick={(e) => { e.stopPropagation(); if (n.person) onSelectPerson?.(n.person); }}>
           <rect width={n.width} height={n.height} rx="14"/>
