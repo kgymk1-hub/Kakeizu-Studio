@@ -32,6 +32,20 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - CSV / JSON / PNG / PDF 出力（PNG/PDF系ライブラリは dynamic import）
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
+
+## v0.5 development: 家系図ノード表示強化
+
+v0.5 development の第1フェーズでは、データ管理機能やレイアウトエンジンを増やす前に、既存のSVG家系図ビュー上の人物ノードの見た目と情報量を強化しています。package.json の version は `0.4.0` のまま変更していません。
+
+- 家系図ビューの表示密度を `compact` / `standard` / `detailed` で切り替えられます。初期値は `standard` です。
+- `compact` は氏名中心の省スペース表示、`standard` は氏名・生没年・最小ステータス、`detailed` は氏名・生没年・称号/肩書・確度・確認状態・出典状態を表示します。
+- 人物ノードでは `birth_date_text` / `death_date_text` から生没年を `1900 - 1970`、`1900 - `、`? - 1970` のように確認できます。
+- `detailed` では `rank_title`、`confidence`、`review_status`、Person Citation の有無をノード上で確認できます。
+- 出典なし、未確認、低確度（要確認）、異説ありは、文字表示とノードの強調スタイルで見分けやすくしています。
+- 今回は既存SVG家系図表示の範囲でノード表示を整え、レイアウトエンジンの大幅変更は行っていません。
+- ELK.js / React Flow / 複数ビュー本格対応、縦型・横型・直系祖先図・子孫図などの本格ビュー切替は未対応です。
+- PNG/PDF出力設定の本格追加は行っていません。現在表示中の家系図を出力する既存導線を維持しています。
+
 ## v0.4.0 確認用URL
 
 - 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
