@@ -1,3 +1,104 @@
+# Kakeizu Studio v0.4.0 Release Notes
+
+## バージョン
+
+- Version: `v0.4.0`
+- Package version: `0.4.0`
+- Release type: 検証エンジン / データ検証結果パネル / 検証結果フィルタ / 日付・年齢チェック正式区切り版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.4.0>
+
+## 主な追加機能
+
+- 検証エンジン最小版を追加しました。
+- DB / Dexie / UI に直接依存しない純粋関数 `validateFamilyData` を追加しました。
+- 検証対象は Person / Event / Union / ParentChildRelation / Source / Citation です。Source は Citation の `source_id` 参照先として確認します。
+- Person / Event / ParentChildRelation / Union の出典なしチェックに対応しました。
+- Person / Event / ParentChildRelation / Union の未確認チェック（`review_status === "unreviewed"`）に対応しました。
+- Person / Event / ParentChildRelation / Union の低確度チェック（`confidence === "uncertain"` / `"disputed"`）に対応しました。`likely` は警告対象外です。
+- Union / ParentChildRelation / Event / Citation の参照先不明チェックに対応しました。
+- ParentChildRelation と Union の自己参照チェックに対応しました。
+- 4桁西暦年ベースの日付・年齢チェックに対応しました。
+- `extractYear` により、`1900`、`1900年`、`1900-01-01`、`1900/01/01`、`西暦1900年`、`約1900年`、`1900頃`、`1900年頃`、`c.1900`、`ca.1900` などから年を抽出できます。
+- Person の死亡年 < 出生年、ParentChildRelation の子出生年 < 親出生年、親子年齢差、Union の婚姻年・離婚年・終了年、Person対象Eventの出生前 / 死亡後を検出できます。
+- `ValidationPanel` として、画面内に「データ検証結果」パネルを追加しました。
+- error / warning / info / total 件数表示に対応しました。
+- severity / category / target_type フィルタに対応しました。
+- 条件一致件数 / 全体件数表示に対応しました。
+- issue一覧表示、Person対象時の人物名表示、最大50件表示制限に対応しました。
+
+## v0.3.0からの変更点
+
+- v0.3.0の関係単位Citation UI / 関係削除UI / 関係編集UIを維持したまま、データ品質確認用の検証エンジンと最小UIを追加しました。
+- 既存の取込・レイアウト状況とは別に、現在のアプリデータに対する「データ検証結果」を確認できるようにしました。
+- 出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告を、severity / category / target_type で絞り込めるようにしました。
+- 日付チェックは4桁西暦年ベースの最小実装に留め、和暦・曖昧日付・月日単位比較の本格対応は次フェーズ以降に残しています。
+
+## データ形式の変更
+
+- 新しいDBテーブルは追加していません。
+- JSON backup の `schema_version` は必要がなければ `"1.2"` のままです。
+- 検証結果は保存データではなく、現在のアプリデータから都度算出します。
+- 既存CSV / 標準CSVセット / JSONバックアップ形式に破壊的変更はありません。
+- Citation の `target_type: "name"` / `"place"` は Name / Place モデルが未実装のため、現時点では参照先不明errorにしません。
+
+## 既知の制限
+
+- issueから対象へのジャンプは未対応です。
+- issueクリックによる人物選択は未対応です。
+- 自動修正は未対応です。
+- 保存されるフィルタ設定は未対応です。
+- 和暦の本格変換は未対応です。
+- 曖昧日付の高度解析は未対応です。
+- 月日単位の厳密比較は未対応です。
+- 同姓同名候補検出は未対応です。
+- 婚姻時年齢チェックは未対応です。
+- 死亡後婚姻チェックの詳細ルールは未対応です。
+- 死亡後出生チェックの詳細ルールは未対応です。
+- AI生成CSV専用確認画面は未対応です。
+- Project / ViewSetting / ExportSetting は未対応です。
+- Name / Place / Media は未対応です。
+- GEDCOM / OCR / AI戸籍読み取りは未対応です。
+
+## 次フェーズ候補
+
+- issueから対象へのジャンプ、issueクリックによる人物選択
+- 検証結果の検索UIや保存されるフィルタ設定
+- 和暦の本格変換、曖昧日付の高度解析、月日単位の比較
+- 同姓同名候補検出や婚姻時年齢チェックなどの追加検証ルール
+- Project / ViewSetting / ExportSetting、Name / Place / Media
+- GEDCOM / OCR / AI戸籍読み取り
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.4.0
+git push origin v0.4.0
+```
+
+GitHub上でReleaseを作る場合は、tag `v0.4.0` を使ってReleaseを作成してください。
+
+## GitHub Release body
+
+Kakeizu Studio v0.4.0を公開します。
+
+公開URL: https://kgymk1-hub.github.io/Kakeizu-Studio/
+
+v0.4.0では、検証エンジン最小版、データ検証結果パネル、検証結果フィルタ、4桁西暦年ベースの日付・年齢チェックに対応しました。`validateFamilyData` は DB / Dexie / UI に直接依存しない純粋関数で、Person / Event / Union / ParentChildRelation / Source / Citation を対象に、出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告を検出します。
+
+画面上では「データ検証結果」パネルで error / warning / info / total 件数、issue一覧、Person対象時の人物名を確認できます。severity / category / target_type フィルタ、条件一致件数 / 全体件数表示、最大50件表示制限にも対応しています。
+
+日付・年齢チェックでは `extractYear` により、`1900`、`1900年`、`1900-01-01`、`1900/01/01`、`西暦1900年`、`約1900年`、`1900頃`、`1900年頃`、`c.1900`、`ca.1900` などから4桁西暦年を抽出し、Personの死亡年 < 出生年、ParentChildRelationの子出生年 < 親出生年、親子年齢差、Unionの婚姻年・離婚年・終了年、Person対象Eventの出生前 / 死亡後を検出します。
+
+データ形式として、新しいDBテーブルは追加していません。JSON backup の schema_version は必要がなければ 1.2 のままです。検証結果は保存データではなく現在のアプリデータから都度算出し、既存CSV / 標準CSVセット / JSONバックアップ形式に破壊的変更はありません。
+
+既知の制限として、issueから対象へのジャンプ、issueクリックによる人物選択、自動修正、保存されるフィルタ設定、和暦の本格変換、曖昧日付の高度解析、月日単位の厳密比較、同姓同名候補検出、婚姻時年齢チェック、死亡後婚姻チェックの詳細ルール、死亡後出生チェックの詳細ルール、AI生成CSV専用確認画面、Project / ViewSetting / ExportSetting、Name / Place / Media、GEDCOM / OCR / AI戸籍読み取りは未対応です。
+
 # Kakeizu Studio v0.3.0 Release Notes
 
 ## バージョン
