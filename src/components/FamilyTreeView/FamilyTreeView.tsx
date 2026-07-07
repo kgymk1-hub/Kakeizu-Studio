@@ -11,6 +11,7 @@ const confidenceLabels: Record<Confidence, string> = { confirmed: '確定', like
 const reviewStatusLabels: Record<ReviewStatus, string> = { reviewed: '確認済', unreviewed: '未確認', rejected: '除外' };
 const displayModeLabels: Record<FamilyTreeDisplayMode, string> = { compact: 'コンパクト', standard: '標準', detailed: '詳細' };
 const displayModes: FamilyTreeDisplayMode[] = ['compact', 'standard', 'detailed'];
+<
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const formatName = (name: string) => (name.length > 11 ? `${name.slice(0, 10)}…` : name);
 
