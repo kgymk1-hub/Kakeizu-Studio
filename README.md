@@ -34,6 +34,21 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 
 
+
+## v0.6 development: 人物一覧・検索 第2フェーズ
+
+v0.6 development 第2フェーズでは、人物データを一覧表示し、検索・簡易フィルタから既存の人物詳細パネルへ移動できる導線を追加しました。第1フェーズで追加した共通選択基盤を使い、一覧クリック時に `target_type: "person"` / `target_id` を渡して人物詳細へジャンプします。
+
+- Person一覧を追加し、氏名、性別、生没年、称号・肩書、confidence、review_status、出典あり/なし、備考の一部を確認できます。
+- `display_name` / `family_name` / `given_name` / `family_name_kana` / `given_name_kana` / `birth_family_name` / `rank_title` / `occupation` / `note` の簡易検索に対応しました。
+- `gender` / `confidence` / `review_status` / 出典ありなしの簡易フィルタに対応しました。
+- 出典ありなしは、`citations` に `target_type === "person" && target_id === person.id` のCitationがあるかで判定します。
+- 一覧クリックで第1フェーズの共通選択基盤 `selectTarget` を通じ、既存の人物詳細へジャンプできます。
+- 新しいDBテーブルは追加していません。
+- JSON `schema_version` は変更していません。
+- Dexie schema version は変更していません。
+- `package.json` version は `0.5.0` のまま変更していません。
+
 ## v0.6 development: 選択・ジャンプ基盤 第1フェーズ
 
 v0.6では、検索・一覧・検証結果から対象を探し、選び、修正対象へ移動できる導線を段階的に整備します。第1フェーズでは、本格的な人物一覧、Event一覧、Source一覧、Citation一覧、検索画面、ValidationPanelクリックジャンプを追加する前に、アプリ全体で共有できる `target_type` / `target_id` ベースの選択・ジャンプ基盤を追加します。
