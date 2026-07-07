@@ -92,6 +92,22 @@ describe('FamilyTreeView display modes', () => {
   });
 });
 
+
+describe('FamilyTreeView person selection', () => {
+  it('既存の家系図人物クリックでonSelectPersonが呼ばれる', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    let selectedPersonId: string | undefined;
+    act(() => { root.render(<FamilyTreeView nodes={[node]} edges={[]} viewBox={viewBox} onSelectPerson={(selected) => { selectedPersonId = selected.id; }} />); });
+    const personNode = host.querySelector<SVGGElement>('.person-node')!;
+    act(() => { personNode.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    expect(selectedPersonId).toBe('p1');
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+});
+
 describe('FamilyTreeView export appearance', () => {
   it('出力用見た目設定UIが表示され、初期状態でタイトルと凡例が表示される', () => {
     const html = render('standard');

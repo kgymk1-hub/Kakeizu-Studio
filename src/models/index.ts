@@ -14,6 +14,8 @@ export type ValidationCategory =
   | 'date_inconsistency'
   | 'age_warning';
 export type ValidationTargetType = 'person' | 'event' | 'union' | 'relation' | 'citation';
+export type SelectableTargetType = 'person' | 'event' | 'union' | 'relation' | 'source' | 'citation';
+export interface SelectableTarget { target_type: SelectableTargetType; target_id: string; }
 export type EventType = 'birth' | 'death' | 'marriage' | 'divorce' | 'adoption' | 'recognition' | 'entry_registry' | 'removal_registry' | 'transfer_registry' | 'name_change' | 'residence' | 'occupation' | 'title' | 'other';
 export type EventTargetType = 'person' | 'union' | 'relation';
 
