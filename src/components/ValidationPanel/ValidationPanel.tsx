@@ -115,7 +115,7 @@ export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PAN
         </select>
       </label>
     </div>
-    <p className="validation-visible-count">表示中: {filteredIssues.length}件 / 全体: {counts.total}件</p>
+    <p className="validation-visible-count">条件一致: {filteredIssues.length}件 / 全体: {counts.total}件</p>
     <dl className="validation-help">
       <div><dt>error</dt><dd>{severityDescriptions.error}</dd></div>
       <div><dt>warning</dt><dd>{severityDescriptions.warning}</dd></div>
