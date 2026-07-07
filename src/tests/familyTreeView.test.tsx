@@ -2,7 +2,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { FamilyTreeView, formatLifeDates, getConfidenceLabel, getEdgeClassName, getReviewStatusLabel, hasPersonCitation } from '../components/FamilyTreeView/FamilyTreeView';
+import { readFileSync } from 'node:fs';
+import { FamilyTreeView, defaultExportAppearance, formatLifeDates, getConfidenceLabel, getEdgeClassName, getExportBackgroundClassName, getReviewStatusLabel, hasPersonCitation } from '../components/FamilyTreeView/FamilyTreeView';
 import type { Citation, LayoutEdge, LayoutNode, Person } from '../models';
 
 const now = '2026-07-07T00:00:00.000Z';
@@ -88,6 +89,76 @@ describe('FamilyTreeView display modes', () => {
     expect(host.textContent).toContain('戸主');
     act(() => { root.unmount(); });
     host.remove();
+  });
+});
+
+describe('FamilyTreeView export appearance', () => {
+  it('出力用見た目設定UIが表示され、初期状態でタイトルと凡例が表示される', () => {
+    const html = render('standard');
+    expect(html).toContain('出力用表示:');
+    expect(html).toContain('タイトルを表示');
+    expect(html).toContain('凡例を表示');
+    expect(html).toContain('白');
+    expect(html).toContain('透明風');
+    expect(html).toContain('淡色');
+    expect(html).toContain('<h2 class="tree-export-title">家系図</h2>');
+    expect(html).toContain('凡例:');
+    expect(html).toContain('tree-export-bg-white');
+    expect(defaultExportAppearance).toEqual({ showTitle: true, title: '家系図', showLegend: true, background: 'white' });
+  });
+
+  it('タイトル入力を変更すると表示タイトルが変わり、タイトル表示OFFで非表示になる', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() => { root.render(<FamilyTreeView nodes={[node]} edges={[]} viewBox={viewBox} />); });
+    const titleInput = host.querySelector<HTMLInputElement>('input[aria-label="出力タイトル"]')!;
+    act(() => { titleInput.value = '佐藤家の家系図'; titleInput.dispatchEvent(new Event('input', { bubbles: true })); });
+    expect(host.querySelector('.tree-export-title')?.textContent).toBe('佐藤家の家系図');
+    const titleCheckbox = Array.from(host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))[0];
+    act(() => { titleCheckbox.click(); });
+    expect(host.querySelector('.tree-export-title')).toBeNull();
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+
+  it('凡例表示ON/OFFを切り替えられる', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() => { root.render(<FamilyTreeView nodes={[node]} edges={[]} viewBox={viewBox} />); });
+    expect(host.textContent).toContain('凡例:');
+    const legendCheckbox = Array.from(host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))[1];
+    act(() => { legendCheckbox.click(); });
+    expect(host.textContent).not.toContain('凡例:');
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+
+  it('背景を white / transparent / soft に切り替えると対応classが付く', () => {
+    expect(getExportBackgroundClassName('white')).toBe('tree-export-bg-white');
+    expect(getExportBackgroundClassName('transparent')).toBe('tree-export-bg-transparent');
+    expect(getExportBackgroundClassName('soft')).toBe('tree-export-bg-soft');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() => { root.render(<FamilyTreeView nodes={[node]} edges={[]} viewBox={viewBox} />); });
+    const select = host.querySelector<HTMLSelectElement>('select[aria-label="出力背景"]')!;
+    const preview = () => host.querySelector('.tree-export-preview')!;
+    expect(preview().classList.contains('tree-export-bg-white')).toBe(true);
+    act(() => { select.value = 'transparent'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(preview().classList.contains('tree-export-bg-transparent')).toBe(true);
+    act(() => { select.value = 'soft'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(preview().classList.contains('tree-export-bg-soft')).toBe(true);
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+
+  it('PNG/PDF出力ボタンが引き続き表示される', () => {
+    const appSource = readFileSync('src/App.tsx', 'utf8');
+    expect(appSource).toContain('PNG出力');
+    expect(appSource).toContain('PDF出力');
+    expect(appSource).toContain('ref={treeRef}');
   });
 });
 

@@ -3,6 +3,13 @@ import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, ReviewStatus
 import type { LayoutViewBox } from '../../services/layoutService';
 
 export type FamilyTreeDisplayMode = 'compact' | 'standard' | 'detailed';
+export type FamilyTreeExportBackground = 'white' | 'transparent' | 'soft';
+export type FamilyTreeExportAppearance = {
+  showTitle: boolean;
+  title: string;
+  showLegend: boolean;
+  background: FamilyTreeExportBackground;
+};
 
 interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citations?: Citation[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; initialDisplayMode?: FamilyTreeDisplayMode; }
 
@@ -11,6 +18,18 @@ const confidenceLabels: Record<Confidence, string> = { confirmed: '確定', like
 const reviewStatusLabels: Record<ReviewStatus, string> = { reviewed: '確認済', unreviewed: '未確認', rejected: '除外' };
 const displayModeLabels: Record<FamilyTreeDisplayMode, string> = { compact: 'コンパクト', standard: '標準', detailed: '詳細' };
 const displayModes: FamilyTreeDisplayMode[] = ['compact', 'standard', 'detailed'];
+const exportBackgroundLabels: Record<FamilyTreeExportBackground, string> = { white: '白', transparent: '透明風', soft: '淡色' };
+const exportBackgrounds: FamilyTreeExportBackground[] = ['white', 'transparent', 'soft'];
+
+export const defaultExportAppearance: FamilyTreeExportAppearance = {
+  showTitle: true,
+  title: '家系図',
+  showLegend: true,
+  background: 'white',
+};
+
+export const getExportBackgroundClassName = (background: FamilyTreeExportBackground) => `tree-export-bg-${background}`;
+export const getExportTitle = (title: string) => title.trim() || defaultExportAppearance.title;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const formatName = (name: string) => (name.length > 11 ? `${name.slice(0, 10)}…` : name);
@@ -135,6 +154,7 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [displayMode, setDisplayMode] = useState<FamilyTreeDisplayMode>(initialDisplayMode);
+  const [exportAppearance, setExportAppearance] = useState<FamilyTreeExportAppearance>(defaultExportAppearance);
   const [dragStart, setDragStart] = useState<{ x: number; y: number; panX: number; panY: number }>();
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const hasMissing = issues.length > 0;
@@ -144,7 +164,7 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
 
   if (nodes.length === 0) return <div className="tree-empty"><h2>家系図データがありません</h2><p>CSVをインポートすると、ここにSVG家系図が表示されます。</p></div>;
 
-  return <div className="tree-view">
+  return <div className={`tree-view tree-export-preview ${getExportBackgroundClassName(exportAppearance.background)}`}>
     <div className="tree-toolbar" aria-label="家系図操作">
       <button type="button" onClick={() => setZoom((z) => clamp(z * 1.2, 0.5, 2.6))}>＋ 拡大</button>
       <button type="button" onClick={() => setZoom((z) => clamp(z / 1.2, 0.5, 2.6))}>− 縮小</button>
@@ -152,7 +172,15 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
       <button type="button" onClick={reset}>リセット</button>
       <label className="display-mode-control">表示密度:<select aria-label="表示密度" value={displayMode} onChange={(e) => setDisplayMode(e.target.value as FamilyTreeDisplayMode)}>{displayModes.map((mode) => <option key={mode} value={mode}>{displayModeLabels[mode]}</option>)}</select></label>
     </div>
+    <section className="export-appearance-controls" aria-label="出力用見た目設定">
+      <strong>出力用表示:</strong>
+      <label><input type="checkbox" checked={exportAppearance.showTitle} onChange={(e) => setExportAppearance((current) => ({ ...current, showTitle: e.target.checked }))} />タイトルを表示</label>
+      <label>タイトル:<input aria-label="出力タイトル" value={exportAppearance.title} onInput={(e) => setExportAppearance((current) => ({ ...current, title: e.currentTarget.value }))} onChange={(e) => setExportAppearance((current) => ({ ...current, title: e.target.value }))} /></label>
+      <label><input type="checkbox" checked={exportAppearance.showLegend} onChange={(e) => setExportAppearance((current) => ({ ...current, showLegend: e.target.checked }))} />凡例を表示</label>
+      <label>背景:<select aria-label="出力背景" value={exportAppearance.background} onChange={(e) => setExportAppearance((current) => ({ ...current, background: e.target.value as FamilyTreeExportBackground }))}>{exportBackgrounds.map((background) => <option key={background} value={background}>{exportBackgroundLabels[background]}</option>)}</select></label>
+    </section>
     {hasMissing && <div className="tree-warning">参照不整合があります。表示可能な人物・関係だけで家系図を描画しています。</div>}
+    {exportAppearance.showTitle && <h2 className="tree-export-title">{getExportTitle(exportAppearance.title)}</h2>}
     <svg className={`tree-svg display-${displayMode}`} viewBox={actualViewBox} role="img" aria-label="家系図" onMouseDown={(e) => setDragStart({ x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y })} onMouseMove={(e) => { if (!dragStart) return; const scaleX = viewBox.width / zoom / e.currentTarget.clientWidth; const scaleY = viewBox.height / zoom / e.currentTarget.clientHeight; setPan({ x: dragStart.panX - (e.clientX - dragStart.x) * scaleX, y: dragStart.panY - (e.clientY - dragStart.y) * scaleY }); }} onMouseUp={() => setDragStart(undefined)} onMouseLeave={() => setDragStart(undefined)}>
       <g>{edges.map((e) => { const a = byId.get(e.from), b = byId.get(e.to); if (!a || !b) return null; const label = getEdgeAriaLabel(e); return <path key={e.id} d={edgePath(e, a, b)} className={getEdgeClassName(e)} data-relation-type={e.relation_type ?? ''} data-union-type={e.union_type ?? ''} strokeDasharray={getEdgeStrokeDasharray(e)} strokeWidth={getEdgeStrokeWidth(e)} aria-label={label}><title>{label}</title></path>; })}</g>
       <g>{nodes.map((n) => {
@@ -173,6 +201,6 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
         </g>;
       })}</g>
     </svg>
-    <div className="edge-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span><i className="legend-line solid"/>実親子 = 実線</span><span><i className="legend-line dashed"/>養親子 = 破線</span><span><i className="legend-line dotted"/>継親子 = 点線</span><span><i className="legend-line marriage"/>婚姻 = 実線</span><span><i className="legend-line ended"/>離婚/終了 = 警告色・破線</span><span><i className="legend-line disputed"/>異説あり = 警告色</span></div>
+    {exportAppearance.showLegend && <div className="edge-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span><i className="legend-line solid"/>実親子 = 実線</span><span><i className="legend-line dashed"/>養親子 = 破線</span><span><i className="legend-line dotted"/>継親子 = 点線</span><span><i className="legend-line marriage"/>婚姻 = 実線</span><span><i className="legend-line ended"/>離婚/終了 = 警告色・破線</span><span><i className="legend-line disputed"/>異説あり = 警告色</span></div>}
   </div>;
 }

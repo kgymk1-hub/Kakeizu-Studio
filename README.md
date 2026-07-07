@@ -61,6 +61,20 @@ v0.5 development の第2フェーズでは、人物ノードではなく既存SV
 - 今回は既存SVG家系図表示の範囲で関係線を整え、ELK.js / React Flow / 複数ビュー本格対応、縦型・横型・直系祖先図・子孫図などの本格ビュー切替は未対応です。
 - 新しいDBテーブル、JSON schema_version 変更、PNG/PDF出力設定の本格追加は行っていません。現在表示中の線スタイルが既存のPNG/PDF出力導線に反映されます。
 
+## v0.5 development: 出力用見た目設定
+
+v0.5 development の第3フェーズでは、PNG/PDF出力前に画面上で確認できる最小限の出力用見た目設定を追加しています。package.json の version は `0.4.0` のまま変更していません。
+
+- 家系図ビュー付近の「出力用表示」で、出力用タイトルを表示できます。
+- タイトル表示ON/OFFを切り替えられ、タイトル欄が空の場合は既定タイトルの「家系図」を表示します。
+- 関係線凡例の表示ON/OFFを切り替えられます。
+- 背景を `white`（白）/ `transparent`（透明風）/ `soft`（淡色）から選べます。
+- `transparent` は画面上で透明風と分かる市松模様のプレビューであり、本当の透過PNG生成には未対応です。
+- タイトル、家系図SVG、凡例、背景スタイルは既存の家系図表示領域内に配置しており、現在表示中の設定がPNG/PDF出力対象DOMに自然に反映される構成です。
+- 今回は本格的なPDFページ分割、用紙サイズ指定、印刷レイアウト、PDF出力エンジンの大幅変更には未対応です。
+- Project / ViewSetting / ExportSetting への永続化、DBテーブル追加、JSON schema_version 変更は行っていません。
+- package.json の version は変更していません。
+
 ## v0.4.0 確認用URL
 
 - 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
