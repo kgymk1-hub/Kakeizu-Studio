@@ -31,4 +31,4 @@ export interface ImportBatch { id: string; external_id?: string; imported_at: st
 export interface ValidationIssue { id?: string; severity: ValidationSeverity; category?: ValidationCategory; target_type?: ValidationTargetType; target_id?: string; title?: string; message: string; related_ids?: string[]; code?: string; row?: number; field?: string; external_id?: string; }
 export interface ValidationResult { ok: boolean; issues: ValidationIssue[]; }
 export interface LayoutNode { id: string; type: 'person' | 'union'; x: number; y: number; width: number; height: number; label: string; person?: Person; union?: Union; }
-export interface LayoutEdge { id: string; type: 'spouse' | 'parent-child' | 'union-child'; from: string; to: string; relation_type?: RelationType; confidence?: Confidence; }
+export interface LayoutEdge { id: string; type: 'spouse' | 'parent-child' | 'union-child'; from: string; to: string; relation_type?: RelationType; union_type?: UnionType; status?: Union['status']; end_reason?: Union['end_reason']; confidence?: Confidence; review_status?: ReviewStatus; }

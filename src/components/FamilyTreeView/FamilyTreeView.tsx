@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, ReviewStatus, ValidationIssue } from '../../models';
+import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, ReviewStatus, Union, ValidationIssue } from '../../models';
 import type { LayoutViewBox } from '../../services/layoutService';
 
 export type FamilyTreeDisplayMode = 'compact' | 'standard' | 'detailed';
@@ -24,6 +24,89 @@ export const formatLifeDates = (person?: Pick<Person, 'birth_date_text' | 'death
 export const hasPersonCitation = (personId: string, citations: Pick<Citation, 'target_type' | 'target_id'>[] = []) => citations.some((c) => c.target_type === 'person' && c.target_id === personId);
 export const getConfidenceLabel = (confidence?: Confidence) => confidence ? confidenceLabels[confidence] : '確度未設定';
 export const getReviewStatusLabel = (reviewStatus?: ReviewStatus) => reviewStatus ? reviewStatusLabels[reviewStatus] : '確認状態未設定';
+
+
+const parentRelationDash: Record<string, string | undefined> = {
+  biological: undefined,
+  adoptive: '8 5',
+  special_adoptive: '11 5',
+  step: '2 5',
+  recognized: '7 4',
+  foster: '1 6',
+  unknown: undefined,
+  disputed: '9 4 2 4',
+};
+
+const unionTypeDash: Record<string, string | undefined> = {
+  marriage: undefined,
+  partner: '8 5',
+  concubine: '2 5',
+  unknown: undefined,
+  other: undefined,
+};
+
+const relationLabels: Record<string, string> = { biological: '実親子', adoptive: '養親子', special_adoptive: '特別養親子', step: '継親子', recognized: '認知', foster: '養育', unknown: '不明', disputed: '異説あり' };
+const unionLabels: Record<string, string> = { marriage: '婚姻', partner: 'パートナー', concubine: '側室・内縁', unknown: '不明', other: 'その他' };
+const unionStatusLabels: Record<string, string> = { married: '婚姻中', divorced: '離婚', widowed: '死別', ended: '終了済み', unknown: '状態不明' };
+const endReasonLabels: Record<string, string> = { divorce: '離婚', death: '死亡', unknown: '理由不明', other: 'その他' };
+
+export function getEdgeClassName(edge: LayoutEdge) {
+  const classes = ['edge', `edge-${edge.type}`];
+  if (edge.type === 'spouse') {
+    const unionType = edge.union_type ?? 'unknown';
+    classes.push(`edge-union-${unionType}`);
+    if (edge.status === 'divorced' || edge.end_reason === 'divorce') classes.push('edge-union-divorced');
+    if (edge.status === 'widowed' || edge.end_reason === 'death') classes.push('edge-union-widowed');
+    if (edge.status === 'ended') classes.push('edge-union-ended');
+  } else {
+    classes.push(`edge-relation-${edge.relation_type ?? 'unknown'}`);
+  }
+  if (edge.confidence === 'uncertain') classes.push('edge-confidence-uncertain');
+  if (edge.confidence === 'disputed') classes.push('edge-confidence-disputed');
+  if (edge.review_status === 'unreviewed') classes.push('edge-review-unreviewed');
+  return classes.join(' ');
+}
+
+export function getEdgeStrokeDasharray(edge: LayoutEdge) {
+  if (edge.type === 'spouse') {
+    if (edge.status === 'divorced' || edge.end_reason === 'divorce' || edge.status === 'ended') return '9 4';
+    return unionTypeDash[edge.union_type ?? 'unknown'];
+  }
+  return parentRelationDash[edge.relation_type ?? 'unknown'];
+}
+
+export function getEdgeStrokeWidth(edge: LayoutEdge) {
+  if (edge.type !== 'spouse' && edge.relation_type === 'special_adoptive') return 3.2;
+  if (edge.type !== 'spouse' && edge.relation_type === 'foster') return 1.6;
+  return undefined;
+}
+
+export function getEdgeAriaLabel(edge: LayoutEdge) {
+  if (edge.type === 'spouse') {
+    const parts = [`夫婦関係: ${unionLabels[edge.union_type ?? 'unknown'] ?? edge.union_type ?? '不明'}`];
+    if (edge.status) parts.push(unionStatusLabels[edge.status] ?? edge.status);
+    if (edge.end_reason) parts.push(`終了理由: ${endReasonLabels[edge.end_reason] ?? edge.end_reason}`);
+    if (edge.confidence === 'uncertain') parts.push('要確認');
+    if (edge.confidence === 'disputed') parts.push('異説あり');
+    if (edge.review_status === 'unreviewed') parts.push('未確認');
+    return parts.join(' / ');
+  }
+  const parts = [`親子関係: ${relationLabels[edge.relation_type ?? 'unknown'] ?? edge.relation_type ?? '不明'}`];
+  if (edge.confidence === 'uncertain') parts.push('要確認');
+  if (edge.confidence === 'disputed') parts.push('異説あり');
+  if (edge.review_status === 'unreviewed') parts.push('未確認');
+  return parts.join(' / ');
+}
+
+export function getUnionNodeClassName(union: Union | undefined) {
+  const classes = ['union-node', `union-${union?.union_type ?? 'unknown'}`];
+  if (union?.status === 'divorced' || union?.end_reason === 'divorce') classes.push('union-divorced');
+  if (union?.status === 'widowed' || union?.end_reason === 'death') classes.push('union-widowed');
+  if (union?.status === 'ended') classes.push('union-ended');
+  if (union?.confidence === 'disputed') classes.push('union-disputed');
+  if (union?.confidence === 'uncertain') classes.push('union-uncertain');
+  return classes.join(' ');
+}
 
 export function getPersonNodeClassName(person: Person | undefined, hasCitation: boolean, selected: boolean, displayMode: FamilyTreeDisplayMode) {
   const flags = [
@@ -71,9 +154,9 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
     </div>
     {hasMissing && <div className="tree-warning">参照不整合があります。表示可能な人物・関係だけで家系図を描画しています。</div>}
     <svg className={`tree-svg display-${displayMode}`} viewBox={actualViewBox} role="img" aria-label="家系図" onMouseDown={(e) => setDragStart({ x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y })} onMouseMove={(e) => { if (!dragStart) return; const scaleX = viewBox.width / zoom / e.currentTarget.clientWidth; const scaleY = viewBox.height / zoom / e.currentTarget.clientHeight; setPan({ x: dragStart.panX - (e.clientX - dragStart.x) * scaleX, y: dragStart.panY - (e.clientY - dragStart.y) * scaleY }); }} onMouseUp={() => setDragStart(undefined)} onMouseLeave={() => setDragStart(undefined)}>
-      <g>{edges.map((e) => { const a = byId.get(e.from), b = byId.get(e.to); if (!a || !b) return null; const dashed = e.relation_type && e.relation_type !== 'biological'; return <path key={e.id} d={edgePath(e, a, b)} className={`edge edge-${e.type}`} data-relation-type={e.relation_type ?? 'unknown'} strokeDasharray={dashed ? '7 5' : undefined} />; })}</g>
+      <g>{edges.map((e) => { const a = byId.get(e.from), b = byId.get(e.to); if (!a || !b) return null; const label = getEdgeAriaLabel(e); return <path key={e.id} d={edgePath(e, a, b)} className={getEdgeClassName(e)} data-relation-type={e.relation_type ?? ''} data-union-type={e.union_type ?? ''} strokeDasharray={getEdgeStrokeDasharray(e)} strokeWidth={getEdgeStrokeWidth(e)} aria-label={label}><title>{label}</title></path>; })}</g>
       <g>{nodes.map((n) => {
-        if (n.type === 'union') return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className="union-node" data-union-type={n.union?.union_type}><rect x="1" y="1" width={n.width - 2} height={n.height - 2} transform={`rotate(45 ${n.width / 2} ${n.height / 2})`} rx="3"/><title>{n.label}</title></g>;
+        if (n.type === 'union') return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={getUnionNodeClassName(n.union)} data-union-type={n.union?.union_type} data-union-status={n.union?.status}><rect x="1" y="1" width={n.width - 2} height={n.height - 2} transform={`rotate(45 ${n.width / 2} ${n.height / 2})`} rx="3"/><title>{n.label}</title></g>;
         const personHasCitation = citedPersonIds.has(n.id) || hasPersonCitation(n.id, citations);
         return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={getPersonNodeClassName(n.person, personHasCitation, selectedPersonId === n.id, displayMode)} onClick={(e) => { e.stopPropagation(); if (n.person) onSelectPerson?.(n.person); }}>
           <rect width={n.width} height={n.height} rx="14"/>
@@ -90,5 +173,6 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
         </g>;
       })}</g>
     </svg>
+    <div className="edge-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span><i className="legend-line solid"/>実親子 = 実線</span><span><i className="legend-line dashed"/>養親子 = 破線</span><span><i className="legend-line dotted"/>継親子 = 点線</span><span><i className="legend-line marriage"/>婚姻 = 実線</span><span><i className="legend-line ended"/>離婚/終了 = 警告色・破線</span><span><i className="legend-line disputed"/>異説あり = 警告色</span></div>
   </div>;
 }
