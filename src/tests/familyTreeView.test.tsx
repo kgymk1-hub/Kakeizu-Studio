@@ -107,6 +107,20 @@ describe('FamilyTreeView export appearance', () => {
     expect(defaultExportAppearance).toEqual({ showTitle: true, title: '家系図', showLegend: true, background: 'white' });
   });
 
+  it('PNG/PDF出力対象から操作UIだけを除外し、出力要素は残す', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() => { root.render(<FamilyTreeView nodes={[node]} edges={[]} viewBox={viewBox} />); });
+    expect(host.querySelector('.tree-toolbar')?.getAttribute('data-html2canvas-ignore')).toBe('true');
+    expect(host.querySelector('.export-appearance-controls')?.getAttribute('data-html2canvas-ignore')).toBe('true');
+    expect(host.querySelector('.tree-export-title')?.hasAttribute('data-html2canvas-ignore')).toBe(false);
+    expect(host.querySelector('.edge-legend')?.hasAttribute('data-html2canvas-ignore')).toBe(false);
+    expect(host.querySelector('.tree-svg')?.hasAttribute('data-html2canvas-ignore')).toBe(false);
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+
   it('タイトル入力を変更すると表示タイトルが変わり、タイトル表示OFFで非表示になる', () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

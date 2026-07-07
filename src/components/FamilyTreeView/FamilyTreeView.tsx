@@ -165,14 +165,14 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
   if (nodes.length === 0) return <div className="tree-empty"><h2>家系図データがありません</h2><p>CSVをインポートすると、ここにSVG家系図が表示されます。</p></div>;
 
   return <div className={`tree-view tree-export-preview ${getExportBackgroundClassName(exportAppearance.background)}`}>
-    <div className="tree-toolbar" aria-label="家系図操作">
+    <div className="tree-toolbar" aria-label="家系図操作" data-html2canvas-ignore="true">
       <button type="button" onClick={() => setZoom((z) => clamp(z * 1.2, 0.5, 2.6))}>＋ 拡大</button>
       <button type="button" onClick={() => setZoom((z) => clamp(z / 1.2, 0.5, 2.6))}>− 縮小</button>
       <button type="button" onClick={fitAll}>全体表示</button>
       <button type="button" onClick={reset}>リセット</button>
       <label className="display-mode-control">表示密度:<select aria-label="表示密度" value={displayMode} onChange={(e) => setDisplayMode(e.target.value as FamilyTreeDisplayMode)}>{displayModes.map((mode) => <option key={mode} value={mode}>{displayModeLabels[mode]}</option>)}</select></label>
     </div>
-    <section className="export-appearance-controls" aria-label="出力用見た目設定">
+    <section className="export-appearance-controls" aria-label="出力用見た目設定" data-html2canvas-ignore="true">
       <strong>出力用表示:</strong>
       <label><input type="checkbox" checked={exportAppearance.showTitle} onChange={(e) => setExportAppearance((current) => ({ ...current, showTitle: e.target.checked }))} />タイトルを表示</label>
       <label>タイトル:<input aria-label="出力タイトル" value={exportAppearance.title} onInput={(e) => setExportAppearance((current) => ({ ...current, title: e.currentTarget.value }))} onChange={(e) => setExportAppearance((current) => ({ ...current, title: e.target.value }))} /></label>
