@@ -1,3 +1,49 @@
+# Kakeizu Studio v0.5.0 Release Notes
+
+## バージョン
+
+- Version: `v0.5.0`
+- Package version: `0.5.0`
+- Release type: 家系図表示・出力の見栄え強化正式版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.5.0>
+
+## v0.5.0 - 家系図表示・出力の見栄え強化
+
+### Added
+
+- 家系図ノードの表示密度切替を追加しました。
+- 人物ノードに生没年・出典有無・確度・確認状態を表示しました。
+- 親子関係・夫婦/パートナー関係の種類や状態に応じた関係線表示を追加しました。
+- 関係線凡例を追加しました。
+- 出力用タイトル、凡例ON/OFF、背景切替の簡易設定を追加しました。
+- SVG出力最小版を追加しました。
+
+### Changed
+
+- PNG/PDF出力時に操作UIが写り込まないように調整しました。
+- READMEのv0.5説明を正式版向けに整理しました。
+
+### Notes
+
+- SVG出力は最小版で、`foreignObject` を利用するため表示環境によって再現性に差があります。
+- ELK.js / React Flow / 複数ビュー本格対応、Project / ViewSetting / ExportSetting永続化、本格的な用紙サイズ指定やページ分割は未対応です。
+- JSON backup の `schema_version`、Dexie schema version、DBテーブル、標準CSVセットの構造は変更していません。
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.5.0
+git push origin v0.5.0
+```
+
+---
+
 # Kakeizu Studio v0.4.0 Release Notes
 
 ## バージョン
