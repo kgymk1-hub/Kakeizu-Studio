@@ -33,8 +33,22 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
+## v0.6 development: Source / Citation一覧 第4フェーズ
 
+v0.6 development 第4フェーズでは、登録済みSource / Citationを一覧表示し、資料種別・対象種別・簡易検索から出典情報を探して、第1フェーズの共通選択基盤へ接続する導線を追加しました。
 
+- Source一覧を追加し、資料タイトル、`source_type`、発行者・作成者、発行日、保管場所、本籍、筆頭者、URL有無、備考の一部を確認できます。
+- Citation一覧を追加し、Sourceタイトル、`target_type`、対象名、`page_or_location`、引用文、解釈、`confidence`、備考の一部を確認できます。
+- Source種別フィルタに対応しました。選択肢は実装済み型に合わせ、`current_koseki` / `joseki` / `kaisei_genkoseki` / `website` / `book` / `interview` / `ai_generated` / `other` です。
+- Citation `target_type` フィルタに対応しました。選択肢は実装済み型に合わせ、`person` / `event` / `union` / `relation` / `name` / `place` です。
+- Sourceタイトル、資料種別、発行者・作成者、発行日、取得日、保管場所、本籍、筆頭者、戸籍種別、資料メモ、URL、備考、Sourceタイトル、Citation対象名、引用文、解釈、位置、確度、備考の簡易検索に対応しました。
+- Citationクリックで `target_type` / `target_id` を第1フェーズの共通選択基盤 `selectTarget` へ渡し、対応済み対象へジャンプできます。未対応の `name` / `place` はクラッシュしない安全表示に留めています。
+- Sourceクリックは、現時点では関連Citation表示のため、そのSourceに紐づくCitation絞り込みとして扱います。
+- Source詳細画面、Source / Citation本格編集、一括編集、ページネーション、仮想スクロールは後続対応です。
+- 新しいDBテーブルは追加していません。
+- JSON `schema_version` は変更していません。
+- Dexie schema version は変更していません。
+- `package.json` version は `0.5.0` のまま変更していません。
 
 ## v0.6 development: Event一覧 第3フェーズ
 
