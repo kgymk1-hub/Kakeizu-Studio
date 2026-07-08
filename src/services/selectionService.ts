@@ -37,7 +37,10 @@ export function resolveSelectableTargetToPersonId(target: SelectableTarget, data
   return undefined;
 }
 
-export function validationIssueToSelectableTarget(issue: ValidationIssue): SelectableTarget | undefined {
-  if (!issue.target_type || !issue.target_id) return undefined;
-  return { target_type: issue.target_type, target_id: issue.target_id };
+const selectableValidationTargetTypes: ReadonlySet<SelectableTarget['target_type']> = new Set(['person', 'event', 'union', 'relation', 'source', 'citation']);
+
+export function validationIssueToSelectableTarget(issue: ValidationIssue | undefined | null): SelectableTarget | undefined {
+  if (!issue?.target_type || !issue.target_id) return undefined;
+  if (!selectableValidationTargetTypes.has(issue.target_type as SelectableTarget['target_type'])) return undefined;
+  return { target_type: issue.target_type as SelectableTarget['target_type'], target_id: issue.target_id };
 }

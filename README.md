@@ -33,6 +33,21 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
+## v0.6 development: ValidationPanel修正導線 第5フェーズ
+
+v0.6 development 第5フェーズでは、ValidationPanelの検証結果から修正対象へ移動できる導線を追加しました。第1フェーズの `target_type` / `target_id` ベースの共通選択基盤を利用し、検証結果を確認した流れで既存の人物詳細へジャンプできます。
+
+- ValidationPanelのissueに `onSelectTarget` を接続し、クリック可能な検証結果には「対象へ移動」ボタンを表示します。
+- `ValidationIssue` の `target_type` / `target_id` を `SelectableTarget` に変換し、第1フェーズの `selectTarget` へ渡します。
+- Person issueは対象人物へ、Event issueはperson対象Event経由で関連人物へ、Union issueはpartner人物へ、Relation issueは子または親人物へ誘導できます。
+- targetがないissue、`target_id` がないissue、未対応targetはクリック不可として安全に扱い、クラッシュしない表示にします。
+- Source / Citation issueは選択対象として安全に受け付けますが、専用詳細への直接ジャンプは後続対応です。
+- 既存のseverity / category / target_typeフィルタ、0件表示、件数表示は維持しています。
+- 新しいDBテーブルは追加していません。
+- JSON `schema_version` は変更していません。
+- Dexie schema version は変更していません。
+- `package.json` version は `0.5.0` のまま変更していません。
+
 ## v0.6 development: Source / Citation一覧 第4フェーズ
 
 v0.6 development 第4フェーズでは、登録済みSource / Citationを一覧表示し、資料種別・対象種別・簡易検索から出典情報を探して、第1フェーズの共通選択基盤へ接続する導線を追加しました。

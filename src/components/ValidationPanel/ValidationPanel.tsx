@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Person, ValidationIssue, ValidationSeverity, ValidationTargetType } from '../../models';
+import type { Person, SelectableTarget, ValidationIssue, ValidationSeverity, ValidationTargetType } from '../../models';
+import { validationIssueToSelectableTarget } from '../../services/selectionService';
 
 export const VALIDATION_PANEL_DISPLAY_LIMIT = 50;
 
@@ -16,6 +17,7 @@ interface ValidationPanelProps {
   persons: Person[];
   displayLimit?: number;
   initialFilters?: ValidationIssueFilters;
+  onSelectTarget?: (target: SelectableTarget) => void;
 }
 
 const severityDescriptions: Record<ValidationSeverity, string> = {
@@ -74,7 +76,7 @@ export function formatValidationTarget(issue: ValidationIssue, persons: Person[]
   return `対象: ${label}${targetId ? ` ${targetId}` : ''}`;
 }
 
-export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PANEL_DISPLAY_LIMIT, initialFilters = {} }: ValidationPanelProps) {
+export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PANEL_DISPLAY_LIMIT, initialFilters = {}, onSelectTarget }: ValidationPanelProps) {
   const [severityFilter, setSeverityFilter] = useState<ValidationSeverity | 'all'>(initialFilters.severity ?? 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>(initialFilters.category ?? 'all');
   const [targetTypeFilter, setTargetTypeFilter] = useState<ValidationTargetType | 'all'>(initialFilters.targetType ?? 'all');
@@ -124,13 +126,21 @@ export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PAN
     {issues.length === 0 ? <p className="success">問題は見つかりませんでした。</p> : filteredIssues.length === 0 ? <p className="notice">条件に一致する検証結果はありません。</p> : <>
       {isLimited && <p className="notice">最初の{displayLimit}件を表示しています。</p>}
       <ul className="validation-issue-list">
-        {visibleIssues.map((issue, index) => <li key={issue.id ?? `${issue.severity}-${issue.target_type}-${issue.target_id}-${index}`} className={`validation-issue ${issue.severity}`}>
-          <h3>[{issue.severity}] {issue.title ?? issue.category ?? '検証項目'}</h3>
-          <p>{formatValidationTarget(issue, persons)}</p>
-          <p>target_type: {issue.target_type ?? '不明'} / target_id: {issue.target_id ?? '不明'}</p>
-          <p>category: {issue.category ?? '未分類'}</p>
-          <p>{issue.message}</p>
-        </li>)}
+        {visibleIssues.map((issue, index) => {
+          const target = validationIssueToSelectableTarget(issue);
+          const canSelectTarget = !!target && !!onSelectTarget;
+          const selectLabel = canSelectTarget ? '対象へ移動' : '対象へ移動不可';
+          return <li key={issue.id ?? `${issue.severity}-${issue.target_type}-${issue.target_id}-${index}`} className={`validation-issue ${issue.severity} ${canSelectTarget ? 'selectable' : 'not-selectable'}`}>
+            <div className="validation-issue-header">
+              <h3>[{issue.severity}] {issue.title ?? issue.category ?? '検証項目'}</h3>
+              {canSelectTarget ? <button type="button" className="validation-target-button" onClick={() => onSelectTarget(target)}>対象へ移動</button> : <span className="validation-target-unavailable" aria-label={selectLabel}>{selectLabel}</span>}
+            </div>
+            <p>{formatValidationTarget(issue, persons)}</p>
+            <p>target_type: {issue.target_type ?? '不明'} / target_id: {issue.target_id ?? '不明'}</p>
+            <p>category: {issue.category ?? '未分類'}</p>
+            <p>{issue.message}</p>
+          </li>;
+        })}
       </ul>
     </>}
   </section>;
