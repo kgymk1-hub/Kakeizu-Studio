@@ -78,6 +78,23 @@ describe('ValidationPanel', () => {
     expect(onSelectTarget).not.toHaveBeenCalled();
   });
 
+
+
+  it('Source / Citation issueは対象へ移動不可として表示する', () => {
+    const sourceCitationIssues: ValidationIssue[] = [
+      { severity: 'warning', category: 'broken_reference', target_type: 'source', target_id: 's1', title: 'Source確認', message: 'Source issueです。' } as unknown as ValidationIssue,
+      { severity: 'warning', category: 'broken_reference', target_type: 'citation', target_id: 'c1', title: 'Citation確認', message: 'Citation issueです。' },
+    ];
+    const container = document.createElement('div');
+    const onSelectTarget = vi.fn();
+    act(() => {
+      createRoot(container).render(<ValidationPanel issues={sourceCitationIssues} persons={persons} onSelectTarget={onSelectTarget} />);
+    });
+    expect(container.textContent).toContain('対象へ移動不可');
+    expect(container.querySelector('button.validation-target-button')).toBeNull();
+    expect(onSelectTarget).not.toHaveBeenCalled();
+  });
+
   it('onSelectTargetがない場合はtargetつきissueでもクリック不可表示になる', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={[issues[1]]} persons={persons} />);
     expect(html).toContain('対象へ移動不可');
@@ -86,7 +103,7 @@ describe('ValidationPanel', () => {
 
   it('フィルタ後0件の場合に一致なしメッセージを表示できる', () => {
     const html = renderToStaticMarkup(<ValidationPanel issues={issues} persons={persons} initialFilters={{ severity: 'error', category: 'missing_citation' }} />);
-    expect(html).toContain('条件に一致する検証結果はありません。');
+    expect(html).toContain('条件に一致する検証結果がありません。');
     expect(html).toContain('条件一致: 0件 / 全体: 3件');
   });
 

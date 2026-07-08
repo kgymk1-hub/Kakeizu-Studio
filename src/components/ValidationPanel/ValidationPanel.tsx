@@ -87,15 +87,15 @@ export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PAN
   const visibleIssues = filteredIssues.slice(0, displayLimit);
   const isLimited = filteredIssues.length > visibleIssues.length;
 
-  return <section className="panel validation-panel" aria-labelledby="validation-panel-title">
+  return <section className="panel list-panel validation-panel" aria-labelledby="validation-panel-title">
     <h2 id="validation-panel-title">データ検証結果</h2>
-    <div className="validation-counts" aria-label="検証結果件数">
+    <div className="list-panel-count validation-counts" aria-label="検証結果件数">
       <span className="error">error: {counts.error}</span>
       <span className="warning">warning: {counts.warning}</span>
       <span className="info">info: {counts.info}</span>
       <span>total: {counts.total}</span>
     </div>
-    <div className="validation-filters" aria-label="検証結果フィルタ">
+    <div className="list-panel-controls validation-filters" aria-label="検証結果フィルタ">
       <label>severity
         <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as ValidationSeverity | 'all')}>
           <option value="all">すべて</option>
@@ -117,20 +117,20 @@ export function ValidationPanel({ issues, persons, displayLimit = VALIDATION_PAN
         </select>
       </label>
     </div>
-    <p className="validation-visible-count">条件一致: {filteredIssues.length}件 / 全体: {counts.total}件</p>
+    <p className="list-panel-count validation-visible-count">条件一致: {filteredIssues.length}件 / 全体: {counts.total}件</p>
     <dl className="validation-help">
       <div><dt>error</dt><dd>{severityDescriptions.error}</dd></div>
       <div><dt>warning</dt><dd>{severityDescriptions.warning}</dd></div>
       <div><dt>info</dt><dd>{severityDescriptions.info}</dd></div>
     </dl>
-    {issues.length === 0 ? <p className="success">問題は見つかりませんでした。</p> : filteredIssues.length === 0 ? <p className="notice">条件に一致する検証結果はありません。</p> : <>
+    {issues.length === 0 ? <p className="success">問題は見つかりませんでした。</p> : filteredIssues.length === 0 ? <p className="notice list-panel-empty">条件に一致する検証結果がありません。</p> : <>
       {isLimited && <p className="notice">最初の{displayLimit}件を表示しています。</p>}
-      <ul className="validation-issue-list">
+      <ul className="list-card-list validation-issue-list">
         {visibleIssues.map((issue, index) => {
           const target = validationIssueToSelectableTarget(issue);
           const canSelectTarget = !!target && !!onSelectTarget;
           const selectLabel = canSelectTarget ? '対象へ移動' : '対象へ移動不可';
-          return <li key={issue.id ?? `${issue.severity}-${issue.target_type}-${issue.target_id}-${index}`} className={`validation-issue ${issue.severity} ${canSelectTarget ? 'selectable' : 'not-selectable'}`}>
+          return <li key={issue.id ?? `${issue.severity}-${issue.target_type}-${issue.target_id}-${index}`} className={`list-card validation-issue ${issue.severity} ${canSelectTarget ? 'selectable' : 'not-selectable'}`}>
             <div className="validation-issue-header">
               <h3>[{issue.severity}] {issue.title ?? issue.category ?? '検証項目'}</h3>
               {canSelectTarget ? <button type="button" className="validation-target-button" onClick={() => onSelectTarget(target)}>対象へ移動</button> : <span className="validation-target-unavailable" aria-label={selectLabel}>{selectLabel}</span>}
