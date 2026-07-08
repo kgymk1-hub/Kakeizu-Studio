@@ -33,6 +33,20 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
+## v0.6 development: 一覧・検索UIの仕上げ 第6フェーズ
+
+v0.6 development 第6フェーズでは、Person / Event / Source / Citation / ValidationPanelを横断して一覧・検索UIの見た目と操作感を整理しました。大きな新機能追加ではなく、既存の検索・一覧・検証結果から修正対象へ向かう導線を使いやすくする仕上げです。
+
+- Person / Event / Source / Citation / ValidationPanelの見出し、検索欄、フィルタ、件数表示、0件表示、カード余白のUIトーンを揃えました。
+- 検索欄・フィルタ・件数表示・0件表示の共通CSSを整理し、長い名前・URL・引用文・備考が横にはみ出しにくい表示へ調整しました。
+- 左側パネル内の一覧セクションに最大高さと縦スクロールを設定し、v0.6で増えた一覧・検証パネルが縦に長くなっても最低限操作しやすくしました。
+- スマホ幅ではフィルタを折り返し、カードやボタンをタップしやすい高さにして、横スクロールや不自然な余白が出にくいようにしました。
+- Source / Citation issueは、専用詳細への直接ジャンプがまだない現状に合わせ、ValidationPanelでは「対象へ移動不可」として表示します。
+- 新しいDBテーブルは追加していません。
+- JSON `schema_version` は変更していません。
+- Dexie schema version は変更していません。
+- `package.json` version は `0.5.0` のまま変更していません。
+
 ## v0.6 development: ValidationPanel修正導線 第5フェーズ
 
 v0.6 development 第5フェーズでは、ValidationPanelの検証結果から修正対象へ移動できる導線を追加しました。第1フェーズの `target_type` / `target_id` ベースの共通選択基盤を利用し、検証結果を確認した流れで既存の人物詳細へジャンプできます。

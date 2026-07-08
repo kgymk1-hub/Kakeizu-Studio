@@ -37,7 +37,7 @@ export function resolveSelectableTargetToPersonId(target: SelectableTarget, data
   return undefined;
 }
 
-const selectableValidationTargetTypes: ReadonlySet<SelectableTarget['target_type']> = new Set(['person', 'event', 'union', 'relation', 'source', 'citation']);
+const selectableValidationTargetTypes: ReadonlySet<SelectableTarget['target_type']> = new Set(['person', 'event', 'union', 'relation']);
 
 export function validationIssueToSelectableTarget(issue: ValidationIssue | undefined | null): SelectableTarget | undefined {
   if (!issue?.target_type || !issue.target_id) return undefined;

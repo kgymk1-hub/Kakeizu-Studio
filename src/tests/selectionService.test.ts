@@ -53,9 +53,9 @@ describe('validationIssueToSelectableTarget', () => {
     expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'relation', target_id: 'r1', message: 'relation' })).toEqual({ target_type: 'relation', target_id: 'r1' });
   });
 
-  it('source / citation issueを安全にSelectableTargetへ変換できる', () => {
-    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'source', target_id: 's1', message: 'source' } as unknown as ValidationIssue)).toEqual({ target_type: 'source', target_id: 's1' });
-    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'citation', target_id: 'c1', message: 'citation' })).toEqual({ target_type: 'citation', target_id: 'c1' });
+  it('source / citation issueは専用詳細導線がないためSelectableTargetへ変換しない', () => {
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'source', target_id: 's1', message: 'source' } as unknown as ValidationIssue)).toBeUndefined();
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'citation', target_id: 'c1', message: 'citation' })).toBeUndefined();
   });
 
   it('target情報がないValidationIssueはundefinedになる', () => {
