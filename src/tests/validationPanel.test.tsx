@@ -1,5 +1,7 @@
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ValidationPanel, countValidationIssues, filterValidationIssues, formatValidationTarget, getValidationCategoryOptions, getValidationTargetTypeOptions } from '../components/ValidationPanel/ValidationPanel';
 import type { Person, ValidationIssue } from '../models';
 
@@ -48,6 +50,38 @@ describe('ValidationPanel', () => {
       { severity: 'warning', category: 'age_warning', target_type: 'relation', target_id: 'r1', message: '子の出生時点で親が8歳です。' },
     ];
     expect(getValidationCategoryOptions(dateIssues)).toEqual(['age_warning', 'date_inconsistency']);
+  });
+
+
+
+  it('クリック可能なissueに対象へ移動UIを表示し、クリックでonSelectTargetを呼ぶ', () => {
+    const container = document.createElement('div');
+    const onSelectTarget = vi.fn();
+    act(() => {
+      createRoot(container).render(<ValidationPanel issues={issues} persons={persons} onSelectTarget={onSelectTarget} />);
+    });
+    const button = Array.from(container.querySelectorAll('button')).find((element) => element.textContent === '対象へ移動') as HTMLButtonElement | undefined;
+    expect(button).toBeTruthy();
+    act(() => button?.click());
+    expect(onSelectTarget).toHaveBeenCalledWith({ target_type: 'relation', target_id: 'r001' });
+  });
+
+  it('クリック不可のissueは対象へ移動不可を表示し、onSelectTargetを呼ばない', () => {
+    const container = document.createElement('div');
+    const onSelectTarget = vi.fn();
+    const noTargetIssues: ValidationIssue[] = [{ severity: 'info', category: 'unreviewed', title: '全体確認', message: '対象がありません。' }];
+    act(() => {
+      createRoot(container).render(<ValidationPanel issues={noTargetIssues} persons={persons} onSelectTarget={onSelectTarget} />);
+    });
+    expect(container.textContent).toContain('対象へ移動不可');
+    expect(container.querySelector('button.validation-target-button')).toBeNull();
+    expect(onSelectTarget).not.toHaveBeenCalled();
+  });
+
+  it('onSelectTargetがない場合はtargetつきissueでもクリック不可表示になる', () => {
+    const html = renderToStaticMarkup(<ValidationPanel issues={[issues[1]]} persons={persons} />);
+    expect(html).toContain('対象へ移動不可');
+    expect(html).not.toContain('class="validation-target-button"');
   });
 
   it('フィルタ後0件の場合に一致なしメッセージを表示できる', () => {

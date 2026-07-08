@@ -46,12 +46,26 @@ describe('resolveSelectableTargetToPersonId', () => {
 });
 
 describe('validationIssueToSelectableTarget', () => {
-  it('ValidationIssueをSelectableTargetへ変換できる', () => {
-    const issue: ValidationIssue = { severity: 'warning', target_type: 'citation', target_id: 'c1', message: '確認が必要です' };
-    expect(validationIssueToSelectableTarget(issue)).toEqual({ target_type: 'citation', target_id: 'c1' });
+  it('person / event / union / relation issueをSelectableTargetへ変換できる', () => {
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'person', target_id: 'p1', message: 'person' })).toEqual({ target_type: 'person', target_id: 'p1' });
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'event', target_id: 'e1', message: 'event' })).toEqual({ target_type: 'event', target_id: 'e1' });
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'union', target_id: 'u1', message: 'union' })).toEqual({ target_type: 'union', target_id: 'u1' });
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'relation', target_id: 'r1', message: 'relation' })).toEqual({ target_type: 'relation', target_id: 'r1' });
+  });
+
+  it('source / citation issueを安全にSelectableTargetへ変換できる', () => {
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'source', target_id: 's1', message: 'source' } as unknown as ValidationIssue)).toEqual({ target_type: 'source', target_id: 's1' });
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'citation', target_id: 'c1', message: 'citation' })).toEqual({ target_type: 'citation', target_id: 'c1' });
   });
 
   it('target情報がないValidationIssueはundefinedになる', () => {
     expect(validationIssueToSelectableTarget({ severity: 'info', message: '全体メッセージ' })).toBeUndefined();
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'person', message: 'idなし' })).toBeUndefined();
+  });
+
+  it('未対応target_typeやundefinedでもクラッシュせずundefinedになる', () => {
+    expect(validationIssueToSelectableTarget({ severity: 'warning', target_type: 'name', target_id: 'n1', message: '未対応' } as unknown as ValidationIssue)).toBeUndefined();
+    expect(validationIssueToSelectableTarget(undefined)).toBeUndefined();
+    expect(validationIssueToSelectableTarget(null)).toBeUndefined();
   });
 });
