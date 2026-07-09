@@ -1,3 +1,57 @@
+# Kakeizu Studio v0.6.0 Release Notes
+
+## バージョン
+
+- Version: `v0.6.0`
+- Package version: `0.6.0`
+- Release type: 検索・一覧・検証結果からの修正導線正式版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.6.0>
+
+## v0.6.0 - 検索・一覧・検証結果からの修正導線
+
+### Added
+
+- 共通選択・ジャンプ基盤を追加しました。
+- Person一覧・検索・簡易フィルタを追加しました。
+- Event一覧・event_typeフィルタ・簡易検索を追加しました。
+- Source / Citation一覧を追加しました。
+- Source種別フィルタ、Citation target_typeフィルタを追加しました。
+- Citation対象名表示を追加しました。
+- Sourceクリックによる関連Citation絞り込みを追加しました。
+- ValidationPanelの検証結果から対象へ移動する導線を追加しました。
+- 一覧・検索UIの共通スタイルを追加しました。
+- 左側パネルの縦長化とスマホ幅表示に最低限対応しました。
+
+### Changed
+
+- READMEをv0.6.0正式版向けに整理しました。
+- ValidationPanelのSource / Citation issueを、現時点では対象へ移動不可として分かりやすく表示しました。
+- Person / Event / Source / Citation / ValidationPanelの検索欄・フィルタ・件数表示・0件表示の見た目を整理しました。
+
+### Notes
+
+- Event詳細編集UIへの本格ジャンプは未対応です。
+- Source / Citation詳細画面は未対応です。
+- Source / Citation issueからの直接ジャンプは未対応です。
+- 本格ソート、ページネーション、仮想スクロールは未対応です。
+- Project / ViewSetting / ExportSetting、Name / Place、CSVインポート本格改修は後続対応です。
+- JSON backup の `schema_version`、Dexie schema version、DBテーブル、標準CSVセットの構造は変更していません。
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.6.0
+git push origin v0.6.0
+```
+
+---
+
 # Kakeizu Studio v0.5.0 Release Notes
 
 ## バージョン
