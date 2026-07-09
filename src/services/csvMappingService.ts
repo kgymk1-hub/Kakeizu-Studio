@@ -2,7 +2,7 @@ import Papa from 'papaparse';
 import { importSimpleCsv, parseSimpleCsv } from './csvImportService';
 import type { RawCsvPerson } from '../schemas/csvSchemas';
 import type { NormalizedFamilyData } from './normalizationService';
-import { buildSimpleCsvImportPreview, canImportWithPolicy, type ImportPolicy } from './importPreviewService';
+import { buildSimpleCsvImportPreview, canImportWithPolicy, type ExistingImportContext, type ImportPolicy } from './importPreviewService';
 
 export const APP_COLUMNS = ['person_id','name','gender','birth_date','death_date','father_id','mother_id','spouse_ids','generation_no','title','note','source','confidence'] as const;
 export type AppColumn = typeof APP_COLUMNS[number];
@@ -91,7 +91,7 @@ export function convertCsvToStandard(csvText: string, mapping: ColumnMapping) {
   return Papa.unparse(convertCsvToStandardRows(csvText, mapping), { columns: [...APP_COLUMNS] });
 }
 
-export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string, options: { importPolicy?: ImportPolicy } = {}) {
+export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string, options: { importPolicy?: ImportPolicy; existingData?: ExistingImportContext } = {}) {
   const standardCsv = convertCsvToStandard(csvText, mapping);
   const parsed = parseSimpleCsv(standardCsv);
   const result = importSimpleCsv(standardCsv, sourceName);
@@ -99,7 +99,7 @@ export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, source
   const warningCount = result.issues.filter((i) => i.severity === 'warning').length;
   const spouseDeclarations = parsed.rows.reduce((sum, row) => sum + (row.spouse_ids?.split(';').map((x) => x.trim()).filter(Boolean).length ?? 0), 0);
   const importPolicy = options.importPolicy ?? 'replace_all';
-  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length, { importPolicy });
+  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length, { importPolicy, existingData: options.existingData });
   return {
     standardCsv,
     parsedRows: parsed.rows,

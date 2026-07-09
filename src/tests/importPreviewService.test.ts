@@ -71,3 +71,37 @@ describe('importPreviewService', () => {
     expect(parsed.preview.canImport).toBe(false);
   });
 });
+
+describe('external_id import matching', () => {
+  const person = (id: string, external_id?: string, display_name = id) => ({ id, external_id, display_name, created_at: '', updated_at: '' });
+
+  it('かんたんCSV person_idを既存Person.external_idと照合し、重複と空欄も集計できる', () => {
+    const preview = buildSimpleCsvImportPreview({ ...emptyData, persons: [person('imp1', 'P001', '山田太郎'), person('imp2', 'P002'), person('imp3', 'P002'), person('imp4', undefined)] }, 4, { existingData: { persons: [person('existing-person', 'P001', '既存太郎')] }, importPolicy: 'update_by_external_id' });
+    expect(preview.matches.map((m) => m.status)).toEqual(['matched_existing', 'duplicate_in_import', 'duplicate_in_import', 'missing_external_id']);
+    expect(preview.matches[0].existingId).toBe('existing-person');
+    expect(preview.summary.matchSummary).toMatchObject({ matchedExisting: 1, duplicateInImport: 2, missingExternalId: 1 });
+    expect(preview.summary.policyPlan).toMatchObject({ update: 1, blocked: 3 });
+    expect(preview.canImport).toBe(false);
+  });
+
+  it('標準CSVセットはexternal_idで照合し、内部id一致だけでは既存一致にしない', () => {
+    const files = buildStandardCsvSetFiles({ persons: [person('same-internal-id', 'EXT001', '外部ID一致'), person('existing-internal-only', undefined, '内部IDのみ一致')], unions: [], parentChildRelations: [], sources: [], citations: [] });
+    const parsed = parseStandardCsvSetFiles(files, { existingData: { persons: [person('same-internal-id', 'OTHER'), person('existing-person', 'EXT001')] }, importPolicy: 'skip_existing' });
+    expect(parsed.preview.matches.find((m) => m.importId === 'same-internal-id')?.status).toBe('matched_existing');
+    expect(parsed.preview.matches.find((m) => m.importId === 'same-internal-id')?.existingId).toBe('existing-person');
+    expect(parsed.preview.matches.find((m) => m.importId === 'existing-internal-only')?.status).toBe('missing_external_id');
+    expect(parsed.preview.summary.policyPlan).toMatchObject({ skip: 1, blocked: 1 });
+  });
+
+  it('Source/Event/Citationもexternal_idで照合できる', () => {
+    const files = buildStandardCsvSetFiles({ persons: [person('p1', 'P1')], unions: [], parentChildRelations: [], sources: [{ id: 's1', external_id: 'SRC1', source_type: 'book', title: '資料', created_at: '', updated_at: '' }], citations: [{ id: 'c1', external_id: 'CIT1', source_id: 's1', target_type: 'person', target_id: 'p1', created_at: '', updated_at: '' }], events: [{ id: 'e1', external_id: 'EV1', event_type: 'birth', target_type: 'person', target_id: 'p1', created_at: '', updated_at: '' }] });
+    const parsed = parseStandardCsvSetFiles(files, { existingData: { persons: [], sources: [{ id: 'source-existing', external_id: 'SRC1', source_type: 'book', title: '既存資料', created_at: '', updated_at: '' }], citations: [{ id: 'citation-existing', external_id: 'CIT1', source_id: 'source-existing', target_type: 'person', target_id: 'p1', created_at: '', updated_at: '' }], events: [{ id: 'event-existing', external_id: 'EV1', event_type: 'birth', target_type: 'person', target_id: 'p1', created_at: '', updated_at: '' }] }, importPolicy: 'add_as_new_ids' });
+    expect(parsed.preview.matches.filter((m) => m.status === 'matched_existing').map((m) => m.entityType).sort()).toEqual(['citation', 'event', 'source']);
+    expect(parsed.preview.summary.policyPlan.addAsNew).toBe(3);
+  });
+
+  it('replace_allでは照合結果に関わらずreplace件数を集計する', () => {
+    const preview = buildSimpleCsvImportPreview({ ...emptyData, persons: [person('p1', 'P1'), person('p2', 'P2')] }, 2, { importPolicy: 'replace_all' });
+    expect(preview.summary.policyPlan).toMatchObject({ replace: 2, create: 0, update: 0, skip: 0, addAsNew: 0, blocked: 0 });
+  });
+});
