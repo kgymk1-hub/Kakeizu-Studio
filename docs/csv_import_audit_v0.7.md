@@ -166,3 +166,13 @@
 - `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` は `preview_only` とし、UIとプレビューで確認できるが実行ボタンは無効化して安全に案内する。
 - 次フェーズでは、この取込方式選択を前提に、既存データとの `external_id` 照合、更新・スキップ・別ID追加の候補表示と保存処理強化へ進む。
 - DB保存方式、Dexie schema version、JSON backup `schema_version`、標準CSVセット構造、新規DBテーブルは変更していない。
+
+## v0.7 第4フェーズ: 既存external_id照合強化
+
+- `src/services/importPreviewService.ts` に既存データ照合用の型と純粋関数を追加し、プレビュー生成時に取り込み予定データと既存データの `external_id` を照合するようにした。
+- かんたんCSVでは `person_id` を `Person.external_id` として扱い、既存 `Person.external_id` と一致するものを既存一致候補、未一致を新規候補、CSV内重複をCSV内重複、空欄を `external_id` なしとして表示する。
+- 標準CSVセットでは `persons.csv` の `external_id` を既存 `Person.external_id` と照合し、CSV上の内部 `id` だけでは更新候補にしない。`Source` / `Event` / `Union` / `ParentChildRelation` / `Citation` も、取り込みデータに `external_id` がある場合は同じルールで照合する。
+- プレビューに新規候補、既存一致候補、CSV内重複、`external_id` なしの件数と、取込方式ごとの作成・更新・スキップ・別ID追加・全置換・保留/要確認候補を表示するようにした。
+- `replace_all` は従来どおり実行可能で、`append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` は引き続きプレビューのみで実行不可とした。
+- 次フェーズでは、参照先不明データや仮人物作成方針の整理に進む。
+- DB保存方式、JSON `schema_version`、Dexie schema version、標準CSVセット構造、新規DBテーブルは変更していない。

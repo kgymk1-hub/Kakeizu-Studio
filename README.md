@@ -523,3 +523,12 @@ npm run preview
 - かんたんCSVでは、正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、現在の取込方式が全置換であることを表示します。
 - 標準CSVセットでは、ファイル別件数、`manifest.json` の有無、Person / Union / ParentChildRelation / Source / Citation / Event の取り込み予定件数、issue一覧の表示を整理しました。
 - 今回はプレビュー表示の整理に集中し、DB保存方式、`package.json` version、JSON `schema_version`、Dexie schema versionは変更していません。
+
+### v0.7 development 第4フェーズ: 既存external_id照合強化
+
+- CSVインポートのプレビューで、取り込み予定データの `external_id` と既存データの `external_id` を照合できるようにしました。
+- かんたんCSVでは `person_id` を `Person.external_id` として扱い、新規候補、既存一致候補、CSV内重複、`external_id` なしをプレビュー表示します。
+- 標準CSVセットでは `external_id` を使って Person / Source / Event / Union / Relation / Citation の照合候補を表示し、内部 `id` だけでは更新候補にしません。
+- 取込方式ごとに、作成・更新・スキップ・別ID追加・全置換・保留/要確認の予定件数を表示します。
+- 実行可能なのは引き続き `replace_all` のみで、`append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` はプレビューのみです。
+- DB保存方式、package version、JSON `schema_version`、Dexie schema versionは変更していません。
