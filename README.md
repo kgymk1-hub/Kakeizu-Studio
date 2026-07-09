@@ -508,3 +508,10 @@ npm test
 npm run build
 npm run preview
 ```
+
+### v0.7 development 第2フェーズ: インポート結果プレビュー強化
+
+- CSVインポート本格化に向けて、取り込み前のインポート結果プレビューを強化しました。
+- かんたんCSVでは、正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、現在の取込方式が全置換であることを表示します。
+- 標準CSVセットでは、ファイル別件数、`manifest.json` の有無、Person / Union / ParentChildRelation / Source / Citation / Event の取り込み予定件数、issue一覧の表示を整理しました。
+- 今回はプレビュー表示の整理に集中し、DB保存方式、`package.json` version、JSON `schema_version`、Dexie schema versionは変更していません。

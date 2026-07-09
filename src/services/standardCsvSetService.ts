@@ -1,5 +1,7 @@
 import Papa from 'papaparse';
 import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union, ValidationIssue } from '../models';
+import { buildStandardCsvSetImportPreview } from './importPreviewService';
+import type { ImportPreviewResult } from './importPreviewService';
 
 export const STANDARD_CSV_SET_FORMAT = 'kakeizu_standard_csv_set';
 export const STANDARD_CSV_SET_FILES = ['persons.csv', 'unions.csv', 'parent_child_relations.csv', 'sources.csv', 'citations.csv', 'events.csv'] as const;
@@ -15,7 +17,7 @@ export const STANDARD_CSV_COLUMNS = {
 } as const;
 
 export interface StandardCsvSetData { persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; sources: Source[]; citations: Citation[]; events: Event[]; importBatches: ImportBatch[]; }
-export interface StandardCsvSetPreview extends StandardCsvSetData { issues: ValidationIssue[]; counts: { persons:number; unions:number; parent_child_relations:number; sources:number; citations:number; events:number; warnings:number; errors:number }; }
+export interface StandardCsvSetPreview extends StandardCsvSetData { issues: ValidationIssue[]; counts: { persons:number; unions:number; parent_child_relations:number; sources:number; citations:number; events:number; warnings:number; errors:number }; preview: ImportPreviewResult; }
 export type StandardCsvSetTextFiles = Record<string, string>;
 
 function csv<T extends Record<string, unknown>>(fields: readonly string[], rows: T[]) { return BOM + Papa.unparse({ fields: [...fields], data: rows }, { columns: [...fields], newline: '\r\n' }); }
@@ -93,7 +95,8 @@ export function validateStandardCsvSet(files: StandardCsvSetTextFiles): Standard
   events.forEach((e,i)=>{ if(e.target_type==='person' && !personIds.has(e.target_id)) issues.push({severity:'error',code:'missing_person_ref',message:`event.target_id ${e.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(e.target_type==='union' && !unionIds.has(e.target_id)) issues.push({severity:'error',code:'missing_union_ref',message:`event.target_id ${e.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(e.target_type==='relation' && !relationIds.has(e.target_id)) issues.push({severity:'error',code:'missing_relation_ref',message:`event.target_id ${e.target_id} が存在しません。`,row:i+2,field:'target_id'}); });
   citations.forEach((c,i)=>{ if(c.source_id && !sourceIds.has(c.source_id)) issues.push({severity:'error',code:'missing_source_ref',message:`citation.source_id ${c.source_id} が存在しません。`,row:i+2,field:'source_id'}); if(c.target_type==='person' && !personIds.has(c.target_id)) issues.push({severity:'error',code:'missing_person_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='union' && !unionIds.has(c.target_id)) issues.push({severity:'error',code:'missing_union_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='relation' && !relationIds.has(c.target_id)) issues.push({severity:'error',code:'missing_relation_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='event' && !eventIds.has(c.target_id)) issues.push({severity:'error',code:'missing_event_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(['name','place'].includes(c.target_type)) issues.push({severity:'warning',code:'unsupported_target_type',message:`${c.target_type} は将来用target_typeとして読み込みますが、参照先データは未実装です。`,row:i+2,field:'target_type'}); });
   const importBatch: ImportBatch = { id:`csv-standard-${Date.now()}`, imported_at:now, import_type:'csv_standard', source_name:'kakeizu_standard_csv_set.zip', imported_count:persons.length, warning_count:issues.filter(i=>i.severity==='warning').length, error_count:issues.filter(i=>i.severity==='error').length };
-  return { persons, unions, parentChildRelations, sources, citations, events, importBatches:[importBatch], issues, counts:{ persons:persons.length, unions:unions.length, parent_child_relations:parentChildRelations.length, sources:sources.length, citations:citations.length, events:events.length, warnings:issues.filter(i=>i.severity==='warning').length, errors:issues.filter(i=>i.severity==='error').length } };
+  const previewBase = { persons, unions, parentChildRelations, sources, citations, events, importBatches:[importBatch], issues, counts:{ persons:persons.length, unions:unions.length, parent_child_relations:parentChildRelations.length, sources:sources.length, citations:citations.length, events:events.length, warnings:issues.filter(i=>i.severity==='warning').length, errors:issues.filter(i=>i.severity==='error').length } };
+  return { ...previewBase, preview: buildStandardCsvSetImportPreview(previewBase, files) };
 }
 
 export function parseStandardCsvSetFiles(files: StandardCsvSetTextFiles) { return validateStandardCsvSet(files); }

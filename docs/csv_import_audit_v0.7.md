@@ -149,3 +149,12 @@
 - 現在の単一CSVと標準CSVセットはどちらも最終的に全置換保存であり、追加・更新系の実装ではDB保存層とプレビュー層の分離が必要。
 - package version、JSON backup `schema_version`、Dexie schema version、DBテーブル、標準CSVセット構造は本棚卸しでは変更していない。
 - 仕様書`docs/specification.md`はVersion 1.2 / v0.6.0実装反映版を確認し、今回は変更していない。
+
+## v0.7 第2フェーズ: インポート結果プレビュー強化
+
+- `src/services/importPreviewService.ts` に、かんたんCSVと標準CSVセットで共有できる `ImportPreviewIssue` / `ImportPreviewSummary` / `ImportPreviewResult` と集計関数を追加した。プレビューは `importPolicy: replace_all`、正常行・警告行・エラー行、severity別issue件数、取り込み予定件数を持つ。
+- かんたんCSVプレビューでは、総行数、正常行、警告行、エラー行、Person / Union / ParentChildRelation / Event / Source / Citation の取り込み予定件数、全置換取込であること、error時の取込不可、warningのみ時の注意表示を確認できるようにした。
+- 標準CSVセットプレビューでは、読み込まれたCSVファイル別件数、`manifest.json` の有無、取り込み予定件数、warning / error件数、全置換取込であること、error時の反映不可を確認できるようにした。
+- issue一覧は、severity、code、messageに加えて、取得できる範囲で行番号、ファイル名、対象列、対象種別、対象IDを表示するよう整理した。
+- 未対応のissue検出は残る。未知の列挙値の網羅的検出、標準CSVセット内の重複id詳細表示、issueごとのファイル名推定精度向上、かんたんCSVの循環・重複以外の高度な検出は次フェーズ以降の候補。
+- 次フェーズでは、この共通プレビュー結果を使って、取込方式選択、既存 `external_id` 照合、更新/スキップ/別ID追加の判断表示につなげる。
