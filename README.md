@@ -532,3 +532,11 @@ npm run preview
 - 取込方式ごとに、作成・更新・スキップ・別ID追加・全置換・保留/要確認の予定件数を表示します。
 - 実行可能なのは引き続き `replace_all` のみで、`append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` はプレビューのみです。
 - DB保存方式、package version、JSON `schema_version`、Dexie schema versionは変更していません。
+
+### v0.7 development 第5フェーズ: 参照先不明・仮人物作成方針
+
+- CSVインポートプレビューで参照先不明の表示を強化し、ファイル名・行番号・列名・参照ID・参照元・参照先種別を確認できるようにしました。
+- かんたんCSVの `father_id` / `mother_id` / `spouse_ids` と、標準CSVセットの union / relation / event / citation の各参照を整理して表示します。
+- 参照先不明・仮人物作成方針として `warn_and_skip` / `block_import` / `create_placeholder_preview` を選べるようにしました。
+- 現時点では仮人物の実保存は行わず、実行可能なのは `replace_all` + `warn_and_skip` のみです。
+- DB保存方式、package version、JSON schema_version、Dexie schema version は変更していません。

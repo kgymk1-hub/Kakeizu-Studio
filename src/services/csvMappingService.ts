@@ -2,7 +2,7 @@ import Papa from 'papaparse';
 import { importSimpleCsv, parseSimpleCsv } from './csvImportService';
 import type { RawCsvPerson } from '../schemas/csvSchemas';
 import type { NormalizedFamilyData } from './normalizationService';
-import { buildSimpleCsvImportPreview, canImportWithPolicy, type ExistingImportContext, type ImportPolicy } from './importPreviewService';
+import { buildSimpleCsvImportPreview, canImportWithPolicy, type ExistingImportContext, type ImportPolicy, type PlaceholderPersonPolicy } from './importPreviewService';
 
 export const APP_COLUMNS = ['person_id','name','gender','birth_date','death_date','father_id','mother_id','spouse_ids','generation_no','title','note','source','confidence'] as const;
 export type AppColumn = typeof APP_COLUMNS[number];
@@ -91,7 +91,7 @@ export function convertCsvToStandard(csvText: string, mapping: ColumnMapping) {
   return Papa.unparse(convertCsvToStandardRows(csvText, mapping), { columns: [...APP_COLUMNS] });
 }
 
-export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string, options: { importPolicy?: ImportPolicy; existingData?: ExistingImportContext } = {}) {
+export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string, options: { importPolicy?: ImportPolicy; existingData?: ExistingImportContext; placeholderPersonPolicy?: PlaceholderPersonPolicy } = {}) {
   const standardCsv = convertCsvToStandard(csvText, mapping);
   const parsed = parseSimpleCsv(standardCsv);
   const result = importSimpleCsv(standardCsv, sourceName);
@@ -99,7 +99,7 @@ export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, source
   const warningCount = result.issues.filter((i) => i.severity === 'warning').length;
   const spouseDeclarations = parsed.rows.reduce((sum, row) => sum + (row.spouse_ids?.split(';').map((x) => x.trim()).filter(Boolean).length ?? 0), 0);
   const importPolicy = options.importPolicy ?? 'replace_all';
-  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length, { importPolicy, existingData: options.existingData });
+  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length, { importPolicy, existingData: options.existingData, placeholderPersonPolicy: options.placeholderPersonPolicy, simpleRows: parsed.rows });
   return {
     standardCsv,
     parsedRows: parsed.rows,
@@ -113,12 +113,12 @@ export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, source
       errorCount,
       placeholderPersonCount: result.issues.filter((i) => i.code === 'unknown_parent_id' || i.code === 'unknown_spouse_id').length,
       autoCompletedSpouseCount: Math.max(0, spouseDeclarations - result.unions.length),
-      canImport: canImportWithPolicy(errorCount, importPolicy),
+      canImport: canImportWithPolicy(errorCount, importPolicy, options.placeholderPersonPolicy, preview.unresolvedReferences.length),
     },
   };
 }
 
-export function isImportAllowed(data: NormalizedFamilyData, importPolicy: ImportPolicy = 'replace_all') {
+export function isImportAllowed(data: NormalizedFamilyData, importPolicy: ImportPolicy = 'replace_all', placeholderPersonPolicy: PlaceholderPersonPolicy = 'warn_and_skip') {
   const errorCount = data.issues.filter((issue) => issue.severity === 'error').length;
-  return canImportWithPolicy(errorCount, importPolicy);
+  return canImportWithPolicy(errorCount, importPolicy, placeholderPersonPolicy);
 }
