@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union, ValidationIssue } from '../models';
-import { buildStandardCsvSetImportPreview } from './importPreviewService';
+import { buildStandardCsvSetImportPreview, type ImportPreviewOptions } from './importPreviewService';
 import type { ImportPreviewResult } from './importPreviewService';
 
 export const STANDARD_CSV_SET_FORMAT = 'kakeizu_standard_csv_set';
@@ -72,7 +72,7 @@ export function readStoredZip(bytes: Uint8Array): StandardCsvSetTextFiles {
 function parseRows(text: string) { const parsed = Papa.parse<Record<string,string>>(text.replace(/^\uFEFF/, ''), { header:true, skipEmptyLines:true, transformHeader:h=>h.trim() }); return { rows: parsed.data, errors: parsed.errors }; }
 function req(row: Record<string,string>, field:string, file:string, rowNo:number, issues:ValidationIssue[]) { const value = v(row[field]).trim(); if (!value) issues.push({ severity:'error', code:'required', message:`${file} ${field} は必須です。`, row:rowNo, field }); return value; }
 
-export function validateStandardCsvSet(files: StandardCsvSetTextFiles): StandardCsvSetPreview {
+export function validateStandardCsvSet(files: StandardCsvSetTextFiles, options: ImportPreviewOptions = {}): StandardCsvSetPreview {
   const issues: ValidationIssue[] = [];
   if (!files['manifest.json']) issues.push({ severity:'error', code:'missing_manifest', message:'manifest.json がありません。' });
   else { try { const m = JSON.parse(files['manifest.json']); if (m.format !== STANDARD_CSV_SET_FORMAT) issues.push({ severity:'error', code:'invalid_format', message:'manifest.json のformatが標準CSVセットではありません。' }); } catch { issues.push({ severity:'error', code:'invalid_manifest', message:'manifest.json を読み込めません。' }); } }
@@ -96,10 +96,10 @@ export function validateStandardCsvSet(files: StandardCsvSetTextFiles): Standard
   citations.forEach((c,i)=>{ if(c.source_id && !sourceIds.has(c.source_id)) issues.push({severity:'error',code:'missing_source_ref',message:`citation.source_id ${c.source_id} が存在しません。`,row:i+2,field:'source_id'}); if(c.target_type==='person' && !personIds.has(c.target_id)) issues.push({severity:'error',code:'missing_person_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='union' && !unionIds.has(c.target_id)) issues.push({severity:'error',code:'missing_union_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='relation' && !relationIds.has(c.target_id)) issues.push({severity:'error',code:'missing_relation_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(c.target_type==='event' && !eventIds.has(c.target_id)) issues.push({severity:'error',code:'missing_event_ref',message:`citation.target_id ${c.target_id} が存在しません。`,row:i+2,field:'target_id'}); else if(['name','place'].includes(c.target_type)) issues.push({severity:'warning',code:'unsupported_target_type',message:`${c.target_type} は将来用target_typeとして読み込みますが、参照先データは未実装です。`,row:i+2,field:'target_type'}); });
   const importBatch: ImportBatch = { id:`csv-standard-${Date.now()}`, imported_at:now, import_type:'csv_standard', source_name:'kakeizu_standard_csv_set.zip', imported_count:persons.length, warning_count:issues.filter(i=>i.severity==='warning').length, error_count:issues.filter(i=>i.severity==='error').length };
   const previewBase = { persons, unions, parentChildRelations, sources, citations, events, importBatches:[importBatch], issues, counts:{ persons:persons.length, unions:unions.length, parent_child_relations:parentChildRelations.length, sources:sources.length, citations:citations.length, events:events.length, warnings:issues.filter(i=>i.severity==='warning').length, errors:issues.filter(i=>i.severity==='error').length } };
-  return { ...previewBase, preview: buildStandardCsvSetImportPreview(previewBase, files) };
+  return { ...previewBase, preview: buildStandardCsvSetImportPreview(previewBase, files, options) };
 }
 
-export function parseStandardCsvSetFiles(files: StandardCsvSetTextFiles) { return validateStandardCsvSet(files); }
+export function parseStandardCsvSetFiles(files: StandardCsvSetTextFiles, options: ImportPreviewOptions = {}) { return validateStandardCsvSet(files, options); }
 
 export async function readStandardCsvSetFromZip(file: Blob) { return readStoredZip(new Uint8Array(await file.arrayBuffer())); }
 
@@ -114,5 +114,5 @@ export async function readStandardCsvSetFromFiles(fileList: FileList | File[] | 
   return files;
 }
 
-export async function parseStandardCsvSetZip(file: Blob) { return validateStandardCsvSet(await readStandardCsvSetFromZip(file)); }
-export async function parseStandardCsvSetFileList(fileList: FileList | File[] | Iterable<File>) { return validateStandardCsvSet(await readStandardCsvSetFromFiles(fileList)); }
+export async function parseStandardCsvSetZip(file: Blob, options: ImportPreviewOptions = {}) { return validateStandardCsvSet(await readStandardCsvSetFromZip(file), options); }
+export async function parseStandardCsvSetFileList(fileList: FileList | File[] | Iterable<File>, options: ImportPreviewOptions = {}) { return validateStandardCsvSet(await readStandardCsvSetFromFiles(fileList), options); }

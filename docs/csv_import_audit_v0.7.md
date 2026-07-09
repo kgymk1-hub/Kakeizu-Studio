@@ -158,3 +158,11 @@
 - issue一覧は、severity、code、messageに加えて、取得できる範囲で行番号、ファイル名、対象列、対象種別、対象IDを表示するよう整理した。
 - 未対応のissue検出は残る。未知の列挙値の網羅的検出、標準CSVセット内の重複id詳細表示、issueごとのファイル名推定精度向上、かんたんCSVの循環・重複以外の高度な検出は次フェーズ以降の候補。
 - 次フェーズでは、この共通プレビュー結果を使って、取込方式選択、既存 `external_id` 照合、更新/スキップ/別ID追加の判断表示につなげる。
+
+## v0.7 第3フェーズ: 取込方式選択
+
+- `ImportPolicy` 型として `replace_all` / `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` を追加し、かんたんCSVと標準CSVセットのプレビューsummaryへ選択中の取込方式と `importPolicyStatus` を反映する土台を用意した。
+- 現時点で実行可能な取込方式は `replace_all` のみ。従来どおり現在データを全置換する方式として扱う。
+- `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` は `preview_only` とし、UIとプレビューで確認できるが実行ボタンは無効化して安全に案内する。
+- 次フェーズでは、この取込方式選択を前提に、既存データとの `external_id` 照合、更新・スキップ・別ID追加の候補表示と保存処理強化へ進む。
+- DB保存方式、Dexie schema version、JSON backup `schema_version`、標準CSVセット構造、新規DBテーブルは変更していない。

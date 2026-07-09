@@ -43,6 +43,14 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - package version、JSON backup `schema_version`、Dexie schema version、DBテーブルは変更していません。
 
 
+
+### v0.7 development 第3フェーズ: 取込方式選択
+
+- CSVインポート画面と標準CSVセットのインポート前プレビューに、取込方式選択UIを追加しました。
+- `replace_all`（全置換）は従来どおり実行可能で、errorなしの場合はwarning確認を経て現在データを置き換えます。
+- `append_new`（追加）、`update_by_external_id`（external_idで更新）、`skip_existing`（既存スキップ）、`add_as_new_ids`（別IDとして追加）は、現時点ではプレビューのみ対応です。選択すると方式説明とsummaryには反映されますが、取込実行はできません。
+- DB保存方式、package version、JSON backup `schema_version`、Dexie schema version、標準CSVセット構造は変更していません。
+
 ## v0.6.0: 検索・一覧・検証結果からの修正導線
 
 v0.6.0は、「検索・一覧・検証結果からの修正導線」を正式版として固定したリリースです。共通の `target_type` / `target_id` 選択基盤、Person / Event / Source / Citation の一覧・検索、ValidationPanelから修正対象へ向かう導線、一覧系UIの見た目整理をまとめました。
