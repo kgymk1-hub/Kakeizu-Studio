@@ -35,6 +35,14 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
+## v0.7 development: CSVインポート現状棚卸し
+
+- v0.7 第1フェーズとして、CSVインポート現状棚卸しを実施しました。
+- 棚卸し結果は `docs/csv_import_audit_v0.7.md` に追加しています。
+- CSVインポート機能の本格改修は次フェーズ以降に行います。
+- package version、JSON backup `schema_version`、Dexie schema version、DBテーブルは変更していません。
+
+
 ## v0.6.0: 検索・一覧・検証結果からの修正導線
 
 v0.6.0は、「検索・一覧・検証結果からの修正導線」を正式版として固定したリリースです。共通の `target_type` / `target_id` 選択基盤、Person / Event / Source / Citation の一覧・検索、ValidationPanelから修正対象へ向かう導線、一覧系UIの見た目整理をまとめました。
