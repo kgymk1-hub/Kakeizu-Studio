@@ -105,3 +105,61 @@ describe('external_id import matching', () => {
     expect(preview.summary.policyPlan).toMatchObject({ replace: 2, create: 0, update: 0, skip: 0, addAsNew: 0, blocked: 0 });
   });
 });
+
+describe('unresolved references and placeholder person policy', () => {
+  it('かんたんCSV father/mother/spouse参照先不明を検出し、warn_and_skipでは仮人物候補にしない', async () => {
+    const { analyzeMappedCsv, suggestColumnMapping, getCsvHeaders } = await import('../services/csvMappingService');
+    const csv = 'person_id,name,father_id,mother_id,spouse_ids\nP1,子,P999,M999,S999;P2\nP2,既知配偶者,,,';
+    const analysis = analyzeMappedCsv(csv, suggestColumnMapping(getCsvHeaders(csv)), 'simple.csv', { placeholderPersonPolicy: 'warn_and_skip' });
+    expect(analysis.preview.unresolvedReferences.map((r) => [r.field, r.referenceId])).toEqual([['father_id', 'P999'], ['mother_id', 'M999'], ['spouse_ids', 'S999']]);
+    expect(analysis.preview.summary.unresolvedReferenceSummary).toMatchObject({ total: 3, personReferences: 3, placeholderPersonCandidates: 0, pendingReview: 3 });
+    expect(analysis.preview.placeholderPersonCandidates).toHaveLength(0);
+    expect(analysis.preview.canImport).toBe(true);
+  });
+
+  it('create_placeholder_previewでは人物参照先不明を重複しすぎない仮人物候補にするが取込不可', async () => {
+    const { analyzeMappedCsv, suggestColumnMapping, getCsvHeaders } = await import('../services/csvMappingService');
+    const csv = 'person_id,name,father_id,spouse_ids\nP1,子,P999,P999\nP2,別子,P999,';
+    const analysis = analyzeMappedCsv(csv, suggestColumnMapping(getCsvHeaders(csv)), 'simple.csv', { placeholderPersonPolicy: 'create_placeholder_preview' });
+    expect(analysis.preview.summary.unresolvedReferenceSummary.placeholderPersonCandidates).toBe(1);
+    expect(analysis.preview.placeholderPersonCandidates).toHaveLength(1);
+    expect(analysis.preview.placeholderPersonCandidates[0].referenceId).toBe('P999');
+    expect(analysis.preview.canImport).toBe(false);
+    expect(analysis.preview.issues.some((i) => i.code === 'placeholder_person_candidate')).toBe(true);
+  });
+
+  it('block_importでは参照先不明をblockedByPolicyに入れて取込不可にする', async () => {
+    const { analyzeMappedCsv, suggestColumnMapping, getCsvHeaders } = await import('../services/csvMappingService');
+    const csv = 'person_id,name,father_id\nP1,子,P999';
+    const analysis = analyzeMappedCsv(csv, suggestColumnMapping(getCsvHeaders(csv)), 'simple.csv', { placeholderPersonPolicy: 'block_import' });
+    expect(analysis.preview.summary.unresolvedReferenceSummary.blockedByPolicy).toBe(1);
+    expect(analysis.preview.canImport).toBe(false);
+    expect(analysis.preview.issues.some((i) => i.code === 'blocked_by_unresolved_reference_policy')).toBe(true);
+  });
+
+  it('標準CSVセットのunion/relation/event/citation参照先不明を検出できる', async () => {
+    const { parseStandardCsvSetFiles } = await import('../services/standardCsvSetService');
+    const files = {
+      'manifest.json': JSON.stringify({ format: 'kakeizu_standard_csv_set' }),
+      'persons.csv': 'id,external_id,name\nP1,,太郎',
+      'unions.csv': 'id,partner1_id,partner2_id\nU1,P999,P1',
+      'parent_child_relations.csv': 'id,parent_id,child_id,union_id\nR1,P1,P888,U999',
+      'sources.csv': 'id,title\nS1,資料',
+      'citations.csv': 'id,source_id,target_type,target_id\nC1,S999,event,E999',
+      'events.csv': 'id,event_type,target_type,target_id\nE1,birth,union,U999',
+    };
+    const parsed = parseStandardCsvSetFiles(files, { placeholderPersonPolicy: 'warn_and_skip' });
+    expect(parsed.preview.unresolvedReferences.map((r) => [r.fileName, r.field, r.referenceId, r.targetEntityType])).toEqual(expect.arrayContaining([
+      ['unions.csv', 'partner1_id', 'P999', 'person'],
+      ['parent_child_relations.csv', 'child_id', 'P888', 'person'],
+      ['parent_child_relations.csv', 'union_id', 'U999', 'union'],
+      ['events.csv', 'target_id', 'U999', 'union'],
+      ['citations.csv', 'source_id', 'S999', 'source'],
+      ['citations.csv', 'target_id', 'E999', 'event'],
+    ]));
+  });
+
+  it('preview_only importPolicyは引き続き取込不可', () => {
+    expect(canImportWithPolicy(0, 'append_new', 'warn_and_skip')).toBe(false);
+  });
+});

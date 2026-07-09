@@ -176,3 +176,13 @@
 - `replace_all` は従来どおり実行可能で、`append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` は引き続きプレビューのみで実行不可とした。
 - 次フェーズでは、参照先不明データや仮人物作成方針の整理に進む。
 - DB保存方式、JSON `schema_version`、Dexie schema version、標準CSVセット構造、新規DBテーブルは変更していない。
+
+## v0.7 第5フェーズ結果: 参照先不明・仮人物作成方針
+
+- インポートプレビューに参照先不明の専用型・集計・一覧を追加し、ファイル名・行番号・列名・参照ID・参照元・参照先種別を確認できるようにした。
+- かんたんCSVでは `father_id` / `mother_id` / `spouse_ids` の人物参照を整理し、CSV内 `person_id` に存在しないIDを参照先不明として表示する。
+- 標準CSVセットでは `unions.csv` の partner 参照、`parent_child_relations.csv` の parent / child / union 参照、`events.csv` の target 参照、`citations.csv` の source / target 参照を参照先不明として整理する。
+- 仮人物作成方針として `warn_and_skip` / `block_import` / `create_placeholder_preview` を追加した。現時点で実行可能なのは `replace_all` + `warn_and_skip` のみで、`block_import` と `create_placeholder_preview` はプレビュー上の方針確認に限定する。
+- `create_placeholder_preview` では人物参照先不明を「仮人物 P999」のような候補として表示するが、仮人物の実保存・参照先不明の自動補完は行わない。
+- 次フェーズでは、標準CSVセット検証強化に進む想定とする。
+- DB保存方式、JSON schema_version、Dexie schema version、新規DBテーブル、標準CSVセットの出力構造は変更していない。
