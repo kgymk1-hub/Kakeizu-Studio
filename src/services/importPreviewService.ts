@@ -5,6 +5,37 @@ import type { ValidationIssue } from '../models';
 export type ImportPreviewIssueSeverity = 'error' | 'warning' | 'info';
 export type ImportPreviewTargetType = 'person' | 'union' | 'relation' | 'event' | 'source' | 'citation' | 'manifest' | 'unknown';
 
+export type ImportPolicy =
+  | 'replace_all'
+  | 'append_new'
+  | 'update_by_external_id'
+  | 'skip_existing'
+  | 'add_as_new_ids';
+
+export type ImportPolicyStatus = 'available' | 'preview_only' | 'unsupported';
+
+export const importPolicyOptions: { value: ImportPolicy; label: string; description: string; status: ImportPolicyStatus }[] = [
+  { value: 'replace_all', label: '全置換', description: '現在のデータを全て置き換えます。', status: 'available' },
+  { value: 'append_new', label: '追加', description: '既存データを残して新規データを追加します。後続フェーズで実装予定です。', status: 'preview_only' },
+  { value: 'update_by_external_id', label: 'external_idで更新', description: 'external_idが一致する既存データを更新し、存在しないものは追加します。後続フェーズで実装予定です。', status: 'preview_only' },
+  { value: 'skip_existing', label: '既存スキップ', description: 'external_idが既に存在するものはスキップし、新規のみ追加します。後続フェーズで実装予定です。', status: 'preview_only' },
+  { value: 'add_as_new_ids', label: '別IDとして追加', description: 'external_idが重複しても別IDとして追加します。後続フェーズで実装予定です。', status: 'preview_only' },
+];
+
+export function getImportPolicyOption(importPolicy: ImportPolicy) {
+  return importPolicyOptions.find((option) => option.value === importPolicy) ?? importPolicyOptions[0];
+}
+
+export function getImportPolicyStatus(importPolicy: ImportPolicy): ImportPolicyStatus {
+  return getImportPolicyOption(importPolicy).status;
+}
+
+export function canImportWithPolicy(errorIssues: number, importPolicy: ImportPolicy) {
+  return errorIssues === 0 && getImportPolicyStatus(importPolicy) === 'available';
+}
+
+export type ImportPreviewOptions = { importPolicy?: ImportPolicy };
+
 export type ImportPreviewIssue = {
   severity: ImportPreviewIssueSeverity;
   code: string;
@@ -18,7 +49,8 @@ export type ImportPreviewIssue = {
 
 export type ImportPreviewSummary = {
   mode: 'simple_csv' | 'standard_csv_set';
-  importPolicy: 'replace_all';
+  importPolicy: ImportPolicy;
+  importPolicyStatus: ImportPolicyStatus;
   totalRows: number;
   validRows: number;
   warningRows: number;
@@ -51,7 +83,9 @@ function countRowsWithSeverity(issues: ImportPreviewIssue[], severity: ImportPre
   return new Set(issues.filter((issue) => issue.severity === severity && issue.rowNumber != null).map((issue) => issue.rowNumber)).size;
 }
 
-export function buildSimpleCsvImportPreview(data: NormalizedFamilyData, totalRows: number): ImportPreviewResult {
+export function buildSimpleCsvImportPreview(data: NormalizedFamilyData, totalRows: number, options: ImportPreviewOptions = {}): ImportPreviewResult {
+  const importPolicy = options.importPolicy ?? 'replace_all';
+  const importPolicyStatus = getImportPolicyStatus(importPolicy);
   const issues = data.issues.map((issue) => mapIssue(issue));
   const errorRows = countRowsWithSeverity(issues, 'error');
   const warningRows = countRowsWithSeverity(issues, 'warning');
@@ -59,12 +93,12 @@ export function buildSimpleCsvImportPreview(data: NormalizedFamilyData, totalRow
   const warningIssues = issues.filter((issue) => issue.severity === 'warning').length;
   return {
     summary: {
-      mode: 'simple_csv', importPolicy: 'replace_all', totalRows,
+      mode: 'simple_csv', importPolicy, importPolicyStatus, totalRows,
       validRows: Math.max(0, totalRows - new Set(issues.filter((i) => i.rowNumber != null && (i.severity === 'error' || i.severity === 'warning')).map((i) => i.rowNumber)).size),
       warningRows, errorRows, totalIssues: issues.length, warningIssues, errorIssues,
       plannedCreate: { persons: data.persons.length, unions: data.unions.length, relations: data.parentChildRelations.length, events: (data as unknown as { events?: unknown[] }).events?.length ?? 0, sources: (data as unknown as { sources?: unknown[] }).sources?.length ?? 0, citations: (data as unknown as { citations?: unknown[] }).citations?.length ?? 0 },
     },
-    issues, canImport: errorIssues === 0, hasWarnings: warningIssues > 0,
+    issues, canImport: canImportWithPolicy(errorIssues, importPolicy), hasWarnings: warningIssues > 0,
   };
 }
 
@@ -72,7 +106,9 @@ const standardFileKeys = [
   ['persons.csv', 'persons'], ['unions.csv', 'unions'], ['parent_child_relations.csv', 'parent_child_relations'], ['sources.csv', 'sources'], ['citations.csv', 'citations'], ['events.csv', 'events'],
 ] as const;
 
-export function buildStandardCsvSetImportPreview(preview: { issues: ValidationIssue[]; counts: { persons:number; unions:number; parent_child_relations:number; sources:number; citations:number; events:number; warnings:number; errors:number } }, files?: StandardCsvSetTextFiles): ImportPreviewResult {
+export function buildStandardCsvSetImportPreview(preview: { issues: ValidationIssue[]; counts: { persons:number; unions:number; parent_child_relations:number; sources:number; citations:number; events:number; warnings:number; errors:number } }, files?: StandardCsvSetTextFiles, options: ImportPreviewOptions = {}): ImportPreviewResult {
+  const importPolicy = options.importPolicy ?? 'replace_all';
+  const importPolicyStatus = getImportPolicyStatus(importPolicy);
   const issueFile = (issue: ValidationIssue) => {
     if (issue.code === 'missing_manifest' || issue.code === 'invalid_manifest' || issue.code === 'invalid_format') return 'manifest.json';
     if (issue.code === 'missing_csv') return issue.message.match(/^(\S+\.csv)/)?.[1];
@@ -91,12 +127,12 @@ export function buildStandardCsvSetImportPreview(preview: { issues: ValidationIs
   const filesSummary = standardFileKeys.map(([fileName, key]) => ({ fileName, rows: preview.counts[key], present: files ? files[fileName] != null : true }));
   return {
     summary: {
-      mode: 'standard_csv_set', importPolicy: 'replace_all', totalRows,
+      mode: 'standard_csv_set', importPolicy, importPolicyStatus, totalRows,
       validRows: Math.max(0, totalRows - countRowsWithSeverity(issues, 'error') - countRowsWithSeverity(issues, 'warning')),
       warningRows: countRowsWithSeverity(issues, 'warning'), errorRows: countRowsWithSeverity(issues, 'error'),
       totalIssues: issues.length, warningIssues, errorIssues,
       plannedCreate: { persons: preview.counts.persons, unions: preview.counts.unions, relations: preview.counts.parent_child_relations, events: preview.counts.events, sources: preview.counts.sources, citations: preview.counts.citations },
     },
-    issues, files: filesSummary, manifestPresent: files ? files['manifest.json'] != null : true, canImport: errorIssues === 0, hasWarnings: warningIssues > 0,
+    issues, files: filesSummary, manifestPresent: files ? files['manifest.json'] != null : true, canImport: canImportWithPolicy(errorIssues, importPolicy), hasWarnings: warningIssues > 0,
   };
 }

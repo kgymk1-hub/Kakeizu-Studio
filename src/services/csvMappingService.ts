@@ -2,7 +2,7 @@ import Papa from 'papaparse';
 import { importSimpleCsv, parseSimpleCsv } from './csvImportService';
 import type { RawCsvPerson } from '../schemas/csvSchemas';
 import type { NormalizedFamilyData } from './normalizationService';
-import { buildSimpleCsvImportPreview } from './importPreviewService';
+import { buildSimpleCsvImportPreview, canImportWithPolicy, type ImportPolicy } from './importPreviewService';
 
 export const APP_COLUMNS = ['person_id','name','gender','birth_date','death_date','father_id','mother_id','spouse_ids','generation_no','title','note','source','confidence'] as const;
 export type AppColumn = typeof APP_COLUMNS[number];
@@ -91,14 +91,15 @@ export function convertCsvToStandard(csvText: string, mapping: ColumnMapping) {
   return Papa.unparse(convertCsvToStandardRows(csvText, mapping), { columns: [...APP_COLUMNS] });
 }
 
-export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string) {
+export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, sourceName?: string, options: { importPolicy?: ImportPolicy } = {}) {
   const standardCsv = convertCsvToStandard(csvText, mapping);
   const parsed = parseSimpleCsv(standardCsv);
   const result = importSimpleCsv(standardCsv, sourceName);
   const errorCount = result.issues.filter((i) => i.severity === 'error').length;
   const warningCount = result.issues.filter((i) => i.severity === 'warning').length;
   const spouseDeclarations = parsed.rows.reduce((sum, row) => sum + (row.spouse_ids?.split(';').map((x) => x.trim()).filter(Boolean).length ?? 0), 0);
-  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length);
+  const importPolicy = options.importPolicy ?? 'replace_all';
+  const preview = buildSimpleCsvImportPreview(result, parsed.rows.length, { importPolicy });
   return {
     standardCsv,
     parsedRows: parsed.rows,
@@ -112,11 +113,12 @@ export function analyzeMappedCsv(csvText: string, mapping: ColumnMapping, source
       errorCount,
       placeholderPersonCount: result.issues.filter((i) => i.code === 'unknown_parent_id' || i.code === 'unknown_spouse_id').length,
       autoCompletedSpouseCount: Math.max(0, spouseDeclarations - result.unions.length),
-      canImport: errorCount === 0,
+      canImport: canImportWithPolicy(errorCount, importPolicy),
     },
   };
 }
 
-export function isImportAllowed(data: NormalizedFamilyData) {
-  return !data.issues.some((issue) => issue.severity === 'error');
+export function isImportAllowed(data: NormalizedFamilyData, importPolicy: ImportPolicy = 'replace_all') {
+  const errorCount = data.issues.filter((issue) => issue.severity === 'error').length;
+  return canImportWithPolicy(errorCount, importPolicy);
 }
