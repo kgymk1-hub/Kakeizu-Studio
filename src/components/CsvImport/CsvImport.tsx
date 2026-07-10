@@ -45,7 +45,7 @@ function IssueList({ issues }: { issues: { severity: string; code: string; messa
   return <ul className="issue-list">{issues.map((i,idx)=><li key={idx} className={i.severity}><strong>{i.severity}</strong> [{i.code}] {i.fileName && <span>file: {i.fileName} / </span>}{i.rowNumber && <span>行: {i.rowNumber} / </span>}{i.field && <span>列: {i.field} / </span>}{i.targetType && <span>対象: {i.targetType} </span>}{i.targetId && <span>ID: {i.targetId} / </span>}{i.message}</li>)}</ul>;
 }
 
-export function CsvImport({ onImported, existingData }: { onImported: (data: NormalizedFamilyData) => Promise<boolean> | boolean; existingData?: ExistingImportContext }) {
+export function CsvImport({ onImported, existingData }: { onImported: (data: NormalizedFamilyData, preview: ImportPreviewResult) => Promise<boolean> | boolean; existingData?: ExistingImportContext }) {
   const [text, setText] = useState('');
   const [sourceName, setSourceName] = useState('family_simple.csv');
   const [step, setStep] = useState(0);
@@ -81,7 +81,7 @@ export function CsvImport({ onImported, existingData }: { onImported: (data: Nor
       const ok = window.confirm(`警告がありますが、このCSVを取り込みますか？\n人物: ${analysis.summary.personCount}件\nUnion: ${analysis.summary.unionCount}件\n親子関係: ${analysis.summary.relationCount}件\n警告: ${analysis.summary.warningCount}件`);
       if (!ok) return;
     }
-    const applied = await onImported(analysis.result);
+    const applied = await onImported(analysis.result, analysis.preview);
     setStep(4);
     setMessage(`${analysis.summary.personCount}人 / Union ${analysis.summary.unionCount}件 / 親子 ${analysis.summary.relationCount}件 / 警告 ${analysis.summary.warningCount}件 / エラー ${analysis.summary.errorCount}件${applied ? '（反映済み）' : '（未反映）'}`);
   };

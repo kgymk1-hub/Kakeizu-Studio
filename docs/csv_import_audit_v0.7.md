@@ -198,3 +198,15 @@
 - `manifest.json` のJSON不正、format不一致、versionまたはschema_version不足、files記載と実ファイルの矛盾を検証する。
 - `warningRows` / `errorRows` は複数ファイルの同じ行番号が混同されないよう、`fileName + rowNumber` 単位で集計するよう修正した。
 - 次フェーズでは ImportBatch最小版、またはインポート結果レポートへ進む想定。DB保存方式、DB/schema、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していない。
+
+## v0.7 第7フェーズ: ImportBatch最小版
+
+- 既存の`ImportBatch`モデルとDexie `importBatches`テーブルを活かし、DBテーブル追加とDexie schema version変更なしで最小履歴項目を拡張した。
+- 記録項目は、取込日時、取込モード（`simple_csv` / `standard_csv_set`）、取込方式、仮人物作成方針、status、source_label、file_names、total_rows、Person / Union / Relation / Source / Citation / Event件数、warning / error件数、参照先不明件数、仮人物候補件数。
+- かんたんCSVと標準CSVセットは、`replace_all` + `warn_and_skip` + errorなしで実際に取込成功した場合だけImportBatchを保存する。
+- `append_new`などのpreview_only方式、および`create_placeholder_preview`は実行不可のためImportBatchを記録しない。
+- 現在の全置換保存フローは既存どおり`importBatches`も置き換えるため、全置換後は最新ImportBatchのみ残る。
+- JSONバックアップは既存の`import_batches`対象を壊さず、`schema_version`は変更していない。ImportBatch詳細レポートの本格保存は後続課題とする。
+- 標準CSVセット構造は変更せず、ImportBatch用CSVは追加していない。
+- CSVインポート画面側に直近ImportBatch一覧を追加し、0件時メッセージと件数サマリを表示する。
+- 次フェーズでは、インポート結果レポートや行単位ログなどの詳細記録へ進む想定。
