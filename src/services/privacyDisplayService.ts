@@ -16,9 +16,15 @@ export function getPersonLifeTextForPrivacy(person: Person | undefined, normalLi
   return normalLifeText;
 }
 
+export function getPersonRankTitleForPrivacy(person: Person | undefined, fallback: string, setting?: PrivacySetting) {
+  if (!person || !setting?.public_output_mode) return fallback;
+  if (isMaskedByPrivacy(person, setting)) return '';
+  return fallback;
+}
+
 export function maskPersonForPublicOutput(person: Person, setting?: PrivacySetting): Person {
   if (!setting?.public_output_mode) return person;
-  if (isMaskedByPrivacy(person, setting)) return { ...person, display_name: '非公開', birth_date_text: undefined, death_date_text: undefined, honseki_text: undefined, note: undefined };
+  if (isMaskedByPrivacy(person, setting)) return { ...person, display_name: '非公開', birth_date_text: undefined, death_date_text: undefined, rank_title: undefined, occupation: undefined, honseki_text: undefined, note: undefined };
   if (isLiving(person) && setting.mask_living_dates) return { ...person, birth_date_text: undefined, death_date_text: undefined, honseki_text: setting.hide_honseki ? undefined : person.honseki_text, note: undefined };
   return { ...person, honseki_text: setting.hide_honseki ? undefined : person.honseki_text, note: undefined };
 }
