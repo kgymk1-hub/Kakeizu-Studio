@@ -20,6 +20,7 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 第6フェーズ：PrivacySetting相当の方針整理
 - 第7フェーズ：公開用出力モード最小版
 - 第8フェーズ：JSONバックアップ互換性確認
+- 補完フェーズ：表示設定と出力設定の凡例責務、公開用出力モードの詳細表示マスク、Vitest実行設定の理由を整理。
 
 ### v0.8 development 方針
 

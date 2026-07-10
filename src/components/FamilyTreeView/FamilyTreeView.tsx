@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, PrivacySetting, ReviewStatus, Union, ValidationIssue } from '../../models';
-import { getPersonDisplayNameForPrivacy, getPersonLifeTextForPrivacy } from '../../services/privacyDisplayService';
+import { getPersonDisplayNameForPrivacy, getPersonLifeTextForPrivacy, getPersonRankTitleForPrivacy } from '../../services/privacyDisplayService';
 import type { LayoutViewBox } from '../../services/layoutService';
 
 export type FamilyTreeDisplayMode = 'compact' | 'standard' | 'detailed';
@@ -12,7 +12,7 @@ export type FamilyTreeExportAppearance = {
   background: FamilyTreeExportBackground;
 };
 
-interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citations?: Citation[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; initialDisplayMode?: FamilyTreeDisplayMode; displayMode?: FamilyTreeDisplayMode; onDisplayModeChange?: (mode: FamilyTreeDisplayMode) => void; exportAppearance?: FamilyTreeExportAppearance; onExportAppearanceChange?: (appearance: FamilyTreeExportAppearance) => void; privacySetting?: PrivacySetting; }
+interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citations?: Citation[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; initialDisplayMode?: FamilyTreeDisplayMode; displayMode?: FamilyTreeDisplayMode; onDisplayModeChange?: (mode: FamilyTreeDisplayMode) => void; showRelationLegend?: boolean; onShowRelationLegendChange?: (show: boolean) => void; exportAppearance?: FamilyTreeExportAppearance; onExportAppearanceChange?: (appearance: FamilyTreeExportAppearance) => void; privacySetting?: PrivacySetting; }
 
 const genderLabel: Record<string, string> = { male: '男', female: '女', unknown: '不明', other: '他' };
 const confidenceLabels: Record<Confidence, string> = { confirmed: '確定', likely: '可能性高', uncertain: '要確認', disputed: '異説あり' };
@@ -151,15 +151,18 @@ function edgePath(edge: LayoutEdge, from: LayoutNode, to: LayoutNode) {
   return `M ${ax} ${ay} V ${midY} H ${bx} V ${by}`;
 }
 
-export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations = [], citedPersonIds = new Set(), selectedPersonId, onSelectPerson, initialDisplayMode = 'standard', displayMode: controlledDisplayMode, onDisplayModeChange, exportAppearance: controlledExportAppearance, onExportAppearanceChange, privacySetting }: Props) {
+export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations = [], citedPersonIds = new Set(), selectedPersonId, onSelectPerson, initialDisplayMode = 'standard', displayMode: controlledDisplayMode, onDisplayModeChange, exportAppearance: controlledExportAppearance, onExportAppearanceChange, privacySetting, showRelationLegend: controlledShowRelationLegend, onShowRelationLegendChange }: Props) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [localDisplayMode, setLocalDisplayMode] = useState<FamilyTreeDisplayMode>(initialDisplayMode);
   const [localExportAppearance, setLocalExportAppearance] = useState<FamilyTreeExportAppearance>(defaultExportAppearance);
+  const [localShowRelationLegend, setLocalShowRelationLegend] = useState(defaultExportAppearance.showLegend);
   const displayMode = controlledDisplayMode ?? localDisplayMode;
   const exportAppearance = controlledExportAppearance ?? localExportAppearance;
+  const showRelationLegend = controlledShowRelationLegend ?? localShowRelationLegend;
   const setDisplayMode = (mode: FamilyTreeDisplayMode) => { setLocalDisplayMode(mode); onDisplayModeChange?.(mode); };
-  const setExportAppearance = (next: FamilyTreeExportAppearance | ((current: FamilyTreeExportAppearance) => FamilyTreeExportAppearance)) => { const value = typeof next === 'function' ? next(exportAppearance) : next; setLocalExportAppearance(value); onExportAppearanceChange?.(value); };
+  const setShowRelationLegend = (show: boolean) => { setLocalShowRelationLegend(show); onShowRelationLegendChange?.(show); };
+  const setExportAppearance = (next: FamilyTreeExportAppearance | ((current: FamilyTreeExportAppearance) => FamilyTreeExportAppearance)) => { const value = typeof next === 'function' ? next(exportAppearance) : next; setLocalExportAppearance(value); setLocalShowRelationLegend(value.showLegend); onExportAppearanceChange?.(value); };
   const [dragStart, setDragStart] = useState<{ x: number; y: number; panX: number; panY: number }>();
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const hasMissing = issues.length > 0;
@@ -181,8 +184,10 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
       <strong>出力用表示:</strong>
       <label><input type="checkbox" checked={exportAppearance.showTitle} onChange={(e) => setExportAppearance((current) => ({ ...current, showTitle: e.target.checked }))} />タイトルを表示</label>
       <label>タイトル:<input aria-label="出力タイトル" value={exportAppearance.title} onInput={(e) => setExportAppearance((current) => ({ ...current, title: e.currentTarget.value }))} onChange={(e) => setExportAppearance((current) => ({ ...current, title: e.target.value }))} /></label>
-      <label><input type="checkbox" checked={exportAppearance.showLegend} onChange={(e) => setExportAppearance((current) => ({ ...current, showLegend: e.target.checked }))} />凡例を表示</label>
+      <label><input type="checkbox" checked={exportAppearance.showLegend} onChange={(e) => setExportAppearance((current) => ({ ...current, showLegend: e.target.checked }))} />出力に凡例を含める</label>
       <label>背景:<select aria-label="出力背景" value={exportAppearance.background} onChange={(e) => setExportAppearance((current) => ({ ...current, background: e.target.value as FamilyTreeExportBackground }))}>{exportBackgrounds.map((background) => <option key={background} value={background}>{exportBackgroundLabels[background]}</option>)}</select></label>
+      <label><input type="checkbox" checked={showRelationLegend} onChange={(e) => setShowRelationLegend(e.target.checked)} />関係線凡例を表示</label>
+      <span className="help-text">現時点では、画面表示の凡例と出力時の凡例は連動します。</span>
     </section>
     {hasMissing && <div className="tree-warning">参照不整合があります。表示可能な人物・関係だけで家系図を描画しています。</div>}
     {exportAppearance.showTitle && <h2 className="tree-export-title">{getExportTitle(exportAppearance.title)}</h2>}
@@ -197,7 +202,7 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
           {displayMode !== 'compact' && <text x="16" y="41" className="dates">{getPersonLifeTextForPrivacy(n.person, formatLifeDates(n.person), privacySetting)}</text>}
           {displayMode === 'standard' && <text x="16" y="63" className="status-line"><tspan className={personHasCitation ? 'status-ok' : 'status-alert'}>{personHasCitation ? '出典あり' : '出典なし'}</tspan><tspan> ・ </tspan><tspan className={n.person?.confidence === 'uncertain' || n.person?.confidence === 'disputed' ? 'status-alert' : 'status-ok'}>{getConfidenceLabel(n.person?.confidence)}</tspan></text>}
           {displayMode === 'detailed' && <>
-            <text x="16" y="56" className="title-line">{n.person?.rank_title || '称号・肩書なし'}</text>
+            <text x="16" y="56" className="title-line">{getPersonRankTitleForPrivacy(n.person, n.person?.rank_title || '称号・肩書なし', privacySetting)}</text>
             <text x="16" y="70" className="status-line">確度: <tspan className={n.person?.confidence === 'uncertain' || n.person?.confidence === 'disputed' ? 'status-alert' : 'status-ok'}>{getConfidenceLabel(n.person?.confidence)}</tspan></text>
             <text x="16" y="82" className="status-line">確認: <tspan className={n.person?.review_status === 'unreviewed' ? 'status-alert' : 'status-ok'}>{getReviewStatusLabel(n.person?.review_status)}</tspan> / <tspan className={personHasCitation ? 'status-ok' : 'status-alert'}>{personHasCitation ? '出典あり' : '出典なし'}</tspan></text>
           </>}
@@ -206,6 +211,6 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
         </g>;
       })}</g>
     </svg>
-    {exportAppearance.showLegend && <div className="edge-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span><i className="legend-line solid"/>実親子 = 実線</span><span><i className="legend-line dashed"/>養親子 = 破線</span><span><i className="legend-line dotted"/>継親子 = 点線</span><span><i className="legend-line marriage"/>婚姻 = 実線</span><span><i className="legend-line ended"/>離婚/終了 = 警告色・破線</span><span><i className="legend-line disputed"/>異説あり = 警告色</span></div>}
+    {showRelationLegend && <div className="edge-legend" aria-label="関係線の凡例"><strong>凡例:</strong><span><i className="legend-line solid"/>実親子 = 実線</span><span><i className="legend-line dashed"/>養親子 = 破線</span><span><i className="legend-line dotted"/>継親子 = 点線</span><span><i className="legend-line marriage"/>婚姻 = 実線</span><span><i className="legend-line ended"/>離婚/終了 = 警告色・破線</span><span><i className="legend-line disputed"/>異説あり = 警告色</span></div>}
   </div>;
 }

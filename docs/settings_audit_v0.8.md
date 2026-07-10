@@ -80,6 +80,14 @@
 - 公開用CSV出力、公開用JSONバックアップ、公開用PDF専用レイアウト。
 - Name / Place、GEDCOM、親等計算、v0.9以降の機能。
 
+## 補完フェーズ：表示設定・出力設定・公開用出力モードの責務整理
+
+- `ViewSetting.show_relation_legend` は、通常画面上の家系図ビューに関係線凡例を表示するかどうかを表す。
+- `ExportSetting.show_legend` は、PNG / PDF / SVG 出力対象に凡例を含めるかどうかを表す。
+- 現行のPNG / PDF / SVG出力は表示中DOMを対象にするため、今回の補完フェーズでは安全側の最小実装として、画面凡例と出力凡例は連動扱いにした。UIにも「現時点では、画面表示の凡例と出力時の凡例は連動します。」と明記した。
+- 公開用出力モードON時にhidden/private人物をマスク対象にする場合、詳細表示モードで個人特定につながり得る `rank_title` を表示しないよう補完した。表示用マスクデータでは `rank_title` / `occupation` / `honseki_text` / `note` を消す。DB上のPerson、JSONバックアップ、CSV出力、標準CSVセット出力の元データは書き換えない。
+- この作業環境ではVitestのdefault fork poolが無出力で停止する事象があったため、npm testは `vitest run --pool=threads --fileParallelism=false` に変更した。テスト内容自体の意図は変えていない。
+
 ## 次フェーズ
 
 - 次は v0.8 第9フェーズ：v0.8全体仕上げ確認。
