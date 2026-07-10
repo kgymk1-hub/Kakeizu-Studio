@@ -88,6 +88,18 @@
 - 公開用出力モードON時にhidden/private人物をマスク対象にする場合、詳細表示モードで個人特定につながり得る `rank_title` を表示しないよう補完した。表示用マスクデータでは `rank_title` / `occupation` / `honseki_text` / `note` を消す。DB上のPerson、JSONバックアップ、CSV出力、標準CSVセット出力の元データは書き換えない。
 - この作業環境ではVitestのdefault fork poolが無出力で停止する事象があったため、npm testは `vitest run --pool=threads --fileParallelism=false` に変更した。テスト内容自体の意図は変えていない。
 
+## 第9フェーズ：v0.8全体仕上げ確認
+
+- 第1〜第8フェーズと補完フェーズの実装導線を確認し、起動時のdefault project / settings作成、読み込み、保存、表示反映、PNG / PDF / SVG出力反映、JSON backup 1.3作成、1.2以前復元時のdefault補完が一連でつながっていることを確認した。
+- Projectはv0.8時点では単一default project相当で、設定管理の器としてのみ扱う。完全な複数Project切替、Project削除・複製、Person等への `project_id` 一括追加は行わない。
+- ViewSettingは画面表示設定として `tree_display_mode` と `show_relation_legend` を保存・復元する。既存の表示密度切替は維持する。
+- ExportSettingは出力設定として `show_title` / `title` / `show_legend` / `background` を保存・復元する。PNG / PDF / SVGは既存のDOMキャプチャ出力方針を維持する。
+- PrivacySettingは公開用出力モードとして保存・復元する。`public_output_mode` OFFでは既存表示を維持し、ONでは表示・出力時だけhidden/private人物や生存者日付などを最低限マスクする。元のPersonデータ、CSV出力、JSONバックアップ、標準CSVセット出力は勝手にマスクしない。
+- 画面凡例と出力凡例は責務上は `ViewSetting.show_relation_legend` と `ExportSetting.show_legend` に分けるが、現時点ではDOMキャプチャ方式のため連動扱いとする。完全分離は後続課題とする。
+- JSON backup `schema_version: "1.3"` はProject / ViewSetting / ExportSetting / PrivacySettingを含めるための変更であり、`1.2` 以前のJSONはdefault settingsを補完して復元する。
+- Dexie schema version 4は `projects` / `viewSettings` / `exportSettings` / `privacySettings` を追加するための変更であり、version(1)〜version(3)、既存ImportBatch、persons / unions / parentChildRelations / events / sources / citationsは維持する。
+- CSVインポートv0.7機能、ImportBatch / ImportReport、標準CSVセット構造、Person/Event/Source/Citation一覧、ValidationPanelへの仕様変更は行わず、テストとビルドで影響がないことを確認する。
+
 ## 次フェーズ
 
-- 次は v0.8 第9フェーズ：v0.8全体仕上げ確認。
+- 次は v0.8 第10フェーズ：v0.8.0リリース固定。package/App/README冒頭Version、RELEASE_NOTES正式リリース追記、v0.8.0タグ手順の正式追記は第10フェーズで扱う。

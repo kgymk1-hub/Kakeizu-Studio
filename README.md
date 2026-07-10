@@ -20,7 +20,8 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 第6フェーズ：PrivacySetting相当の方針整理
 - 第7フェーズ：公開用出力モード最小版
 - 第8フェーズ：JSONバックアップ互換性確認
-- 補完フェーズ：表示設定と出力設定の凡例責務、公開用出力モードの詳細表示マスク、Vitest実行設定の理由を整理。
+- 補完フェーズ：表示設定・出力設定・公開用出力モードの責務整理
+- 第9フェーズ：v0.8全体仕上げ確認（第1〜第8フェーズと補完フェーズの整合、ドキュメント、テスト、ビルド確認）
 
 ### v0.8 development 方針
 
@@ -29,6 +30,18 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - Project / settingsをDB永続化するため、Dexie schema versionを4へ上げ、`projects` / `viewSettings` / `exportSettings` / `privacySettings` を追加しました。既存version(1)〜version(3)およびImportBatchテーブルは維持します。
 - Project / settingsをJSON backupに含めるため、JSON backup `schema_version` は `1.3` に上げました。`1.2` 以前の復元互換は維持し、settingsがないJSONはdefault project / default settingsを補完します。
 - 公開用出力モードは表示・PNG/PDF/SVG出力時のマスクであり、元のPersonデータ、JSONバックアップ、CSV出力、標準CSVセット出力を書き換えません。
+- `ViewSetting.show_relation_legend` は画面上の関係線凡例、`ExportSetting.show_legend` はPNG / PDF / SVG出力対象の凡例包含を表します。現時点の出力はDOMキャプチャ方式のため、画面凡例と出力凡例は連動扱いです。
+
+### v0.8 development 時点の未対応事項
+
+- 完全な複数Project切替。
+- Person / Union / Relation / Event / Source / Citation への `project_id` 付与。
+- Project削除・複製。
+- 公開用CSV出力、公開用JSONバックアップ、公開用PDF専用レイアウト。
+- 生存者判定の高度化。
+- 添付ファイル・戸籍画像のマスク。
+- 画面凡例と出力凡例の完全分離。
+- Name / Place 最小版。
 
 
 ## 公開URL
