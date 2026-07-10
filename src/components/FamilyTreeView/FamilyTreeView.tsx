@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, ReviewStatus, Union, ValidationIssue } from '../../models';
+import type { Citation, Confidence, LayoutEdge, LayoutNode, Person, PrivacySetting, ReviewStatus, Union, ValidationIssue } from '../../models';
+import { getPersonDisplayNameForPrivacy, getPersonLifeTextForPrivacy } from '../../services/privacyDisplayService';
 import type { LayoutViewBox } from '../../services/layoutService';
 
 export type FamilyTreeDisplayMode = 'compact' | 'standard' | 'detailed';
@@ -11,7 +12,7 @@ export type FamilyTreeExportAppearance = {
   background: FamilyTreeExportBackground;
 };
 
-interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citations?: Citation[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; initialDisplayMode?: FamilyTreeDisplayMode; }
+interface Props { nodes: LayoutNode[]; edges: LayoutEdge[]; viewBox: LayoutViewBox; issues?: ValidationIssue[]; citations?: Citation[]; citedPersonIds?: Set<string>; selectedPersonId?: string; onSelectPerson?: (person: Person) => void; initialDisplayMode?: FamilyTreeDisplayMode; displayMode?: FamilyTreeDisplayMode; onDisplayModeChange?: (mode: FamilyTreeDisplayMode) => void; exportAppearance?: FamilyTreeExportAppearance; onExportAppearanceChange?: (appearance: FamilyTreeExportAppearance) => void; privacySetting?: PrivacySetting; }
 
 const genderLabel: Record<string, string> = { male: '男', female: '女', unknown: '不明', other: '他' };
 const confidenceLabels: Record<Confidence, string> = { confirmed: '確定', likely: '可能性高', uncertain: '要確認', disputed: '異説あり' };
@@ -150,11 +151,15 @@ function edgePath(edge: LayoutEdge, from: LayoutNode, to: LayoutNode) {
   return `M ${ax} ${ay} V ${midY} H ${bx} V ${by}`;
 }
 
-export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations = [], citedPersonIds = new Set(), selectedPersonId, onSelectPerson, initialDisplayMode = 'standard' }: Props) {
+export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations = [], citedPersonIds = new Set(), selectedPersonId, onSelectPerson, initialDisplayMode = 'standard', displayMode: controlledDisplayMode, onDisplayModeChange, exportAppearance: controlledExportAppearance, onExportAppearanceChange, privacySetting }: Props) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [displayMode, setDisplayMode] = useState<FamilyTreeDisplayMode>(initialDisplayMode);
-  const [exportAppearance, setExportAppearance] = useState<FamilyTreeExportAppearance>(defaultExportAppearance);
+  const [localDisplayMode, setLocalDisplayMode] = useState<FamilyTreeDisplayMode>(initialDisplayMode);
+  const [localExportAppearance, setLocalExportAppearance] = useState<FamilyTreeExportAppearance>(defaultExportAppearance);
+  const displayMode = controlledDisplayMode ?? localDisplayMode;
+  const exportAppearance = controlledExportAppearance ?? localExportAppearance;
+  const setDisplayMode = (mode: FamilyTreeDisplayMode) => { setLocalDisplayMode(mode); onDisplayModeChange?.(mode); };
+  const setExportAppearance = (next: FamilyTreeExportAppearance | ((current: FamilyTreeExportAppearance) => FamilyTreeExportAppearance)) => { const value = typeof next === 'function' ? next(exportAppearance) : next; setLocalExportAppearance(value); onExportAppearanceChange?.(value); };
   const [dragStart, setDragStart] = useState<{ x: number; y: number; panX: number; panY: number }>();
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const hasMissing = issues.length > 0;
@@ -188,8 +193,8 @@ export function FamilyTreeView({ nodes, edges, viewBox, issues = [], citations =
         const personHasCitation = citedPersonIds.has(n.id) || hasPersonCitation(n.id, citations);
         return <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={getPersonNodeClassName(n.person, personHasCitation, selectedPersonId === n.id, displayMode)} onClick={(e) => { e.stopPropagation(); if (n.person) onSelectPerson?.(n.person); }}>
           <rect width={n.width} height={n.height} rx="14"/>
-          <text x="16" y={displayMode === 'compact' ? 45 : 24} className="name"><title>{n.label}</title>{formatName(n.label)}</text>
-          {displayMode !== 'compact' && <text x="16" y="41" className="dates">{formatLifeDates(n.person)}</text>}
+          <text x="16" y={displayMode === 'compact' ? 45 : 24} className="name"><title>{getPersonDisplayNameForPrivacy(n.person, n.label, privacySetting)}</title>{formatName(getPersonDisplayNameForPrivacy(n.person, n.label, privacySetting))}</text>
+          {displayMode !== 'compact' && <text x="16" y="41" className="dates">{getPersonLifeTextForPrivacy(n.person, formatLifeDates(n.person), privacySetting)}</text>}
           {displayMode === 'standard' && <text x="16" y="63" className="status-line"><tspan className={personHasCitation ? 'status-ok' : 'status-alert'}>{personHasCitation ? '出典あり' : '出典なし'}</tspan><tspan> ・ </tspan><tspan className={n.person?.confidence === 'uncertain' || n.person?.confidence === 'disputed' ? 'status-alert' : 'status-ok'}>{getConfidenceLabel(n.person?.confidence)}</tspan></text>}
           {displayMode === 'detailed' && <>
             <text x="16" y="56" className="title-line">{n.person?.rank_title || '称号・肩書なし'}</text>

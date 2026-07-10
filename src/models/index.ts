@@ -19,6 +19,13 @@ export interface SelectableTarget { target_type: SelectableTargetType; target_id
 export type EventType = 'birth' | 'death' | 'marriage' | 'divorce' | 'adoption' | 'recognition' | 'entry_registry' | 'removal_registry' | 'transfer_registry' | 'name_change' | 'residence' | 'occupation' | 'title' | 'other';
 export type EventTargetType = 'person' | 'union' | 'relation';
 
+export type TreeDisplayMode = 'compact' | 'standard' | 'detailed';
+export type ExportBackground = 'white' | 'transparent' | 'soft';
+export interface Project { id: string; name: string; description?: string; created_at: string; updated_at: string; }
+export interface ViewSetting { id: string; project_id: string; tree_display_mode: TreeDisplayMode; show_relation_legend: boolean; created_at: string; updated_at: string; }
+export interface ExportSetting { id: string; project_id: string; show_title: boolean; title: string; show_legend: boolean; background: ExportBackground; created_at: string; updated_at: string; }
+export interface PrivacySetting { id: string; project_id: string; public_output_mode: boolean; hide_living_persons: boolean; hide_private_persons: boolean; hide_hidden_persons: boolean; hide_honseki: boolean; mask_living_dates: boolean; created_at: string; updated_at: string; }
+
 export type SourceType = 'current_koseki' | 'joseki' | 'kaisei_genkoseki' | 'website' | 'book' | 'interview' | 'ai_generated' | 'other';
 export type CitationTargetType = 'person' | 'event' | 'union' | 'relation' | 'name' | 'place';
 

@@ -8,6 +8,28 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 > v0.7.0では、CSVインポート本格化として、取込前プレビュー、取込方式選択、external_id照合、参照先不明検出、標準CSVセット検証、ImportBatch履歴、インポート結果レポートを正式版として整理しました。
 
+## v0.8 development: Project / 表示設定 / 出力設定 / プライバシー設定
+
+> v0.8は開発中です。package version、Appヘッダー、README冒頭Versionはまだ `0.7.0` のままです。
+
+- 第1フェーズ：Project / 設定系の現状棚卸し
+- 第2フェーズ：Projectモデル最小版
+- 第3フェーズ：ViewSetting最小版
+- 第4フェーズ：ExportSetting最小版
+- 第5フェーズ：出力設定のDB永続化
+- 第6フェーズ：PrivacySetting相当の方針整理
+- 第7フェーズ：公開用出力モード最小版
+- 第8フェーズ：JSONバックアップ互換性確認
+
+### v0.8 development 方針
+
+- 現時点では単一default project相当です。Projectは設定管理の器であり、完全な複数Project切替はまだ実装しません。
+- Person / Union / Relation / Event / Source / Citation への `project_id` 付与はまだ行いません。
+- Project / settingsをDB永続化するため、Dexie schema versionを4へ上げ、`projects` / `viewSettings` / `exportSettings` / `privacySettings` を追加しました。既存version(1)〜version(3)およびImportBatchテーブルは維持します。
+- Project / settingsをJSON backupに含めるため、JSON backup `schema_version` は `1.3` に上げました。`1.2` 以前の復元互換は維持し、settingsがないJSONはdefault project / default settingsを補完します。
+- 公開用出力モードは表示・PNG/PDF/SVG出力時のマスクであり、元のPersonデータ、JSONバックアップ、CSV出力、標準CSVセット出力を書き換えません。
+
+
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>

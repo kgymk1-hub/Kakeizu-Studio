@@ -1,7 +1,8 @@
-import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union } from '../models';
+import type { Citation, Event, ExportSetting, ImportBatch, ParentChildRelation, Person, PrivacySetting, Project, Source, Union, ViewSetting } from '../models';
+import { createDefaultExportSetting, createDefaultPrivacySetting, createDefaultProject, createDefaultViewSetting } from './projectSettingsService';
 
 export interface BackupData {
-  schema_version: '1.0' | '1.1' | '1.2';
+  schema_version: '1.0' | '1.1' | '1.2' | '1.3';
   exported_at: string;
   persons: Person[];
   unions: Union[];
@@ -10,17 +11,21 @@ export interface BackupData {
   sources: Source[];
   citations: Citation[];
   events: Event[];
+  projects: Project[];
+  view_settings: ViewSetting[];
+  export_settings: ExportSetting[];
+  privacy_settings: PrivacySetting[];
 }
 
-type BackupInput = Omit<BackupData, 'schema_version' | 'exported_at' | 'events'> & { events?: Event[] };
+type BackupInput = Omit<BackupData, 'schema_version' | 'exported_at' | 'events' | 'projects' | 'view_settings' | 'export_settings' | 'privacy_settings'> & { events?: Event[]; projects?: Project[]; view_settings?: ViewSetting[]; export_settings?: ExportSetting[]; privacy_settings?: PrivacySetting[] };
 
 export function createJsonBackup(data: BackupInput) {
-  return JSON.stringify({ schema_version: '1.2', exported_at: new Date().toISOString(), ...data, events: data.events ?? [] }, null, 2);
+  return JSON.stringify({ schema_version: '1.3', exported_at: new Date().toISOString(), ...data, events: data.events ?? [], projects: data.projects ?? [createDefaultProject()], view_settings: data.view_settings ?? [createDefaultViewSetting()], export_settings: data.export_settings ?? [createDefaultExportSetting()], privacy_settings: data.privacy_settings ?? [createDefaultPrivacySetting()] }, null, 2);
 }
 
 export function parseJsonBackup(json: string): BackupData {
   const data = JSON.parse(json) as Partial<BackupData>;
-  if (data.schema_version !== '1.0' && data.schema_version !== '1.1' && data.schema_version !== '1.2') throw new Error('Unsupported schema_version');
+  if (data.schema_version !== '1.0' && data.schema_version !== '1.1' && data.schema_version !== '1.2' && data.schema_version !== '1.3') throw new Error('Unsupported schema_version');
   return {
     schema_version: data.schema_version,
     exported_at: data.exported_at ?? new Date().toISOString(),
@@ -31,5 +36,9 @@ export function parseJsonBackup(json: string): BackupData {
     sources: data.sources ?? [],
     citations: data.citations ?? [],
     events: data.events ?? [],
+    projects: data.projects?.length ? data.projects : [createDefaultProject()],
+    view_settings: data.view_settings?.length ? data.view_settings : [createDefaultViewSetting()],
+    export_settings: data.export_settings?.length ? data.export_settings : [createDefaultExportSetting()],
+    privacy_settings: data.privacy_settings?.length ? data.privacy_settings : [createDefaultPrivacySetting()],
   };
 }
