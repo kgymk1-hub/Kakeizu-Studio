@@ -546,3 +546,11 @@ npm run preview
 - 標準CSVセットの取り込み前検証を強化し、必須ファイル・必須列・CSV内重複ID・参照整合・列挙値・manifest検証を追加または整理しました。
 - 検証issueは severity / code / message に加えて fileName / rowNumber / field / targetType / targetId を確認しやすくし、error がある場合は標準CSVセットを取込不可にします。
 - DB保存方式、package version、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していません。
+
+### v0.7 development 第7フェーズ: ImportBatch最小版
+
+- 既存のImportBatch / `importBatches`を活かし、かんたんCSVと標準CSVセットの取込成功時に最小取込履歴を記録するようにしました。
+- 取込履歴には、取込日時、取込モード、取込方式、仮人物作成方針、取込件数、warning / error件数、参照先不明件数、仮人物候補件数、読み込んだファイル名を保持します。
+- CSVインポート画面に直近の取込履歴一覧を追加し、0件時メッセージとPerson / Union / Relation / Source / Citation / Event件数を確認できるようにしました。
+- preview_only方式（追加、external_id更新、既存スキップ、別ID追加、仮人物作成候補）は引き続き実行不可で、ImportBatchにも記録しません。
+- JSON backup `schema_version`、Dexie schema version、標準CSVセット構造、`package.json` version、README冒頭Versionは変更していません。
