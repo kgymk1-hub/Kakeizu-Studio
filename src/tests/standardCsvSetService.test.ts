@@ -229,3 +229,61 @@ describe('relation edit standard CSV fields', () => {
     expect(parseStandardCsvSetFiles(files).unions[0]).toMatchObject({ union_type:'partner', marriage_date_text:'明治3年', divorce_date_text:'明治4年', end_date_text:'明治5年', end_reason:'divorce', status:'divorced', confidence:'likely', review_status:'rejected', note:'夫婦編集' });
   });
 });
+
+describe('standardCsvSetService v0.7 phase 6 validation', () => {
+  it('必須ファイル不足、必須列不足、重複id、manifest不備をcodeとfile/row/fieldつきで検出できる', () => {
+    const files = buildStandardCsvSetFiles(base);
+    delete (files as Record<string,string>)['sources.csv'];
+    files['manifest.json'] = JSON.stringify({ format: 'wrong_format', schema_version: '1.0', files: ['sources.csv'] });
+    files['persons.csv'] = 'id,external_id,gender\nP1,,male\nP1,,alien';
+    const preview = parseStandardCsvSetFiles(files);
+    expect(preview.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'invalid_manifest_format' }),
+      expect.objectContaining({ code: 'missing_manifest_file_entry' }),
+      expect.objectContaining({ code: 'missing_required_file' }),
+      expect.objectContaining({ code: 'missing_required_column', field: 'name' }),
+      expect.objectContaining({ code: 'duplicate_id_in_file', row: 3, field: 'id', target_id: 'P1' }),
+      expect.objectContaining({ code: 'invalid_enum_value', row: 3, field: 'gender' }),
+    ]));
+    expect(preview.preview.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'missing_required_column', fileName: 'persons.csv', field: 'name' }),
+      expect.objectContaining({ code: 'duplicate_id_in_file', fileName: 'persons.csv', rowNumber: 3, field: 'id' }),
+    ]));
+    expect(preview.preview.canImport).toBe(false);
+  });
+
+  it('events.csvは任意だがmanifest.jsonは必須', () => {
+    const files = buildStandardCsvSetFiles(base);
+    delete (files as Record<string,string>)['events.csv'];
+    expect(parseStandardCsvSetFiles(files).issues.some((i) => i.code === 'missing_required_file' && i.message.includes('events.csv'))).toBe(false);
+    delete (files as Record<string,string>)['manifest.json'];
+    expect(parseStandardCsvSetFiles(files).issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'missing_manifest' })]));
+  });
+
+  it('ファイル間の同一idは重複扱いせず、空欄許可列の空欄は列挙値エラーにしない', () => {
+    const files = buildStandardCsvSetFiles(base);
+    files['sources.csv'] = 'id,source_type,title,privacy_level\np1,book,資料,';
+    const preview = parseStandardCsvSetFiles(files);
+    expect(preview.issues.some((i) => i.code === 'duplicate_id_in_file')).toBe(false);
+    expect(preview.issues.some((i) => i.code === 'invalid_enum_value' && i.field === 'privacy_level')).toBe(false);
+  });
+
+  it('不正な列挙値とtarget_typeを検出できる', () => {
+    const files = buildStandardCsvSetFiles(base);
+    files['parent_child_relations.csv'] = 'id,parent_id,child_id,relation_type\nR1,p1,p2,invalid_relation';
+    files['events.csv'] = 'id,event_type,target_type,target_id\nE1,invalid_event,invalid_target,p1';
+    files['citations.csv'] = 'id,source_id,target_type,target_id\nC1,s1,invalid_target,p1';
+    const preview = parseStandardCsvSetFiles(files);
+    expect(preview.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'invalid_enum_value', field: 'relation_type' }),
+      expect.objectContaining({ code: 'invalid_enum_value', field: 'event_type' }),
+      expect.objectContaining({ code: 'invalid_target_type', field: 'target_type' }),
+    ]));
+  });
+
+  it('manifest JSON不正を検出できる', () => {
+    const files = buildStandardCsvSetFiles(base);
+    files['manifest.json'] = '{ bad json';
+    expect(parseStandardCsvSetFiles(files).issues).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'invalid_manifest_json' })]));
+  });
+});

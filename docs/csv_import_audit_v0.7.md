@@ -186,3 +186,15 @@
 - `create_placeholder_preview` では人物参照先不明を「仮人物 P999」のような候補として表示するが、仮人物の実保存・参照先不明の自動補完は行わない。
 - 次フェーズでは、標準CSVセット検証強化に進む想定とする。
 - DB保存方式、JSON schema_version、Dexie schema version、新規DBテーブル、標準CSVセットの出力構造は変更していない。
+
+## v0.7 第6フェーズ: 標準CSVセット検証強化
+
+- 標準CSVセットの取り込み前検証を強化し、issue code / severity / fileName / rowNumber / field / targetType / targetId をプレビューで追いやすくした。
+- 必須ファイルは `manifest.json`, `persons.csv`, `unions.csv`, `parent_child_relations.csv`, `sources.csv`, `citations.csv` とし、`events.csv` は後方互換のため任意扱いを維持した。
+- 必須列検証を追加し、既存列定義に合わせて `persons.csv` は `id,name`、`unions.csv` は `id,partner1_id`、`parent_child_relations.csv` は `id,parent_id,child_id,relation_type`、`sources.csv` は `id,source_type,title`、`citations.csv` は `id,source_id,target_type,target_id`、`events.csv` は `id,event_type,target_type,target_id` を検証する。
+- 各CSV内の `id` 重複を `duplicate_id_in_file` として検出する。ファイル間で同じidがあってもエンティティ種別が違うため重複扱いしない。
+- Union / ParentChildRelation / Event / Citation の参照整合検証を整理し、既存の参照先不明プレビューにも反映されるようにした。
+- Person / Union / ParentChildRelation / Event / Source / Citation の列挙値検証を追加し、空欄許可列の空欄はエラーにしない。
+- `manifest.json` のJSON不正、format不一致、versionまたはschema_version不足、files記載と実ファイルの矛盾を検証する。
+- `warningRows` / `errorRows` は複数ファイルの同じ行番号が混同されないよう、`fileName + rowNumber` 単位で集計するよう修正した。
+- 次フェーズでは ImportBatch最小版、またはインポート結果レポートへ進む想定。DB保存方式、DB/schema、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していない。

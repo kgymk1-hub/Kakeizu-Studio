@@ -540,3 +540,9 @@ npm run preview
 - 参照先不明・仮人物作成方針として `warn_and_skip` / `block_import` / `create_placeholder_preview` を選べるようにしました。
 - 現時点では仮人物の実保存は行わず、実行可能なのは `replace_all` + `warn_and_skip` のみです。
 - DB保存方式、package version、JSON schema_version、Dexie schema version は変更していません。
+
+### v0.7 development 第6フェーズ: 標準CSVセット検証強化
+
+- 標準CSVセットの取り込み前検証を強化し、必須ファイル・必須列・CSV内重複ID・参照整合・列挙値・manifest検証を追加または整理しました。
+- 検証issueは severity / code / message に加えて fileName / rowNumber / field / targetType / targetId を確認しやすくし、error がある場合は標準CSVセットを取込不可にします。
+- DB保存方式、package version、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していません。
