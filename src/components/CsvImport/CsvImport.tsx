@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { NormalizedFamilyData } from '../../services/normalizationService';
 import { analyzeMappedCsv, APP_COLUMNS, CHATGPT_CSV_PROMPT, getCsvHeaders, isImportAllowed, SAMPLE_CSV, suggestColumnMapping, validateColumnMapping, type AppColumn, type ColumnMapping } from '../../services/csvMappingService';
 import { getImportPolicyOption, getPlaceholderPersonPolicyOption, importPolicyOptions, placeholderPersonPolicyOptions, type ExistingImportContext, type ImportPolicy, type ImportPreviewResult, type PlaceholderPersonPolicy } from '../../services/importPreviewService';
+import type { ImportReport } from '../../services/importReportService';
 import { download } from '../../utils/download';
 
 export async function readCsvFileAsText(file: File) {
@@ -45,7 +46,7 @@ function IssueList({ issues }: { issues: { severity: string; code: string; messa
   return <ul className="issue-list">{issues.map((i,idx)=><li key={idx} className={i.severity}><strong>{i.severity}</strong> [{i.code}] {i.fileName && <span>file: {i.fileName} / </span>}{i.rowNumber && <span>行: {i.rowNumber} / </span>}{i.field && <span>列: {i.field} / </span>}{i.targetType && <span>対象: {i.targetType} </span>}{i.targetId && <span>ID: {i.targetId} / </span>}{i.message}</li>)}</ul>;
 }
 
-export function CsvImport({ onImported, existingData }: { onImported: (data: NormalizedFamilyData, preview: ImportPreviewResult) => Promise<boolean> | boolean; existingData?: ExistingImportContext }) {
+export function CsvImport({ onImported, existingData }: { onImported: (data: NormalizedFamilyData, preview: ImportPreviewResult) => Promise<ImportReport | false> | ImportReport | false; existingData?: ExistingImportContext }) {
   const [text, setText] = useState('');
   const [sourceName, setSourceName] = useState('family_simple.csv');
   const [step, setStep] = useState(0);
@@ -54,6 +55,7 @@ export function CsvImport({ onImported, existingData }: { onImported: (data: Nor
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [importPolicy, setImportPolicy] = useState<ImportPolicy>('replace_all');
   const [placeholderPersonPolicy, setPlaceholderPersonPolicy] = useState<PlaceholderPersonPolicy>('warn_and_skip');
+  const [lastReport, setLastReport] = useState<ImportReport | undefined>();
   const fileRef = useRef<HTMLInputElement>(null);
   const issueRef = useRef<HTMLDivElement>(null);
 
@@ -81,9 +83,10 @@ export function CsvImport({ onImported, existingData }: { onImported: (data: Nor
       const ok = window.confirm(`警告がありますが、このCSVを取り込みますか？\n人物: ${analysis.summary.personCount}件\nUnion: ${analysis.summary.unionCount}件\n親子関係: ${analysis.summary.relationCount}件\n警告: ${analysis.summary.warningCount}件`);
       if (!ok) return;
     }
-    const applied = await onImported(analysis.result, analysis.preview);
+    const report = await onImported(analysis.result, analysis.preview);
+    if (report) setLastReport(report);
     setStep(4);
-    setMessage(`${analysis.summary.personCount}人 / Union ${analysis.summary.unionCount}件 / 親子 ${analysis.summary.relationCount}件 / 警告 ${analysis.summary.warningCount}件 / エラー ${analysis.summary.errorCount}件${applied ? '（反映済み）' : '（未反映）'}`);
+    setMessage(`${analysis.summary.personCount}人 / Union ${analysis.summary.unionCount}件 / 親子 ${analysis.summary.relationCount}件 / 警告 ${analysis.summary.warningCount}件 / エラー ${analysis.summary.errorCount}件${report ? '（反映済み）' : '（未反映）'}`);
   };
 
   const copyPrompt = async () => {
@@ -110,6 +113,8 @@ export function CsvImport({ onImported, existingData }: { onImported: (data: Nor
     {step >= 2 && analysis && <div><h3>プレビュー</h3><ImportPolicySelector name="simple-import-policy" importPolicy={importPolicy} onChange={setImportPolicy} /><PlaceholderPersonPolicySelector name="simple-placeholder-policy-preview" policy={placeholderPersonPolicy} onChange={setPlaceholderPersonPolicy} /><div className="preview-metrics"><span>総行数: {analysis.preview.summary.totalRows}</span><span>正常行: {analysis.preview.summary.validRows}</span><span>警告行: {analysis.preview.summary.warningRows}</span><span>エラー行: {analysis.preview.summary.errorRows}</span><span>warning: {analysis.preview.summary.warningIssues}</span><span>error: {analysis.preview.summary.errorIssues}</span></div><div className="preview-metrics"><span>Person: {analysis.preview.summary.plannedCreate.persons}件</span><span>Union: {analysis.preview.summary.plannedCreate.unions}件</span><span>ParentChildRelation: {analysis.preview.summary.plannedCreate.relations}件</span><span>Event: {analysis.preview.summary.plannedCreate.events}件</span><span>Source: {analysis.preview.summary.plannedCreate.sources}件</span><span>Citation: {analysis.preview.summary.plannedCreate.citations}件</span></div><MatchPreview preview={analysis.preview} /><UnresolvedReferencePreview preview={analysis.preview} />{!analysis.preview.canImport ? <p className="error">{analysis.preview.summary.importPolicyStatus === 'preview_only' ? 'この取込方式は現在プレビューのみ対応です。実行はできません。' : 'エラーがあるため取り込み不可です。'}</p> : analysis.preview.hasWarnings ? <p className="warning">警告があります。内容を確認すれば取り込み可能です。</p> : <p className="success">エラー・警告なし。取り込み可能です。</p>}<div className="preview-scroll"><table className="preview-table"><thead><tr><th>行番号</th>{previewColumns.map((c)=><th key={c}>{c}</th>)}<th>判定結果</th></tr></thead><tbody>{analysis.parsedRows.map((row, index)=>{ const rowIssues = analysis.result.issues.filter((issue)=>issue.row===index+2 || issue.external_id===row.person_id); const hasError = rowIssues.some((issue)=>issue.severity==='error'); const hasWarning = rowIssues.some((issue)=>issue.severity==='warning'); return <tr key={`${row.person_id}-${index}`} className={hasError?'error-row':hasWarning?'warning-row':''}><td>{index+2}</td>{previewColumns.map((c)=><td key={c}>{String(row[c] ?? '')}</td>)}<td>{hasError?'エラーあり':hasWarning?'警告あり':'正常'}</td></tr>; })}</tbody></table></div><button onClick={()=>setStep(3)}>検証結果へ進む</button></div>}
 
     {step >= 3 && analysis && <div className="validation-summary"><h3>検証結果確認</h3><p className="help-text">errorは修正が必要な問題で、取り込みをブロックします。warningは未登録ID参照などの確認事項で、確認後に取り込めます。</p><p>総行数 {analysis.preview.summary.totalRows}件 / 正常行 {analysis.preview.summary.validRows}件 / 警告行 {analysis.preview.summary.warningRows}件 / エラー行 {analysis.preview.summary.errorRows}件 / warning {analysis.preview.summary.warningIssues}件 / error {analysis.preview.summary.errorIssues}件</p><p>取り込み予定: Person {analysis.preview.summary.plannedCreate.persons}件 / Union {analysis.preview.summary.plannedCreate.unions}件 / ParentChildRelation {analysis.preview.summary.plannedCreate.relations}件 / Event {analysis.preview.summary.plannedCreate.events}件 / Source {analysis.preview.summary.plannedCreate.sources}件 / Citation {analysis.preview.summary.plannedCreate.citations}件</p><MatchPreview preview={analysis.preview} /><UnresolvedReferencePreview preview={analysis.preview} /><p>未登録人物IDの参照件数 {analysis.summary.placeholderPersonCount}件 / 自動補完された配偶者関係 {analysis.summary.autoCompletedSpouseCount}件</p><ImportPolicySelector name="simple-import-policy" importPolicy={importPolicy} onChange={setImportPolicy} /><PlaceholderPersonPolicySelector name="simple-placeholder-policy-validation" policy={placeholderPersonPolicy} onChange={setPlaceholderPersonPolicy} /><p className="warning"><strong>取込方式：{getImportPolicyOption(importPolicy).label}</strong>。{importPolicy === 'replace_all' ? 'インポートを実行すると、現在の家系図データと資料・出典は、このCSVの内容で置き換えられます（CSVには資料・出典を含めないため既存の資料・出典は削除されます）。' : 'この取込方式は現在プレビューのみ対応です。実行はできません。'}</p>{!analysis.preview.canImport ? <p className="error">{analysis.preview.summary.importPolicyStatus === 'preview_only' ? 'この取込方式は現在プレビューのみ対応です。実行はできません。' : 'エラーがあるため取り込めません。'} <button onClick={()=>issueRef.current?.scrollIntoView({behavior:'smooth'})}>エラー一覧へ</button></p> : analysis.summary.warningCount>0 ? <p className="warning">警告がありますが取り込み可能です。</p> : <p>エラー・警告なし。取り込み可能です。</p>}<div ref={issueRef} className="issue-box"><IssueList issues={analysis.preview.issues} /></div><button className="primary" disabled={!analysis.preview.canImport} onClick={runImport}>家系図・資料・出典を置き換えてインポート実行</button></div>}
+
+    {lastReport && <div className="import-report"><h3>インポート結果レポート</h3><p><strong>取込結果:</strong> {lastReport.status === 'success_with_warnings' ? 'warning付き成功' : lastReport.status === 'success' ? '成功' : lastReport.status}</p><p><strong>取込元:</strong> {lastReport.mode === 'simple_csv' ? 'かんたんCSV' : '標準CSVセット'} / <strong>実行日時:</strong> {new Date(lastReport.createdAt).toLocaleString()}</p><div className="preview-metrics"><span>Person {lastReport.importedCounts.persons}</span><span>Union {lastReport.importedCounts.unions}</span><span>Relation {lastReport.importedCounts.relations}</span><span>Source {lastReport.importedCounts.sources}</span><span>Citation {lastReport.importedCounts.citations}</span><span>Event {lastReport.importedCounts.events}</span></div><div className="preview-metrics"><span>warning {lastReport.issueSummary.warningIssues}</span><span>error {lastReport.issueSummary.errorIssues}</span><span>total {lastReport.issueSummary.totalIssues}</span></div><h4>次に確認すること</h4><ul className="compact-list">{lastReport.nextActions.map((action)=><li key={action}>{action}</li>)}</ul></div>}
     {message && <p className="notice">{message}</p>}
   </section>;
 }
