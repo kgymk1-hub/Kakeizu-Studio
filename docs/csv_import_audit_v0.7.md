@@ -210,3 +210,14 @@
 - 標準CSVセット構造は変更せず、ImportBatch用CSVは追加していない。
 - CSVインポート画面側に直近ImportBatch一覧を追加し、0件時メッセージと件数サマリを表示する。
 - 次フェーズでは、インポート結果レポートや行単位ログなどの詳細記録へ進む想定。
+
+## v0.7 第8フェーズ: インポート結果レポート
+
+- かんたんCSVと標準CSVセットの取込成功後に、直近取込結果としてインポート結果レポートを表示するようにした。
+- レポートは詳細DB永続データではなく、既存のImportBatch最小版とImportPreviewResultから画面表示用に作成する。
+- レポートには取込結果、取込元、取込方式、仮人物方針、実行日時、取込ファイル、取込件数、warning/error件数、external_id照合、policyPlan、参照先不明、仮人物候補、主なissue、次に確認することを含める。
+- ImportBatch一覧は直近履歴の概要として維持し、ImportReportは直近取込結果の詳細表示として扱う。
+- 詳細レポートのDB永続保存、行単位ログ保存、ImportBatch詳細画面はまだ行わない。
+- preview_only方式は引き続き取込実行不可で、実行後レポートも作らない。
+- JSON schema_version、Dexie schema version、標準CSVセット構造、ImportBatch用CSVは変更していない。
+- 次フェーズではv0.7全体仕上げ確認に進む。

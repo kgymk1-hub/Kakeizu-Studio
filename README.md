@@ -554,3 +554,11 @@ npm run preview
 - CSVインポート画面に直近の取込履歴一覧を追加し、0件時メッセージとPerson / Union / Relation / Source / Citation / Event件数を確認できるようにしました。
 - preview_only方式（追加、external_id更新、既存スキップ、別ID追加、仮人物作成候補）は引き続き実行不可で、ImportBatchにも記録しません。
 - JSON backup `schema_version`、Dexie schema version、標準CSVセット構造、`package.json` version、README冒頭Versionは変更していません。
+
+### v0.7 development 第8フェーズ: インポート結果レポート
+
+- かんたんCSVと標準CSVセットの取込後に、直近取込結果としてインポート結果レポートを表示するようにしました。
+- レポートでは取込件数、warning/error、参照先不明、仮人物候補、external_id照合、取込方式ごとの予定処理、次に確認することを確認できます。
+- ImportBatch一覧は直近履歴の概要として維持し、インポート結果レポートは直近取込結果の詳細表示として扱います。
+- 詳細レポートのDB永続保存や行単位ログ保存はまだ行いません。
+- JSON schema_version、Dexie schema version、標準CSVセット構造、package versionは変更していません。
