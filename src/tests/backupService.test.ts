@@ -9,7 +9,7 @@ const citation: Citation = { id: 'c1', source_id: 's1', target_type: 'person', t
 describe('backupService Source/Citation', () => {
   it('JSONバックアップにsources/citationsが含まれる', () => {
     const parsed = JSON.parse(createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [source], citations: [citation] }));
-    expect(parsed.schema_version).toBe('1.2');
+    expect(parsed.schema_version).toBe('1.3');
     expect(parsed.sources).toEqual([source]);
     expect(parsed.citations).toEqual([citation]);
   });
@@ -32,11 +32,15 @@ describe('backupService Source/Citation', () => {
 import type { Event } from '../models';
 
 describe('backupService events', () => {
-  it('JSONバックアップにeventsが含まれる', () => {
+  it('JSONバックアップにeventsとsettingsが含まれる', () => {
     const event: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', created_at:'2026-01-01T00:00:00.000Z', updated_at:'2026-01-01T00:00:00.000Z' };
     const parsed = JSON.parse(createJsonBackup({ persons:[], unions:[], parent_child_relations:[], import_batches:[], sources:[], citations:[], events:[event] }));
-    expect(parsed.schema_version).toBe('1.2');
+    expect(parsed.schema_version).toBe('1.3');
     expect(parsed.events).toEqual([event]);
+    expect(parsed.projects[0].id).toBe('default-project');
+    expect(parsed.view_settings[0].tree_display_mode).toBe('standard');
+    expect(parsed.export_settings[0].show_title).toBe(true);
+    expect(parsed.privacy_settings[0].public_output_mode).toBe(false);
   });
 
   it('旧1.0 / 1.1 JSONでeventsがなくても復元できる', () => {
@@ -67,5 +71,22 @@ describe('relation edit backup fields', () => {
     const parsed = parseJsonBackup(createJsonBackup({ persons: [], unions: [union], parent_child_relations: [relation], import_batches: [], sources: [], citations: [] }));
     expect(parsed.parent_child_relations[0]).toEqual(relation);
     expect(parsed.unions[0]).toEqual(union);
+  });
+});
+
+
+describe('backupService v1.3 settings compatibility', () => {
+  it('schema_version 1.2 の古いJSONはdefault settingsを補完して復元できる', () => {
+    const backup = parseJsonBackup(JSON.stringify({ schema_version: '1.2', persons: [{ id: 'p1', display_name: 'A', created_at: now, updated_at: now }], unions: [], parent_child_relations: [], import_batches: [] }));
+    expect(backup.persons[0].id).toBe('p1');
+    expect(backup.projects[0].id).toBe('default-project');
+    expect(backup.privacy_settings[0].hide_private_persons).toBe(true);
+  });
+
+  it('schema_version 1.3 の設定を作成・復元できる', () => {
+    const json = createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [], citations: [], view_settings: [{ id: 'v1', project_id: 'default-project', tree_display_mode: 'compact', show_relation_legend: false, created_at: now, updated_at: now }] });
+    const parsed = parseJsonBackup(json);
+    expect(parsed.schema_version).toBe('1.3');
+    expect(parsed.view_settings[0].tree_display_mode).toBe('compact');
   });
 });
