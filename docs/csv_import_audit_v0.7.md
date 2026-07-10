@@ -221,3 +221,15 @@
 - preview_only方式は引き続き取込実行不可で、実行後レポートも作らない。
 - JSON schema_version、Dexie schema version、標準CSVセット構造、ImportBatch用CSVは変更していない。
 - 次フェーズではv0.7全体仕上げ確認に進む。
+
+## v0.7 第9フェーズ: v0.7全体仕上げ確認
+
+- v0.7第1〜第8フェーズの流れとして、CSV読み込み、取込前プレビュー作成、取込方式選択、既存 `external_id` 照合、参照先不明検出、標準CSVセット検証、取込実行、ImportBatch保存、インポート結果レポート表示、ImportBatch履歴表示までを一連の導線として確認した。
+- かんたんCSVは既存の単一CSV取込を維持し、`person_id` を `Person.external_id` として照合しながら、`father_id` / `mother_id` / `spouse_ids` の参照先不明をプレビュー表示する。
+- 標準CSVセットはZIPまたは複数CSVファイルを読み込み、`manifest.json`、必須ファイル、必須列、CSV内重複ID、参照整合、列挙値を検証する。`events.csv` は既存互換のため任意扱いを維持する。warningRows / errorRows は fileName + rowNumber 単位で集計する。
+- 現在実行可能なのは、かんたんCSV・標準CSVセットともに `replace_all` + `warn_and_skip` + errorなし のみである。
+- `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` / `block_import` / `create_placeholder_preview` は `preview_only` 扱いで、UI上で後続フェーズ予定として表示するが、実保存、ImportBatch保存、仮人物保存、参照先不明の自動補完は行わない。
+- ImportBatch最小版は既存 `ImportBatch` モデルと既存 `importBatches` テーブルを使う。全置換保存フローでは既存データと同様に `importBatches` も置き換えるため、取込成功後は最新ImportBatchのみ残る。
+- ImportReportは直近取込結果の画面表示用データとして扱い、DB永続保存しない。ImportBatch一覧は履歴概要として維持する。
+- JSON backup `schema_version`、Dexie schema version、新規DBテーブル、標準CSVセット構造、ImportBatch用CSVは変更していない。
+- 次フェーズは v0.7 第10フェーズとして、package/App/README冒頭VersionやRELEASE_NOTESなどを正式に `v0.7.0` へ固定する。

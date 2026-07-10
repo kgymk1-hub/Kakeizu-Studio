@@ -35,21 +35,37 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
-## v0.7 development: CSVインポート現状棚卸し
+## v0.7 development: CSVインポート本格化
 
-- v0.7 第1フェーズとして、CSVインポート現状棚卸しを実施しました。
-- 棚卸し結果は `docs/csv_import_audit_v0.7.md` に追加しています。
-- CSVインポート機能の本格改修は次フェーズ以降に行います。
-- package version、JSON backup `schema_version`、Dexie schema version、DBテーブルは変更していません。
+- v0.7では、v0.6.0の保存形式を維持したままCSVインポート本格化に向けた確認・プレビュー・履歴・レポートを段階的に強化しています。
+- 第1フェーズ：CSVインポート現状棚卸し。既存のかんたんCSV、標準CSVセット、DB保存、JSONバックアップ、未対応事項を `docs/csv_import_audit_v0.7.md` に整理しました。
+- 第2フェーズ：インポート結果プレビュー強化。正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、issue一覧を取込前に確認できるようにしました。
+- 第3フェーズ：取込方式選択。`replace_all` / `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` の選択肢を表示し、全置換以外はプレビューのみとして明示しました。
+- 第4フェーズ：既存external_id照合強化。かんたんCSVの `person_id` と標準CSVセット各行の `external_id` を既存データと照合し、新規候補、既存一致候補、CSV内重複、external_idなしを表示します。
+- 第5フェーズ：参照先不明・仮人物作成方針。`father_id` / `mother_id` / `spouse_ids` や標準CSVセット内参照の未解決を表示し、`warn_and_skip` / `block_import` / `create_placeholder_preview` をプレビューで比較できるようにしました。
+- 第6フェーズ：標準CSVセット検証強化。manifest、必須ファイル、必須列、重複ID、参照整合、列挙値、fileName + rowNumber単位のwarning/error集計を整理しました。`events.csv` は既存互換のため任意扱いです。
+- 第7フェーズ：ImportBatch最小版。既存のImportBatch / `importBatches`テーブルを活かし、取込成功時の最小履歴を表示します。全置換保存フローに合わせ、取込後は最新ImportBatchのみ残ります。
+- 第8フェーズ：インポート結果レポート。直近取込結果として、件数、warning/error、参照先不明、仮人物候補、external_id照合、次に確認することを画面表示します。詳細レポートはDB永続保存しません。
+- 第9フェーズ：v0.7全体仕上げ確認。第1〜第8フェーズのつながりを確認し、READMEと棚卸しドキュメントをv0.7全体説明として整理しました。
 
+### v0.7 development 時点の実行可能範囲
 
+- 実保存できる取込条件は、かんたんCSV・標準CSVセットともに `replace_all` + `warn_and_skip` + errorなし のみです。
+- `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` / `block_import` / `create_placeholder_preview` は現在プレビューのみで、取込実行、ImportBatch保存、実データ更新は行いません。
+- package version、README冒頭Version、AppヘッダーVersion、JSON backup `schema_version`、Dexie schema version、DBテーブル、標準CSVセット構造は変更していません。
 
-### v0.7 development 第3フェーズ: 取込方式選択
+### v0.7 development 時点の未対応事項
 
-- CSVインポート画面と標準CSVセットのインポート前プレビューに、取込方式選択UIを追加しました。
-- `replace_all`（全置換）は従来どおり実行可能で、errorなしの場合はwarning確認を経て現在データを置き換えます。
-- `append_new`（追加）、`update_by_external_id`（external_idで更新）、`skip_existing`（既存スキップ）、`add_as_new_ids`（別IDとして追加）は、現時点ではプレビューのみ対応です。選択すると方式説明とsummaryには反映されますが、取込実行はできません。
-- DB保存方式、package version、JSON backup `schema_version`、Dexie schema version、標準CSVセット構造は変更していません。
+- 全置換以外の実保存。
+- external_idによる実更新。
+- 既存スキップの実保存。
+- 別ID追加の実保存。
+- 仮人物の実保存。
+- 参照先不明の自動補完。
+- ImportBatch詳細画面。
+- 詳細レポートのDB永続保存。
+- 行単位ログ保存。
+
 
 ## v0.6.0: 検索・一覧・検証結果からの修正導線
 
