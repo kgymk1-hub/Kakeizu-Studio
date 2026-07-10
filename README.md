@@ -4,49 +4,97 @@
 
 Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript + Vite 製のローカルファースト家系図作成アプリです。ブラウザ内の IndexedDB（Dexie）へ保存するため、MVP公開版ではサーバーを使わずに人物・関係・資料・出典を扱えます。
 
-**Version 0.7.0**
+**Version 0.8.0**
 
-> v0.7.0では、CSVインポート本格化として、取込前プレビュー、取込方式選択、external_id照合、参照先不明検出、標準CSVセット検証、ImportBatch履歴、インポート結果レポートを正式版として整理しました。
+> v0.8.0では、Project / 表示設定 / 出力設定 / プライバシー設定を正式版として整理し、単一default project相当のProjectモデル、ViewSetting、ExportSetting、PrivacySettingをDBへ保存できるようにしました。
 
-## v0.8 development: Project / 表示設定 / 出力設定 / プライバシー設定
+## v0.8.0: Project / 表示設定 / 出力設定 / プライバシー設定
 
-> v0.8は開発中です。package version、Appヘッダー、README冒頭Versionはまだ `0.7.0` のままです。
+v0.8.0では、単一default project相当のProjectモデル、ViewSetting、ExportSetting、PrivacySettingを追加し、表示設定・出力設定・公開用出力モードをDBに保存できるようにしました。また、Project / settingsをJSONバックアップに含めるため、JSON backup `schema_version` を `1.3` に更新しました。
 
-- 第1フェーズ：Project / 設定系の現状棚卸し
-- 第2フェーズ：Projectモデル最小版
-- 第3フェーズ：ViewSetting最小版
-- 第4フェーズ：ExportSetting最小版
-- 第5フェーズ：出力設定のDB永続化
-- 第6フェーズ：PrivacySetting相当の方針整理
-- 第7フェーズ：公開用出力モード最小版
-- 第8フェーズ：JSONバックアップ互換性確認
-- 補完フェーズ：表示設定・出力設定・公開用出力モードの責務整理
-- 第9フェーズ：v0.8全体仕上げ確認（第1〜第8フェーズと補完フェーズの整合、ドキュメント、テスト、ビルド確認）
+v0.8第1〜第9フェーズと補完フェーズの内容は、正式版の実装内容として以下のとおり整理しています。
 
-### v0.8 development 方針
+- Project / 設定系の現状棚卸し: 既存の画面状態、JSONバックアップ、Dexie schema、未対応事項を `docs/settings_audit_v0.8.md` に整理しました。
+- Projectモデル最小版: v0.8時点では単一default project相当として、設定管理の器を追加しました。完全な複数Project切替は未対応です。
+- ViewSetting最小版: 表示密度と画面凡例表示設定をDBへ保存・復元できるようにしました。
+- ExportSetting最小版: 出力タイトル表示ON/OFF、出力タイトル、出力凡例表示設定、背景 white / transparent / soft を扱う土台を追加しました。
+- 出力設定のDB永続化: PNG / PDF / SVG出力対象の見た目設定をProject設定として保存・復元できるようにしました。
+- PrivacySetting相当の方針整理: 公開用出力モードの責務、元データを勝手に書き換えない方針、未対応範囲を整理しました。
+- 公開用出力モード最小版: 表示・PNG/PDF/SVG出力時のみ、hidden/private人物や生存者日付をマスクする最小動作を追加しました。
+- JSONバックアップ互換性確認: Project / settingsを `schema_version: "1.3"` に含め、JSON 1.2以前の復元互換を維持しました。
+- 補完フェーズ: 表示設定・出力設定・公開用出力モードの責務を整理し、画面凡例と出力凡例の扱いを明確化しました。
+- v0.8全体仕上げ確認: v0.8第1〜第8フェーズと補完フェーズの整合、ドキュメント、テスト、ビルドを確認しました。
 
-- 現時点では単一default project相当です。Projectは設定管理の器であり、完全な複数Project切替はまだ実装しません。
-- Person / Union / Relation / Event / Source / Citation への `project_id` 付与はまだ行いません。
-- Project / settingsをDB永続化するため、Dexie schema versionを4へ上げ、`projects` / `viewSettings` / `exportSettings` / `privacySettings` を追加しました。既存version(1)〜version(3)およびImportBatchテーブルは維持します。
-- Project / settingsをJSON backupに含めるため、JSON backup `schema_version` は `1.3` に上げました。`1.2` 以前の復元互換は維持し、settingsがないJSONはdefault project / default settingsを補完します。
-- 公開用出力モードは表示・PNG/PDF/SVG出力時のマスクであり、元のPersonデータ、JSONバックアップ、CSV出力、標準CSVセット出力を書き換えません。
-- `ViewSetting.show_relation_legend` は画面上の関係線凡例、`ExportSetting.show_legend` はPNG / PDF / SVG出力対象の凡例包含を表します。現時点の出力はDOMキャプチャ方式のため、画面凡例と出力凡例は連動扱いです。
+### v0.8.0 方針
 
-### v0.8 development 時点の未対応事項
+- v0.8時点では単一default project相当です。
+- 完全な複数Project切替は未対応です。
+- Person / Union / Relation / Event / Source / Citation への `project_id` 一括追加は未対応です。
+- 画面凡例と出力凡例は、現時点のDOMキャプチャ方式では連動扱いです。
+- 公開用出力モードは表示・出力時のみマスクします。
+- 元Personデータ、CSV出力、JSONバックアップ、標準CSVセット出力は勝手にマスクしません。
+- Dexie schema versionはProject / settings用に `version(4)` までを使用し、`version(5)` は追加していません。
+- 標準CSVセット構造は変更していません。
+
+## v0.8.0 確認項目
+
+- [ ] Projectモデル最小版がある。
+- [ ] default projectが作成・読み込みされる。
+- [ ] v0.8時点では単一default project相当である。
+- [ ] ViewSettingが保存・復元される。
+- [ ] 表示密度が保存・復元される。
+- [ ] 画面凡例表示設定が保存・復元される。
+- [ ] ExportSettingが保存・復元される。
+- [ ] 出力タイトル表示ON/OFFが保存・復元される。
+- [ ] 出力タイトルが保存・復元される。
+- [ ] 出力凡例表示設定が保存・復元される。
+- [ ] 背景 white / transparent / soft が保存・復元される。
+- [ ] PrivacySettingが保存・復元される。
+- [ ] 公開用出力モードON/OFFが保存・復元される。
+- [ ] `public_output_mode` OFFでは既存表示を維持する。
+- [ ] `public_output_mode` ONではhidden/private人物や生存者日付が表示・出力時にマスクされる。
+- [ ] 元Personデータは書き換えられない。
+- [ ] JSON backup `schema_version` 1.3 でProject / settingsが保存される。
+- [ ] JSON 1.2以前の復元互換が維持される。
+- [ ] Dexie schema `version(4)` が追加されている。
+- [ ] 既存CSVインポートv0.7機能が壊れていない。
+- [ ] 既存の人物一覧・Event一覧・Source/Citation一覧が壊れていない。
+- [ ] 家系図表示が壊れていない。
+- [ ] PNG / PDF / SVG出力が壊れていない。
+- [ ] 標準CSVセット構造が変わっていない。
+- [ ] GitHub Pages確認URL <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0> で公開版を確認できる。
+
+## v0.8.0 時点の未対応事項
 
 - 完全な複数Project切替。
-- Person / Union / Relation / Event / Source / Citation への `project_id` 付与。
-- Project削除・複製。
-- 公開用CSV出力、公開用JSONバックアップ、公開用PDF専用レイアウト。
+- Person / Union / ParentChildRelation / Event / Source / Citation への `project_id` 付与。
+- Project削除。
+- Project複製。
+- Projectごとのデータ分離。
+- 公開用CSV出力。
+- 公開用JSONバックアップ。
+- 公開用PDF専用レイアウト。
 - 生存者判定の高度化。
 - 添付ファイル・戸籍画像のマスク。
 - 画面凡例と出力凡例の完全分離。
 - Name / Place 最小版。
+- GEDCOM対応。
+- 親等計算。
+
+### v0.8.0タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.8.0
+git push origin v0.8.0
+```
 
 
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- v0.8.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0>
 - v0.7.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0>
 
 ## 主な機能
@@ -552,7 +600,7 @@ JSONバックアップはアプリ内部形式そのものです。v0.5.0でも 
   - `dist/index.html` のJS/CSS参照が `/Kakeizu-Studio/assets/...` になっているか確認する。
   - `manifest.json` や `/Kakeizu-Studio/icons/icon.svg` が404になっていないか確認する。
   - GitHub ActionsのPagesデプロイが成功しているか確認する。
-  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0` のようにクエリを付けて開く。
+  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0` のようにクエリを付けて開く。
 
 ## 既知の制限
 

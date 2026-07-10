@@ -103,3 +103,10 @@
 ## 次フェーズ
 
 - 次は v0.8 第10フェーズ：v0.8.0リリース固定。package/App/README冒頭Version、RELEASE_NOTES正式リリース追記、v0.8.0タグ手順の正式追記は第10フェーズで扱う。
+
+## 第10フェーズ：v0.8.0リリース固定
+
+v0.8.0リリース固定では、package / README / Appヘッダー / RELEASE_NOTES を0.8.0へ更新し、Project / 表示設定 / 出力設定 / プライバシー設定フェーズを正式版として固定した。
+
+このリリースでは、Dexie schema version(4) と JSON backup schema_version 1.3 を維持する。
+標準CSVセット構造、Person等への project_id 付与、完全な複数Project切替、公開用CSV/JSON出力は追加しない。

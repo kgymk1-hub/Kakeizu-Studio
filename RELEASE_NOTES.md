@@ -1,3 +1,59 @@
+# Kakeizu Studio v0.8.0 Release Notes
+
+## バージョン
+
+- Version: `v0.8.0`
+- Package version: `0.8.0`
+- Release type: Project / 表示設定 / 出力設定 / プライバシー設定正式版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0>
+
+## v0.8.0 - Project / 表示設定 / 出力設定 / プライバシー設定
+
+### Added
+
+- Projectモデル最小版を追加しました。
+- ViewSettingモデル最小版を追加しました。
+- ExportSettingモデル最小版を追加しました。
+- PrivacySetting相当の設定を追加しました。
+- 表示設定・出力設定をDBに保存できるようにしました。
+- 公開用出力モード最小版を追加しました。
+- Project / settingsをJSONバックアップに含められるようにしました。
+
+### Changed
+
+- JSON backup schema_version を 1.3 に更新しました。
+- Project / settings用にDexie schema version(4)を追加しました。
+- 家系図の表示設定・出力用見た目設定をProject設定として扱う土台を整えました。
+- 画面凡例と出力凡例の責務を整理しました。
+- 公開用出力モードON時の人物ノード表示マスクを整理しました。
+- READMEをv0.8.0正式版向けに整理しました。
+
+### Notes
+
+- v0.8.0時点では、Projectは単一default project相当です。
+- 完全な複数Project切替は未対応です。
+- Person等への project_id 付与は未対応です。
+- 公開用出力モードは表示・出力時のみマスクします。
+- 元Personデータ、CSV出力、JSONバックアップ、標準CSVセット出力は勝手にマスクしません。
+- 画面凡例と出力凡例は、現行DOMキャプチャ方式では連動扱いです。
+- JSON 1.2以前の復元互換を維持しています。
+- 標準CSVセット構造は変更していません。
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.8.0
+git push origin v0.8.0
+```
+
+---
+
 # Kakeizu Studio v0.7.0 Release Notes
 
 ## バージョン
