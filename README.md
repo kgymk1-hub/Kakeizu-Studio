@@ -4,14 +4,14 @@
 
 Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript + Vite 製のローカルファースト家系図作成アプリです。ブラウザ内の IndexedDB（Dexie）へ保存するため、MVP公開版ではサーバーを使わずに人物・関係・資料・出典を扱えます。
 
-**Version 0.6.0**
+**Version 0.7.0**
 
-> v0.6.0では、Person / Event / Source / Citation の一覧・検索、ValidationPanelからの対象移動、共通選択基盤を追加し、登録済みデータを探して修正対象へ移動しやすくしました。v0.5.0の家系図表示・PNG/PDF/SVG出力強化も維持しています。
+> v0.7.0では、CSVインポート本格化として、取込前プレビュー、取込方式選択、external_id照合、参照先不明検出、標準CSVセット検証、ImportBatch履歴、インポート結果レポートを正式版として整理しました。
 
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
-- v0.6.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.6.0>
+- v0.7.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0>
 
 ## 主な機能
 
@@ -35,26 +35,42 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - データ検証結果パネル（出典なし、未確認、低確度、参照先不明、自己参照、日付矛盾、年齢警告）
 
 
-## v0.7 development: CSVインポート本格化
+## v0.7.0: CSVインポート本格化
 
-- v0.7では、v0.6.0の保存形式を維持したままCSVインポート本格化に向けた確認・プレビュー・履歴・レポートを段階的に強化しています。
-- 第1フェーズ：CSVインポート現状棚卸し。既存のかんたんCSV、標準CSVセット、DB保存、JSONバックアップ、未対応事項を `docs/csv_import_audit_v0.7.md` に整理しました。
-- 第2フェーズ：インポート結果プレビュー強化。正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、issue一覧を取込前に確認できるようにしました。
-- 第3フェーズ：取込方式選択。`replace_all` / `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` の選択肢を表示し、全置換以外はプレビューのみとして明示しました。
-- 第4フェーズ：既存external_id照合強化。かんたんCSVの `person_id` と標準CSVセット各行の `external_id` を既存データと照合し、新規候補、既存一致候補、CSV内重複、external_idなしを表示します。
-- 第5フェーズ：参照先不明・仮人物作成方針。`father_id` / `mother_id` / `spouse_ids` や標準CSVセット内参照の未解決を表示し、`warn_and_skip` / `block_import` / `create_placeholder_preview` をプレビューで比較できるようにしました。
-- 第6フェーズ：標準CSVセット検証強化。manifest、必須ファイル、必須列、重複ID、参照整合、列挙値、fileName + rowNumber単位のwarning/error集計を整理しました。`events.csv` は既存互換のため任意扱いです。
-- 第7フェーズ：ImportBatch最小版。既存のImportBatch / `importBatches`テーブルを活かし、取込成功時の最小履歴を表示します。全置換保存フローに合わせ、取込後は最新ImportBatchのみ残ります。
-- 第8フェーズ：インポート結果レポート。直近取込結果として、件数、warning/error、参照先不明、仮人物候補、external_id照合、次に確認することを画面表示します。詳細レポートはDB永続保存しません。
-- 第9フェーズ：v0.7全体仕上げ確認。第1〜第8フェーズのつながりを確認し、READMEと棚卸しドキュメントをv0.7全体説明として整理しました。
+v0.7.0では、CSVインポートの取り込み前確認、取込方式選択、external_id照合、参照先不明検出、標準CSVセット検証、ImportBatch履歴、インポート結果レポートを強化しました。v0.7第1〜第9フェーズの内容を正式版の実装内容として整理し、JSON backup `schema_version`、Dexie schema version、DBテーブル、標準CSVセット構造は変更していません。
 
-### v0.7 development 時点の実行可能範囲
+- CSVインポート現状棚卸し: 既存のかんたんCSV、標準CSVセット、DB保存、JSONバックアップ、未対応事項を `docs/csv_import_audit_v0.7.md` に整理しました。
+- インポート結果プレビュー強化: 正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、issue一覧を取込前に確認できます。
+- 取込方式選択: `replace_all` / `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` を表示し、全置換以外はプレビューのみとして明示しました。
+- 既存external_id照合強化: かんたんCSVの `person_id` と標準CSVセット各行の `external_id` を既存データと照合し、新規候補、既存一致候補、CSV内重複、external_idなしを表示します。
+- 参照先不明・仮人物作成方針: `father_id` / `mother_id` / `spouse_ids` や標準CSVセット内参照の未解決を表示し、`warn_and_skip` / `block_import` / `create_placeholder_preview` をプレビューで比較できます。
+- 標準CSVセット検証強化: manifest、必須ファイル、必須列、重複ID、参照整合、列挙値、fileName + rowNumber単位のwarning/error集計を整理しました。`events.csv` は既存互換のため任意扱いです。
+- ImportBatch最小版: 既存のImportBatch / `importBatches`テーブルを活かし、取込成功時の最小履歴を表示します。全置換保存フローに合わせ、取込後は最新ImportBatchのみ残ります。
+- インポート結果レポート: 直近取込結果として、件数、warning/error、参照先不明、仮人物候補、external_id照合、次に確認することを画面表示します。詳細レポートはDB永続保存しません。
+- v0.7全体仕上げ確認: 第1〜第8フェーズのつながりを確認し、READMEと棚卸しドキュメントをv0.7全体説明として整理しました。
 
-- 実保存できる取込条件は、かんたんCSV・標準CSVセットともに `replace_all` + `warn_and_skip` + errorなし のみです。
-- `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` / `block_import` / `create_placeholder_preview` は現在プレビューのみで、取込実行、ImportBatch保存、実データ更新は行いません。
-- package version、README冒頭Version、AppヘッダーVersion、JSON backup `schema_version`、Dexie schema version、DBテーブル、標準CSVセット構造は変更していません。
+### v0.7.0 確認項目
 
-### v0.7 development 時点の未対応事項
+- [ ] かんたんCSVを読み込める。
+- [ ] かんたんCSVの取込前プレビューが表示される。
+- [ ] 取込方式を選択できる。
+- [ ] 実行可能なのは `replace_all` + `warn_and_skip` + errorなし のみ。
+- [ ] `preview_only`方式は実行できない。
+- [ ] `person_id` と既存 `external_id` の照合結果が表示される。
+- [ ] `father_id` / `mother_id` / `spouse_ids` の参照先不明が表示される。
+- [ ] 標準CSVセットを読み込める。
+- [ ] 標準CSVセットの manifest / 必須ファイル / 必須列 / 重複ID / 参照整合 / 列挙値検証が動作する。
+- [ ] `events.csv` は任意扱いである。
+- [ ] ImportBatch履歴が表示される。
+- [ ] インポート結果レポートが表示される。
+- [ ] 既存の人物一覧・Event一覧・Source/Citation一覧が壊れていない。
+- [ ] 家系図表示が壊れていない。
+- [ ] PNG / PDF / SVG出力が壊れていない。
+- [ ] JSONバックアップが壊れていない。
+- [ ] 標準CSVセット出力が壊れていない。
+- [ ] GitHub Pages確認URL <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0> で公開版を確認できる。
+
+### v0.7.0 時点の未対応事項
 
 - 全置換以外の実保存。
 - external_idによる実更新。
@@ -63,9 +79,19 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 - 仮人物の実保存。
 - 参照先不明の自動補完。
 - ImportBatch詳細画面。
+- ImportBatch削除・編集。
 - 詳細レポートのDB永続保存。
 - 行単位ログ保存。
+- preview_only方式の履歴保存。
 
+### v0.7.0タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.7.0
+git push origin v0.7.0
+```
 
 ## v0.6.0: 検索・一覧・検証結果からの修正導線
 
@@ -490,7 +516,7 @@ JSONバックアップはアプリ内部形式そのものです。v0.5.0でも 
   - `dist/index.html` のJS/CSS参照が `/Kakeizu-Studio/assets/...` になっているか確認する。
   - `manifest.json` や `/Kakeizu-Studio/icons/icon.svg` が404になっていないか確認する。
   - GitHub ActionsのPagesデプロイが成功しているか確認する。
-  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.6.0` のようにクエリを付けて開く。
+  - ブラウザやService Workerのキャッシュを避けるため、`https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0` のようにクエリを付けて開く。
 
 ## 既知の制限
 
@@ -533,48 +559,48 @@ npm run build
 npm run preview
 ```
 
-### v0.7 development 第2フェーズ: インポート結果プレビュー強化
+### v0.7.0 第2フェーズ: インポート結果プレビュー強化
 
 - CSVインポート本格化に向けて、取り込み前のインポート結果プレビューを強化しました。
 - かんたんCSVでは、正常行 / 警告行 / エラー行、warning / error件数、取り込み予定件数、現在の取込方式が全置換であることを表示します。
 - 標準CSVセットでは、ファイル別件数、`manifest.json` の有無、Person / Union / ParentChildRelation / Source / Citation / Event の取り込み予定件数、issue一覧の表示を整理しました。
-- 今回はプレビュー表示の整理に集中し、DB保存方式、`package.json` version、JSON `schema_version`、Dexie schema versionは変更していません。
+- 第2フェーズ時点ではプレビュー表示の整理に集中し、DB保存方式、JSON `schema_version`、Dexie schema versionは変更していません。
 
-### v0.7 development 第4フェーズ: 既存external_id照合強化
+### v0.7.0 第4フェーズ: 既存external_id照合強化
 
 - CSVインポートのプレビューで、取り込み予定データの `external_id` と既存データの `external_id` を照合できるようにしました。
 - かんたんCSVでは `person_id` を `Person.external_id` として扱い、新規候補、既存一致候補、CSV内重複、`external_id` なしをプレビュー表示します。
 - 標準CSVセットでは `external_id` を使って Person / Source / Event / Union / Relation / Citation の照合候補を表示し、内部 `id` だけでは更新候補にしません。
 - 取込方式ごとに、作成・更新・スキップ・別ID追加・全置換・保留/要確認の予定件数を表示します。
 - 実行可能なのは引き続き `replace_all` のみで、`append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` はプレビューのみです。
-- DB保存方式、package version、JSON `schema_version`、Dexie schema versionは変更していません。
+- DB保存方式、JSON `schema_version`、Dexie schema versionは変更していません。
 
-### v0.7 development 第5フェーズ: 参照先不明・仮人物作成方針
+### v0.7.0 第5フェーズ: 参照先不明・仮人物作成方針
 
 - CSVインポートプレビューで参照先不明の表示を強化し、ファイル名・行番号・列名・参照ID・参照元・参照先種別を確認できるようにしました。
 - かんたんCSVの `father_id` / `mother_id` / `spouse_ids` と、標準CSVセットの union / relation / event / citation の各参照を整理して表示します。
 - 参照先不明・仮人物作成方針として `warn_and_skip` / `block_import` / `create_placeholder_preview` を選べるようにしました。
 - 現時点では仮人物の実保存は行わず、実行可能なのは `replace_all` + `warn_and_skip` のみです。
-- DB保存方式、package version、JSON schema_version、Dexie schema version は変更していません。
+- DB保存方式、JSON schema_version、Dexie schema version は変更していません。
 
-### v0.7 development 第6フェーズ: 標準CSVセット検証強化
+### v0.7.0 第6フェーズ: 標準CSVセット検証強化
 
 - 標準CSVセットの取り込み前検証を強化し、必須ファイル・必須列・CSV内重複ID・参照整合・列挙値・manifest検証を追加または整理しました。
 - 検証issueは severity / code / message に加えて fileName / rowNumber / field / targetType / targetId を確認しやすくし、error がある場合は標準CSVセットを取込不可にします。
-- DB保存方式、package version、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していません。
+- DB保存方式、JSON schema_version、Dexie schema version、標準CSVセット構造は変更していません。
 
-### v0.7 development 第7フェーズ: ImportBatch最小版
+### v0.7.0 第7フェーズ: ImportBatch最小版
 
 - 既存のImportBatch / `importBatches`を活かし、かんたんCSVと標準CSVセットの取込成功時に最小取込履歴を記録するようにしました。
 - 取込履歴には、取込日時、取込モード、取込方式、仮人物作成方針、取込件数、warning / error件数、参照先不明件数、仮人物候補件数、読み込んだファイル名を保持します。
 - CSVインポート画面に直近の取込履歴一覧を追加し、0件時メッセージとPerson / Union / Relation / Source / Citation / Event件数を確認できるようにしました。
 - preview_only方式（追加、external_id更新、既存スキップ、別ID追加、仮人物作成候補）は引き続き実行不可で、ImportBatchにも記録しません。
-- JSON backup `schema_version`、Dexie schema version、標準CSVセット構造、`package.json` version、README冒頭Versionは変更していません。
+- JSON backup `schema_version`、Dexie schema version、標準CSVセット構造は変更していません。
 
-### v0.7 development 第8フェーズ: インポート結果レポート
+### v0.7.0 第8フェーズ: インポート結果レポート
 
 - かんたんCSVと標準CSVセットの取込後に、直近取込結果としてインポート結果レポートを表示するようにしました。
 - レポートでは取込件数、warning/error、参照先不明、仮人物候補、external_id照合、取込方式ごとの予定処理、次に確認することを確認できます。
 - ImportBatch一覧は直近履歴の概要として維持し、インポート結果レポートは直近取込結果の詳細表示として扱います。
 - 詳細レポートのDB永続保存や行単位ログ保存はまだ行いません。
-- JSON schema_version、Dexie schema version、標準CSVセット構造、package versionは変更していません。
+- JSON schema_version、Dexie schema version、標準CSVセット構造は変更していません。

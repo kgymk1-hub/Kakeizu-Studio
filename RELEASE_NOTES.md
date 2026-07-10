@@ -1,3 +1,55 @@
+# Kakeizu Studio v0.7.0 Release Notes
+
+## バージョン
+
+- Version: `v0.7.0`
+- Package version: `0.7.0`
+- Release type: CSVインポート本格化正式版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0>
+
+## v0.7.0 - CSVインポート本格化
+
+### Added
+
+- CSVインポート結果プレビューを強化しました。
+- 取込方式選択を追加しました。
+- 既存external_id照合結果を表示できるようにしました。
+- 参照先不明と仮人物作成候補をプレビュー表示できるようにしました。
+- 標準CSVセットの検証を強化しました。
+- ImportBatch最小版として取込履歴を記録・表示できるようにしました。
+- インポート結果レポートを表示できるようにしました。
+
+### Changed
+
+- 標準CSVセット取り込み前の検証表示を整理しました。
+- CSVインポート画面で、取込前プレビュー・取込履歴・取込後レポートの流れが分かりやすくなるよう整理しました。
+- READMEをv0.7.0正式版向けに整理しました。
+
+### Notes
+
+- 実行可能な取込方式は、引き続き `replace_all` + `warn_and_skip` + errorなし のみです。
+- `append_new` / `update_by_external_id` / `skip_existing` / `add_as_new_ids` は現時点ではプレビューのみです。
+- `block_import` / `create_placeholder_preview` も現時点ではプレビューのみです。
+- 仮人物の実保存、全置換以外の実保存、詳細レポートのDB永続保存は未対応です。
+- JSON schema_version は 1.2 のままです。
+- Dexie schema version は変更していません。
+- 標準CSVセット構造は変更していません。
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.7.0
+git push origin v0.7.0
+```
+
+---
+
 # Kakeizu Studio v0.6.0 Release Notes
 
 ## バージョン

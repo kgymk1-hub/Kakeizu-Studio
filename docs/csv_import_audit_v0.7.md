@@ -233,3 +233,9 @@
 - ImportReportは直近取込結果の画面表示用データとして扱い、DB永続保存しない。ImportBatch一覧は履歴概要として維持する。
 - JSON backup `schema_version`、Dexie schema version、新規DBテーブル、標準CSVセット構造、ImportBatch用CSVは変更していない。
 - 次フェーズは v0.7 第10フェーズとして、package/App/README冒頭VersionやRELEASE_NOTESなどを正式に `v0.7.0` へ固定する。
+
+
+## v0.7 第10フェーズ: v0.7.0リリース固定
+
+- v0.7.0リリース固定では、package / README / Appヘッダー / RELEASE_NOTES を0.7.0へ更新し、CSVインポート本格化フェーズを正式版として固定した。
+- JSON schema_version、Dexie schema version、標準CSVセット構造、新規DBテーブル、CSVインポートの保存仕様は変更していない。
