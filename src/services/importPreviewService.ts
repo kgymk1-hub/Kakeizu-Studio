@@ -217,7 +217,11 @@ export function detectStandardCsvSetUnresolvedReferences(data: { persons?: Perso
 }
 
 function countRowsWithSeverity(issues: ImportPreviewIssue[], severity: ImportPreviewIssueSeverity) {
-  return new Set(issues.filter((issue) => issue.severity === severity && issue.rowNumber != null).map((issue) => issue.rowNumber)).size;
+  return new Set(issues.filter((issue) => issue.severity === severity && issue.rowNumber != null).map((issue) => `${issue.fileName ?? 'unknown'}:${issue.rowNumber}`)).size;
+}
+
+function countRowsWithAnyIssue(issues: ImportPreviewIssue[]) {
+  return new Set(issues.filter((issue) => issue.rowNumber != null && (issue.severity === 'error' || issue.severity === 'warning')).map((issue) => `${issue.fileName ?? 'unknown'}:${issue.rowNumber}`)).size;
 }
 
 export function buildSimpleCsvImportPreview(data: NormalizedFamilyData, totalRows: number, options: ImportPreviewOptions = {}): ImportPreviewResult {
@@ -236,7 +240,7 @@ export function buildSimpleCsvImportPreview(data: NormalizedFamilyData, totalRow
   return {
     summary: {
       mode: 'simple_csv', importPolicy, importPolicyStatus, totalRows,
-      validRows: Math.max(0, totalRows - new Set(issues.filter((i) => i.rowNumber != null && (i.severity === 'error' || i.severity === 'warning')).map((i) => i.rowNumber)).size),
+      validRows: Math.max(0, totalRows - countRowsWithAnyIssue(issues)),
       warningRows, errorRows, totalIssues: issues.length, warningIssues, errorIssues,
       plannedCreate: { persons: data.persons.length, unions: data.unions.length, relations: data.parentChildRelations.length, events: (data as unknown as { events?: unknown[] }).events?.length ?? 0, sources: (data as unknown as { sources?: unknown[] }).sources?.length ?? 0, citations: (data as unknown as { citations?: unknown[] }).citations?.length ?? 0 },
       matchSummary: summarizeImportMatches(matches),
@@ -257,8 +261,8 @@ export function buildStandardCsvSetImportPreview(preview: { issues: ValidationIs
   const placeholderPersonPolicy = options.placeholderPersonPolicy ?? 'warn_and_skip';
   const placeholderPersonPolicyStatus = getPlaceholderPersonPolicyStatus(placeholderPersonPolicy);
   const issueFile = (issue: ValidationIssue) => {
-    if (issue.code === 'missing_manifest' || issue.code === 'invalid_manifest' || issue.code === 'invalid_format') return 'manifest.json';
-    if (issue.code === 'missing_csv') return issue.message.match(/^(\S+\.csv)/)?.[1];
+    if (issue.code === 'missing_manifest' || issue.code === 'invalid_manifest_json' || issue.code === 'invalid_manifest_format' || issue.code === 'unsupported_manifest_version' || issue.code === 'missing_manifest_file_entry') return 'manifest.json';
+    if (issue.code === 'missing_required_file') return issue.message.match(/^(\S+\.csv)/)?.[1];
     if (issue.message.startsWith('persons.csv')) return 'persons.csv';
     if (issue.message.startsWith('unions.') || issue.message.startsWith('unions.csv')) return 'unions.csv';
     if (issue.message.startsWith('parent_id') || issue.message.startsWith('child_id') || issue.message.startsWith('parent_child_relations.csv')) return 'parent_child_relations.csv';
@@ -286,7 +290,7 @@ export function buildStandardCsvSetImportPreview(preview: { issues: ValidationIs
   return {
     summary: {
       mode: 'standard_csv_set', importPolicy, importPolicyStatus, totalRows,
-      validRows: Math.max(0, totalRows - countRowsWithSeverity(issues, 'error') - countRowsWithSeverity(issues, 'warning')),
+      validRows: Math.max(0, totalRows - countRowsWithAnyIssue(issues)),
       warningRows: countRowsWithSeverity(issues, 'warning'), errorRows: countRowsWithSeverity(issues, 'error'),
       totalIssues: issues.length, warningIssues, errorIssues,
       plannedCreate: { persons: preview.counts.persons, unions: preview.counts.unions, relations: preview.counts.parent_child_relations, events: preview.counts.events, sources: preview.counts.sources, citations: preview.counts.citations },
