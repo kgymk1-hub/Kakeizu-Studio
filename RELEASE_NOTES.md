@@ -1,3 +1,87 @@
+# Kakeizu Studio v1.0.0 Release Notes（Draft）
+
+## ステータス
+
+- Release status: Release Candidate / Draft
+- Current package version: `0.9.0`
+- Current App version: `Version 0.9.0`
+- Final version update: 統合Dで実施
+- Release date: 未定
+
+## 概要
+
+v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0までに実装済みのproduction codeを固定し、文書、サンプル、互換性fixture、テスト範囲、GitHub Pages公開前確認を整理するリリース候補です。package / App versionは統合Dまで`0.9.0`を維持します。
+
+## Added
+
+- v1.0フル機能サンプルを追加しました。
+- JSON schema 1.0〜1.4代表fixtureを追加しました。
+- v1リリース棚卸し、既知制限、バックアップ互換性、テスト範囲、手動確認チェックリスト、リリース候補検証記録を整理しました。
+
+## Changed
+
+- READMEをv1.0.0 Release Candidateの現在状態に整理しました。
+- 仕様書をVersion 1.6へ更新し、v1.0.0 Release Candidateの安定版仕上げと統合C方針を反映しました。
+- 旧schema復元後の再出力方針をschema 1.4固定として整理しました。
+
+## Fixed
+
+- 旧schema復元後の再出力が旧schemaのままになる問題を修正済みです。
+- 再出力時はschema 1.4と新しいexported_atへ更新します。
+- v1サンプルImportBatchのmetadata不整合を修正済みです。
+
+## Compatibility
+
+- JSON current output: 1.4
+- JSON restore: 1.0〜1.4
+- Dexie: version(1)〜version(5)
+- version(6): なし
+- 標準CSVセット: 現行構造維持
+- names.csv / places.csv / media.csv: なし
+
+## Samples and documentation
+
+- `samples/kakeizu_studio_v1_sample.json`
+- `samples/compatibility/`
+- `docs/v1_release_audit.md`
+- `docs/known_limitations_v1.0.md`
+- `docs/backup_compatibility_v1.0.md`
+- `docs/test_coverage_v1.0.md`
+- `docs/manual_checklist_v1.0.md`
+- `docs/v1_release_verification.md`
+- `docs/specification.md`
+
+## Testing
+
+- 自動テスト: 31 files / 332 tests
+- P0テスト: 6 files / 128 tests
+- build: success
+- TypeScript: success
+- JSON schema 1.0〜1.4代表fixture: success
+
+## Known limitations
+
+- 実ブラウザ手動確認は未実施です。
+- 手動確認チェックリストは未完了です。
+- package / App version 1.0.0固定、v1.0.0 tag、GitHub Releaseは未実施です。
+- JSON復元は現在データを全置換するため、復元前バックアップを推奨します。
+
+## Release checklist
+
+- [x] 自動テスト
+- [x] build
+- [x] TypeScript
+- [x] JSON schema 1.0〜1.4代表fixture
+- [x] GitHub Actions deploy
+- [x] GitHub Pages技術確認
+- [ ] 実ブラウザ手動確認
+- [ ] 手動確認チェックリスト
+- [ ] package / App version 1.0.0固定
+- [ ] v1.0.0 tag
+- [ ] GitHub Release
+
+---
+
 # Kakeizu Studio v0.9.0 Release Notes
 
 ## バージョン
