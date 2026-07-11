@@ -1,3 +1,60 @@
+# Kakeizu Studio v0.9.0 Release Notes
+
+## バージョン
+
+- Version: `v0.9.0`
+- Package version: `0.9.0`
+- Release type: Name / Place 最小版正式版
+
+## 公開URL
+
+- 公開URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- キャッシュ回避確認URL: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.9.0>
+
+## v0.9.0 - Name / Place 最小版
+
+### Added
+
+- Nameモデル最小版を追加しました。
+- Placeモデル最小版を追加しました。
+- Person詳細にName一覧・追加・編集・削除の最小導線を追加しました。
+- Name / Place一覧・検索最小版を追加しました。
+- Event / Source とPlaceの最小連携を追加しました。
+- Place追加・編集・削除の最小導線を追加しました。
+- Citation target_type=name/place の安全表示・検証を追加しました。
+- Event.place_id / Source.place_id の参照切れ検証を追加しました。
+- JSONバックアップにnames / placesを含められるようにしました。
+
+### Changed
+
+- JSON backup schema_version を 1.4 に更新しました。
+- Name / Place用にDexie schema version(5)を追加しました。
+- NameはPerson表示名の置き換えではなく、別名・旧名・通称などの追加情報として扱う方針に整理しました。
+- Placeは既存場所テキストの置き換えではなく、場所の正規化・再利用候補として扱う方針に整理しました。
+- 標準CSVセットではName / Place実体をまだ入出力しない境界を明確化しました。
+
+### Notes
+
+- Person.display_name / family_name / given_name / birth_family_name 等は維持しています。
+- Event.place_text は維持しています。
+- Source.honseki_text / repository は維持しています。
+- Name編集でPerson本体を勝手に上書きしません。
+- Place編集でEvent.place_textやSource.honseki_text / repositoryを勝手に上書きしません。
+- 標準CSVセットには names.csv / places.csv を追加していません。
+- citations.csv の target_type=name/place は安全表示・検証対象ですが、標準CSVセットでName / Place実体を復元する機能は将来対応です。
+- JSON 1.3以前の復元互換を維持しています。
+
+## タグ作成手順
+
+タグは、すべてのPRをmainへマージし、GitHub Pages公開確認が終わった後、mainブランチ上で作成します。
+
+```bash
+git tag v0.9.0
+git push origin v0.9.0
+```
+
+---
+
 # Kakeizu Studio v0.8.0 Release Notes
 
 ## バージョン
