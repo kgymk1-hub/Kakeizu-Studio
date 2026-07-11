@@ -1,18 +1,18 @@
 import { useMemo, useState } from 'react';
-import type { Citation, CitationTargetType, Event, ParentChildRelation, Person, SelectableTarget, Source, SourceType, Union } from '../../models';
+import type { Citation, CitationTargetType, Event, Name, ParentChildRelation, Person, Place, SelectableTarget, Source, SourceType, Union } from '../../models';
 import { citationTargetTypeOptions, filterCitations, filterSources, resolveCitationTargetSummary, sourceTypeOptions } from './sourceCitationFilter';
 
-interface Props { sources: Source[]; citations: Citation[]; persons: Person[]; events: Event[]; unions: Union[]; relations: ParentChildRelation[]; onSelectTarget: (target: SelectableTarget) => void; }
+interface Props { sources: Source[]; citations: Citation[]; persons: Person[]; events: Event[]; unions: Union[]; relations: ParentChildRelation[]; names?: Name[]; places?: Place[]; onSelectTarget: (target: SelectableTarget) => void; }
 const labelAll = (value: string) => value === 'all' ? 'すべて' : value;
 const trim = (value = '', length = 56) => value.length > length ? `${value.slice(0, length)}…` : value;
-const targetToSelectable = (citation: Citation): SelectableTarget | undefined => ['person', 'event', 'union', 'relation'].includes(citation.target_type) ? { target_type: citation.target_type as SelectableTarget['target_type'], target_id: citation.target_id } : undefined;
+const targetToSelectable = (citation: Citation): SelectableTarget | undefined => ['person', 'event', 'union', 'relation', 'name', 'place'].includes(citation.target_type) ? { target_type: citation.target_type as SelectableTarget['target_type'], target_id: citation.target_id } : undefined;
 
-export function SourceCitationPanel({ sources, citations, persons, events, unions, relations, onSelectTarget }: Props) {
+export function SourceCitationPanel({ sources, citations, persons, events, unions, relations, names = [], places = [], onSelectTarget }: Props) {
   const [query, setQuery] = useState('');
   const [sourceType, setSourceType] = useState<'all' | SourceType>('all');
   const [targetType, setTargetType] = useState<'all' | CitationTargetType>('all');
   const [selectedSourceId, setSelectedSourceId] = useState<string | undefined>();
-  const data = useMemo(() => ({ sources, persons, events, unions, relations }), [sources, persons, events, unions, relations]);
+  const data = useMemo(() => ({ sources, persons, events, unions, relations, names, places }), [sources, persons, events, unions, relations, names, places]);
   const filteredSources = useMemo(() => filterSources(sources, { query, source_type: sourceType }), [sources, query, sourceType]);
   const filteredCitations = useMemo(() => filterCitations(citations, data, { query, target_type: targetType, source_id: selectedSourceId }), [citations, data, query, targetType, selectedSourceId]);
 

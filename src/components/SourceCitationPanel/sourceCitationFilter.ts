@@ -1,4 +1,4 @@
-import type { Citation, CitationTargetType, Event, ParentChildRelation, Person, Source, SourceType, Union } from '../../models';
+import type { Citation, CitationTargetType, Event, Name, ParentChildRelation, Person, Place, Source, SourceType, Union } from '../../models';
 
 export interface SourceCitationData {
   sources: Pick<Source, 'id' | 'title'>[];
@@ -6,6 +6,8 @@ export interface SourceCitationData {
   events: Pick<Event, 'id' | 'event_type' | 'target_type' | 'target_id' | 'date_text'>[];
   unions: Pick<Union, 'id' | 'partner1_id' | 'partner2_id'>[];
   relations: Pick<ParentChildRelation, 'id' | 'parent_id' | 'child_id'>[];
+  names?: Pick<Name, 'id' | 'person_id' | 'name_type' | 'name_text'>[];
+  places?: Pick<Place, 'id' | 'name' | 'place_type' | 'normalized_name'>[];
 }
 
 export interface SourceFilters { query?: string; source_type?: 'all' | SourceType; }
@@ -45,6 +47,16 @@ export function resolveCitationTargetSummary(citation: Pick<Citation, 'target_ty
     const parent = data.persons.find((item) => item.id === relation.parent_id);
     const child = data.persons.find((item) => item.id === relation.child_id);
     return { label: `${personName(parent) ?? '参照切れ'} → ${personName(child) ?? '参照切れ'}`, searchText: [personSearchText(parent), personSearchText(child)].join(' '), broken: !parent || !child, supported: true };
+  }
+  if (citation.target_type === 'name') {
+    const name = data.names?.find((item) => item.id === citation.target_id);
+    if (!name) return { label: '参照切れ（Name）', searchText: '', broken: true, supported: true };
+    const person = data.persons.find((item) => item.id === name.person_id);
+    return { label: `名前: ${name.name_type} ${name.name_text}${person ? ` / ${personName(person)}` : ''}`, searchText: [name.name_type, name.name_text, personSearchText(person)].join(' '), broken: !person, supported: true };
+  }
+  if (citation.target_type === 'place') {
+    const place = data.places?.find((item) => item.id === citation.target_id);
+    return place ? { label: `場所: ${place.name}`, searchText: [place.name, place.normalized_name, place.place_type].filter(Boolean).join(' '), broken: false, supported: true } : { label: '参照切れ（Place）', searchText: '', broken: true, supported: true };
   }
   return { label: '未対応対象', searchText: '', broken: false, supported: false };
 }
