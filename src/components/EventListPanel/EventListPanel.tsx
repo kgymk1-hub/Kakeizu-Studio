@@ -20,13 +20,13 @@ export function EventListPanel({ events, persons, unions, relations, onSelectTar
   const filteredEvents = useMemo(() => filterEvents(events, data, { query, event_type: eventType }), [events, data, query, eventType]);
 
   return <section className="panel list-panel event-list-panel" aria-labelledby="event-list-heading">
-    <h2 id="event-list-heading">Event一覧</h2>
+    <h2 id="event-list-heading">出来事（Event）一覧</h2>
     <div className="list-panel-controls event-list-controls">
       <label className="event-search-label">検索<input type="text" value={query} placeholder="種別・日付・説明・備考・関連人物名" onInput={(e) => setQuery(e.currentTarget.value)} /></label>
-      <label>event_type<select value={eventType} onChange={(e) => setEventType(e.target.value as 'all' | EventType)}>{eventTypeOptions.map((value) => <option key={value} value={value}>{labelAll(value)}</option>)}</select></label>
+      <label>出来事種別<select value={eventType} onChange={(e) => setEventType(e.target.value as 'all' | EventType)}>{eventTypeOptions.map((value) => <option key={value} value={value}>{labelAll(value)}</option>)}</select></label>
     </div>
     <p className="list-panel-count event-list-count">{filteredEvents.length} / {events.length} 件を表示</p>
-    {filteredEvents.length === 0 ? <p className="notice list-panel-empty">条件に一致するEventがありません。</p> : <ul className="list-card-list event-list-cards">
+    {filteredEvents.length === 0 ? <p className="notice list-panel-empty">条件に一致する出来事がありません。</p> : <ul className="list-card-list event-list-cards">
       {filteredEvents.map((event) => {
         const target = resolveEventTargetSummary(event, data);
         return <li key={event.id}>
