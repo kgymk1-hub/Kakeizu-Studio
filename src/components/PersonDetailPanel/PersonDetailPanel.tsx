@@ -149,18 +149,18 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
 
     <section className="citation-section"><h3>名前・別名</h3>
       <p className="help-text">Person.display_nameは主表示名として維持し、Nameは別名・旧名・通称などの横付け情報として保存します。</p>
-      <details><summary>Nameを追加</summary><NameForm onSubmit={(form)=>saveName(form)} /></details>
-      {personNames.length === 0 ? <p>この人物に紐づくNameはありません。</p> : <ul className="citation-list">{personNames.map((name)=><li key={name.id}><strong>{name.name_text}</strong> <span className="badge">{name.name_type}</span><dl><dt>有効期間</dt><dd>{name.valid_from_text || '-'} 〜 {name.valid_to_text || '-'}</dd><dt>確度</dt><dd>{name.confidence ?? '-'}</dd><dt>レビュー</dt><dd>{name.review_status ?? '-'}</dd><dt>メモ</dt><dd>{name.note || '-'}</dd></dl><details><summary>編集</summary><NameForm name={name} onSubmit={(form)=>saveName(form, name)} /></details><button type="button" onClick={()=>onDeleteName?.(name.id)}>Nameを削除</button></li>)}</ul>}
+      <details><summary>名前・別名を追加</summary><NameForm onSubmit={(form)=>saveName(form)} /></details>
+      {personNames.length === 0 ? <p>この人物に紐づく名前・別名はありません。</p> : <ul className="citation-list">{personNames.map((name)=><li key={name.id}><strong>{name.name_text}</strong> <span className="badge">{name.name_type}</span><dl><dt>有効期間</dt><dd>{name.valid_from_text || '-'} 〜 {name.valid_to_text || '-'}</dd><dt>確度</dt><dd>{name.confidence ?? '-'}</dd><dt>レビュー</dt><dd>{name.review_status ?? '-'}</dd><dt>メモ</dt><dd>{name.note || '-'}</dd></dl><details><summary>編集</summary><NameForm name={name} onSubmit={(form)=>saveName(form, name)} /></details><button type="button" onClick={()=>onDeleteName?.(name.id)}>名前・別名を削除</button></li>)}</ul>}
     </section>
     <section className="citation-section"><h3>出来事（Event）</h3>
       <p className="help-text">出生・死亡・婚姻・転籍・入籍・除籍などを人物に紐づけて記録します。家系図ノード上にはまだ表示しません。</p>
-      <details><summary>この人物にEventを追加</summary><EventForm sources={sources} places={places} onSubmit={(form) => saveEvent(form)} /></details>
-      {personEvents.length === 0 ? <p>この人物に紐づくEventはありません。</p> : <ul className="citation-list">{personEvents.map((event) => {
+      <details><summary>この人物に出来事を追加</summary><EventForm sources={sources} places={places} onSubmit={(form) => saveEvent(form)} /></details>
+      {personEvents.length === 0 ? <p>この人物に紐づく出来事はありません。</p> : <ul className="citation-list">{personEvents.map((event) => {
         const eventCitation = eventCitationById.get(event.id);
         return <li key={event.id}><strong>{eventTypeLabels[event.event_type] ?? event.event_type}</strong> {eventCitation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
-          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>Place参照</dt><dd>{event.place_id ? (placeById.get(event.place_id)?.name ?? `参照切れ(${event.place_id})`) : '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>出典</dt><dd>{eventCitation ? (sourceById.get(eventCitation.source_id)?.title ?? '参照先資料なし') : 'なし'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
+          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>場所候補（Place）</dt><dd>{event.place_id ? (placeById.get(event.place_id)?.name ?? `参照切れ(${event.place_id})`) : '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>出典</dt><dd>{eventCitation ? (sourceById.get(eventCitation.source_id)?.title ?? '参照先資料なし') : 'なし'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
           <details><summary>編集</summary><EventForm event={event} citation={eventCitation} sources={sources} places={places} onSubmit={(form) => saveEvent(form, event)} /></details>
-          <button type="button" onClick={() => onDeleteEvent?.(event.id)}>Eventを削除</button>
+          <button type="button" onClick={() => onDeleteEvent?.(event.id)}>出来事を削除</button>
         </li>;
       })}</ul>}
     </section>
@@ -223,8 +223,8 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
 
 function CitationForm({ sources, citation, allowNewSource = true, onSubmit }: { sources: Source[]; citation?: Citation; allowNewSource?: boolean; onSubmit: (form: HTMLFormElement) => void }) {
   return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
-    <label>既存資料<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? (allowNewSource ? '__new__' : '')}>{!allowNewSource && <option value="">選択してください</option>}{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}{allowNewSource && <option value="__new__">新しい簡易Sourceを作成</option>}</select></label>
-    {allowNewSource && <><label>新規資料名<input name="new_source_title" placeholder="既存Sourceがない場合のみ" /></label><label>新規資料種別<select name="new_source_type" defaultValue="other">{sourceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></>}
+    <label>既存資料<select name="source_id" defaultValue={citation?.source_id ?? sources[0]?.id ?? (allowNewSource ? '__new__' : '')}>{!allowNewSource && <option value="">選択してください</option>}{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}{allowNewSource && <option value="__new__">新しい簡易資料（Source）を作成</option>}</select></label>
+    {allowNewSource && <><label>新規資料名<input name="new_source_title" placeholder="既存資料がない場合のみ" /></label><label>新規資料種別<select name="new_source_type" defaultValue="other">{sourceTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></>}
     <label>ページ・位置<input name="page_or_location" defaultValue={citation?.page_or_location ?? ''} /></label>
     <label>引用<textarea name="quote_text" defaultValue={citation?.quote_text ?? ''} /></label>
     <label>解釈<textarea name="interpretation" defaultValue={citation?.interpretation ?? ''} /></label>
@@ -239,11 +239,11 @@ function EventForm({ sources, places = [], event, citation, onSubmit }: { source
   return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
     <label>出来事種別<select name="event_type" defaultValue={event?.event_type ?? 'birth'}>{eventTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>日付テキスト<input name="date_text" defaultValue={event?.date_text ?? ''} /></label>
-    <label>場所<input name="place_text" defaultValue={event?.place_text ?? ''} /></label><label>Place参照<select name="place_id" defaultValue={event?.place_id ?? ''}><option value="">選択しない</option>{places.map((place)=><option key={place.id} value={place.id}>{place.name}</option>)}</select></label>
+    <label>場所<input name="place_text" defaultValue={event?.place_text ?? ''} /></label><label>場所候補（Place）<select name="place_id" defaultValue={event?.place_id ?? ''}><option value="">選択しない</option>{places.map((place)=><option key={place.id} value={place.id}>{place.name}</option>)}</select></label>
     <label>説明<textarea name="description" defaultValue={event?.description ?? ''} /></label>
     <label>確度<select name="confidence" defaultValue={event?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>メモ<textarea name="note" defaultValue={event?.note ?? ''} /></label>
-    <fieldset><legend>Event出典（任意）</legend>
+    <fieldset><legend>出来事の出典（任意）</legend>
       <label>資料<select name="event_source_id" defaultValue={citation?.source_id ?? ''}><option value="">作成しない</option>{sources.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>
       <label>ページ・位置<input name="page_or_location" defaultValue={citation?.page_or_location ?? ''} /></label>
       <label>引用<textarea name="quote_text" defaultValue={citation?.quote_text ?? ''} /></label>
@@ -251,7 +251,7 @@ function EventForm({ sources, places = [], event, citation, onSubmit }: { source
       <label>出典確度<select name="citation_confidence" defaultValue={citation?.confidence ?? event?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>出典メモ<textarea name="citation_note" defaultValue={citation?.note ?? ''} /></label>
     </fieldset>
-    <button className="primary" type="submit">Eventを保存</button>
+    <button className="primary" type="submit">出来事を保存</button>
   </form>;
 }
 
@@ -299,8 +299,8 @@ function NameForm({ name, onSubmit }: { name?: Name; onSubmit: (form: HTMLFormEl
     <label>name_text<input name="name_text" required defaultValue={name?.name_text ?? ''} /></label>
     <label>valid_from_text<input name="valid_from_text" defaultValue={name?.valid_from_text ?? ''} /></label>
     <label>valid_to_text<input name="valid_to_text" defaultValue={name?.valid_to_text ?? ''} /></label>
-    <label>confidence<select name="confidence" defaultValue={name?.confidence ?? 'confirmed'}>{Object.keys(confidenceLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
-    <label>review_status<select name="review_status" defaultValue={name?.review_status ?? 'unreviewed'}>{Object.keys(reviewStatusLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
+    <label>確度<select name="confidence" defaultValue={name?.confidence ?? 'confirmed'}>{Object.keys(confidenceLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
+    <label>確認状態<select name="review_status" defaultValue={name?.review_status ?? 'unreviewed'}>{Object.keys(reviewStatusLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
     <label>note<textarea name="note" defaultValue={name?.note ?? ''} /></label>
     <button className="primary" type="submit">保存</button>
   </form>;
