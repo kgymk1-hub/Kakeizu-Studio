@@ -105,6 +105,42 @@ describe('backupService v1.4 Name / Place compatibility', () => {
     expect(parsed.sources[0].place_id).toBe('missing-place');
   });
 
+  it('schema 1.0〜1.3の復元結果を再出力するとschema 1.4になる', () => {
+    const oldExportedAt = '2020-01-01T00:00:00.000Z';
+
+    for (const schemaVersion of ['1.0', '1.1', '1.2', '1.3'] as const) {
+      const restored = parseJsonBackup(JSON.stringify({
+        schema_version: schemaVersion,
+        exported_at: oldExportedAt,
+        persons: [{
+          id: `person-${schemaVersion}`,
+          display_name: `互換確認 ${schemaVersion}`,
+          created_at: oldExportedAt,
+          updated_at: oldExportedAt,
+        }],
+        unions: [],
+        parent_child_relations: [],
+        import_batches: [],
+      }));
+
+      expect(restored.schema_version).toBe(schemaVersion);
+
+      const exportedJson = createJsonBackup(restored);
+      const exportedData = JSON.parse(exportedJson);
+
+      expect(exportedData.schema_version).toBe('1.4');
+      expect(exportedData.exported_at).not.toBe(oldExportedAt);
+      expect(exportedData.exported_at).not.toBe('');
+      expect(Number.isNaN(Date.parse(exportedData.exported_at))).toBe(false);
+
+      const reparsed = parseJsonBackup(exportedJson);
+
+      expect(reparsed.schema_version).toBe('1.4');
+      expect(reparsed.persons[0].id).toBe(`person-${schemaVersion}`);
+      expect(reparsed.persons[0].display_name).toBe(`互換確認 ${schemaVersion}`);
+    }
+  });
+
   it('1.3以前やnames / placesがないJSONでも空配列補完して復元できる', () => {
     for (const schema_version of ['1.0', '1.1', '1.2', '1.3'] as const) {
       const parsed = parseJsonBackup(JSON.stringify({ schema_version, exported_at: now, persons: [], unions: [], parent_child_relations: [], import_batches: [] }));
