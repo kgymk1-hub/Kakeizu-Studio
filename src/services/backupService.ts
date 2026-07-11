@@ -22,7 +22,7 @@ export interface BackupData {
 type BackupInput = Omit<BackupData, 'schema_version' | 'exported_at' | 'events' | 'projects' | 'view_settings' | 'export_settings' | 'privacy_settings' | 'names' | 'places'> & { events?: Event[]; projects?: Project[]; view_settings?: ViewSetting[]; export_settings?: ExportSetting[]; privacy_settings?: PrivacySetting[]; names?: Name[]; places?: Place[] };
 
 export function createJsonBackup(data: BackupInput) {
-  return JSON.stringify({ schema_version: '1.4', exported_at: new Date().toISOString(), ...data, events: data.events ?? [], projects: data.projects ?? [createDefaultProject()], view_settings: data.view_settings ?? [createDefaultViewSetting()], export_settings: data.export_settings ?? [createDefaultExportSetting()], privacy_settings: data.privacy_settings ?? [createDefaultPrivacySetting()], names: data.names ?? [], places: data.places ?? [] }, null, 2);
+  return JSON.stringify({ ...data, events: data.events ?? [], projects: data.projects ?? [createDefaultProject()], view_settings: data.view_settings ?? [createDefaultViewSetting()], export_settings: data.export_settings ?? [createDefaultExportSetting()], privacy_settings: data.privacy_settings ?? [createDefaultPrivacySetting()], names: data.names ?? [], places: data.places ?? [], schema_version: '1.4', exported_at: new Date().toISOString() }, null, 2);
 }
 
 export function parseJsonBackup(json: string): BackupData {
