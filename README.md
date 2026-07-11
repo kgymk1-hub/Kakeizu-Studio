@@ -6,7 +6,61 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 **Version 0.9.0**
 
+> 現在はv1.0.0リリース候補の文書・公開・最終確認フェーズです。
+> package / App versionの1.0.0固定は、最終確認後の統合Dで行います。
+
 > v0.9.0では、Name / Placeモデル最小版を正式版として整理し、PersonとName、Event / SourceとPlaceを最小限連携できるようにしました。
+
+## v1.0.0リリース候補：安定版仕上げ
+
+Kakeizu Studioは現在、v1.0.0 Release Candidateとして安定版仕上げの段階です。統合Cでは文書・公開・最終確認フェーズを整理し、package / App versionは引き続き`0.9.0`のまま維持します。
+
+### 収録範囲
+
+- Person / Union / ParentChildRelation
+- Event / Source / Citation
+- 関係単位Citation
+- ValidationPanel
+- 家系図表示
+- PNG / PDF / SVG
+- CSV / 標準CSVセット
+- JSONバックアップ
+- 一覧・検索・ジャンプ
+- ImportBatch / ImportReport最小版
+- Project / settings最小版
+- 公開用出力モード最小版
+- Name / Place最小版
+- v1.0フル機能サンプル
+- schema 1.0〜1.4互換fixture
+
+### 安定化内容
+
+- UI文言整理
+- 表示専用パネル分離
+- EmptyState / MetricPills共通化
+- list系CSS整理
+- モバイル検索欄修正
+- v1リリース棚卸し
+- 既知制限整理
+- フル機能サンプル
+- schema互換性テスト
+- 旧schema再出力の1.4固定
+- 手動確認チェックリスト
+- テスト範囲棚卸し
+
+### 品質基準
+
+- 31 test files
+- 332 tests
+- JSON schema 1.0〜1.4代表fixture
+- v1.0フル機能サンプル
+
+### 残る作業
+
+- 実ブラウザ手動確認
+- package / App version 1.0.0固定
+- Git tag
+- GitHub Release
 
 
 ## v0.9.0: Name / Place 最小版
@@ -196,9 +250,35 @@ git push origin v0.8.0
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
+- v1.0.0-rc キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0-rc>
+- 統合D前の公開画面Version: `Version 0.9.0`
 - v0.9.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.9.0>
 - v0.8.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0>
 - v0.7.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0>
+
+## v1.0サンプルデータ
+
+- v1.0フル機能サンプル: `samples/kakeizu_studio_v1_sample.json`
+- JSON schema 1.0〜1.4互換fixture: `samples/compatibility/`
+
+JSON復元は現在データを全置換します。復元前に、現在の作業データをJSONバックアップとして保存することを推奨します。
+
+## v1.0関連文書
+
+- v1リリース棚卸し: `docs/v1_release_audit.md`
+- 既知制限: `docs/known_limitations_v1.0.md`
+- バックアップ互換性: `docs/backup_compatibility_v1.0.md`
+- テスト範囲棚卸し: `docs/test_coverage_v1.0.md`
+- 手動確認チェックリスト: `docs/manual_checklist_v1.0.md`
+- リリース候補検証記録: `docs/v1_release_verification.md`
+- 詳細仕様書: `docs/specification.md`
+
+## 既知の制限
+
+- 実ブラウザ手動確認は統合C時点では未実施です。
+- JSON復元は現在データの全置換として動作するため、復元前バックアップを推奨します。
+- 標準CSVセットには`names.csv` / `places.csv` / `media.csv`をまだ追加していません。
+- package / App versionの`1.0.0`固定、Git tag、GitHub Releaseは統合D以降で実施します。
 
 ## 主な機能
 
