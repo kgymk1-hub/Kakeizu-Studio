@@ -71,13 +71,13 @@ export function createImportReportFromPreview(options: { batch?: ImportBatch; pr
 }
 
 export function buildImportReportNextActions(preview: ImportPreviewResult): string[] {
-  if (preview.summary.importPolicyStatus === 'preview_only') return ['この取込方式は現在プレビューのみ対応です。実行後レポートは作成されません。'];
-  if (preview.summary.errorIssues > 0 || !preview.canImport) return ['エラーがあるため取込は実行されませんでした。プレビュー上のissueを確認してください。'];
+  if (preview.summary.importPolicyStatus === 'preview_only') return ['このインポート方式は現在プレビューのみ対応です。反映後のレポートは作成されません。'];
+  if (preview.summary.errorIssues > 0 || !preview.canImport) return ['エラーがあるためデータは反映されませんでした。プレビュー上のissueを確認してください。'];
   const actions: string[] = [];
   if (preview.summary.warningIssues > 0) actions.push('warning内容を確認し、必要に応じてCSVを修正してください。');
   if (preview.summary.unresolvedReferenceSummary.total > 0) actions.push('参照先不明があるため、CSV内のID参照を確認してください。');
   if (preview.placeholderPersonCandidates.length > 0) actions.push('仮人物候補があります。必要なら後続フェーズで仮人物作成を検討してください。');
-  if (preview.summary.matchSummary.matchedExisting > 0) actions.push('既存一致候補があります。将来のexternal_id更新取込で扱いを確認してください。');
+  if (preview.summary.matchSummary.matchedExisting > 0) actions.push('既存一致候補があります。将来のexternal_idによる更新インポートで扱いを確認してください。');
   actions.push('ValidationPanelで出典なし・未確認・低確度を確認してください。');
   actions.push('家系図表示と人物詳細を確認してください。');
   return actions;

@@ -14,7 +14,7 @@ export type UnresolvedReferenceSummary = { total: number; personReferences: numb
 
 export const placeholderPersonPolicyOptions: { value: PlaceholderPersonPolicy; label: string; description: string; status: PlaceholderPersonPolicyStatus }[] = [
   { value: 'warn_and_skip', label: '警告して関係を作らない', description: '参照先不明を警告として表示し、該当する親子・配偶者関係は作成しません。', status: 'available' },
-  { value: 'block_import', label: '取込を止める', description: '参照先不明がある場合は取込不可にします。後続フェーズで本格対応予定です。', status: 'preview_only' },
+  { value: 'block_import', label: '反映を止める', description: '参照先不明がある場合は反映不可にします。後続フェーズで本格対応予定です。', status: 'preview_only' },
   { value: 'create_placeholder_preview', label: '仮人物作成候補にする', description: '参照先不明IDから仮人物を作る候補として表示します。現時点ではプレビューのみで、保存はしません。', status: 'preview_only' },
 ];
 
@@ -191,7 +191,7 @@ function buildPlaceholderPersonCandidates(refs: ImportUnresolvedReference[], pol
 function unresolvedReferenceIssues(refs: ImportUnresolvedReference[], policy: PlaceholderPersonPolicy): ImportPreviewIssue[] {
   const base = refs.map((ref): ImportPreviewIssue => ({ severity: 'warning', code: unresolvedIssueCode(ref.targetEntityType), message: ref.message, rowNumber: ref.rowNumber, fileName: ref.fileName, field: ref.field, targetType: ref.targetEntityType, targetId: ref.referenceId }));
   const placeholder = policy === 'create_placeholder_preview' ? buildPlaceholderPersonCandidates(refs, policy).map((c): ImportPreviewIssue => ({ severity: 'info', code: 'placeholder_person_candidate', message: `${c.displayName} は仮人物作成候補です。現時点では保存しません。`, targetType: 'person', targetId: c.referenceId })) : [];
-  const blocked = policy === 'block_import' && refs.length > 0 ? [{ severity: 'error' as const, code: 'blocked_by_unresolved_reference_policy', message: '参照先不明があるため、選択中の方針では取込不可です。', targetType: 'unknown' as const }] : [];
+  const blocked = policy === 'block_import' && refs.length > 0 ? [{ severity: 'error' as const, code: 'blocked_by_unresolved_reference_policy', message: '参照先不明があるため、選択中の方針では反映できません。', targetType: 'unknown' as const }] : [];
   return [...base, ...placeholder, ...blocked];
 }
 export function detectSimpleCsvUnresolvedReferences(rows: { person_id: string; name?: string; father_id?: string; mother_id?: string; spouse_ids?: string }[], fileName = 'simple_csv'): ImportUnresolvedReference[] {
