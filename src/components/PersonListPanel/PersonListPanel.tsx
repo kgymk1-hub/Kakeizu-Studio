@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Citation, Confidence, Gender, Person, ReviewStatus, SelectableTarget } from '../../models';
+import { EmptyState } from '../common/EmptyState';
 import { filterPersons, hasPersonCitation, type PersonCitationFilter } from './personListFilter';
 
 interface Props {
@@ -40,7 +41,7 @@ export function PersonListPanel({ persons, citations, selectedPersonId, onSelect
       <label>出典<select value={citation} onChange={(e) => setCitation(e.target.value as PersonCitationFilter)}>{citationFilters.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
     </div>
     <p className="list-panel-count person-list-count">{filteredPersons.length} / {persons.length} 人を表示</p>
-    {filteredPersons.length === 0 ? <p className="notice list-panel-empty">条件に一致する人物がありません。</p> : <ul className="list-card-list person-list-cards">
+    {filteredPersons.length === 0 ? <EmptyState className="notice list-panel-empty">条件に一致する人物がありません。</EmptyState> : <ul className="list-card-list person-list-cards">
       {filteredPersons.map((person) => {
         const cited = hasPersonCitation(person.id, citations);
         return <li key={person.id}>
