@@ -168,4 +168,56 @@ describe('Kakeizu Studio v1 sample JSON', () => {
     expect(roundTripped.export_settings).toEqual(data.export_settings);
     expect(roundTripped.privacy_settings).toEqual(data.privacy_settings);
   });
+
+  it('ImportBatchの方式・ファイル・件数が標準CSVセット履歴として整合する', () => {
+    const data = loadSample();
+    const batch = data.import_batches[0];
+
+    expect(batch.import_type).toBe('csv_standard');
+    expect(batch.mode).toBe('standard_csv_set');
+    expect(batch.import_policy).toBe('replace_all');
+    expect(batch.placeholder_person_policy).toBe('warn_and_skip');
+    expect(batch.status).toBe('completed_with_warnings');
+    expect(batch.warning_count).toBe(2);
+    expect(batch.error_count).toBe(0);
+    expect(batch.unresolved_reference_count).toBe(0);
+    expect(batch.placeholder_person_candidate_count).toBe(0);
+
+    expect(batch.file_names).toEqual([
+      'manifest.json',
+      'persons.csv',
+      'unions.csv',
+      'parent_child_relations.csv',
+      'sources.csv',
+      'citations.csv',
+      'events.csv',
+    ]);
+
+    expect(batch.imported_counts).toEqual({
+      persons: 7,
+      unions: 3,
+      relations: 6,
+      events: 7,
+      sources: 4,
+      citations: 23,
+    });
+
+    const importedCounts = batch.imported_counts;
+    expect(importedCounts).toBeDefined();
+    if (!importedCounts) throw new Error('imported_counts is required');
+
+    const importedTotal =
+      importedCounts.persons +
+      importedCounts.unions +
+      importedCounts.relations +
+      importedCounts.events +
+      importedCounts.sources +
+      importedCounts.citations;
+
+    expect(importedTotal).toBe(50);
+    expect(batch.total_rows).toBe(importedTotal);
+    expect(batch.file_names).not.toContain('names.csv');
+    expect(batch.file_names).not.toContain('places.csv');
+    expect(batch.file_names).not.toContain('media.csv');
+  });
 });
