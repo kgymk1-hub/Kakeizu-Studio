@@ -1,4 +1,4 @@
-import type { Citation, Confidence, Event, EventType, ParentChildRelation, Person, RelationType, ReviewStatus, Source, Union, UnionType } from '../../models';
+import type { Citation, Confidence, Event, EventType, Name, NameType, ParentChildRelation, Person, Place, RelationType, ReviewStatus, Source, Union, UnionType } from '../../models';
 import { sourceTypeLabels, sourceTypeOptions } from '../SourceManager/SourceManager';
 
 interface Props {
@@ -12,6 +12,11 @@ interface Props {
   onSaveCitation: (citation: Citation, newSource?: Source) => void;
   onDeleteCitation: (citationId: string) => void;
   events?: Event[];
+  names?: Name[];
+  places?: Place[];
+  onSaveName?: (name: Name) => void;
+  onDeleteName?: (nameId: string) => void;
+  onSavePlace?: (place: Place) => void;
   onSaveEvent?: (event: Event, citation?: Citation) => void;
   onDeleteEvent?: (eventId: string) => void;
   onDeleteParentChildRelation?: (relationId: string) => void;
@@ -30,8 +35,10 @@ const unionTypeLabels: Record<UnionType, string> = { marriage: '婚姻', partner
 const unionEndReasonLabels: Record<NonNullable<Union['end_reason']>, string> = { divorce: '離婚', death: '死亡', unknown: '不明', other: 'その他' };
 const unionStatusLabels: Record<NonNullable<Union['status']>, string> = { married: '婚姻中', divorced: '離婚', widowed: '死別', ended: '終了', unknown: '不明' };
 
-export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, onSaveEvent, onDeleteEvent, onDeleteParentChildRelation, onDeleteUnion, onSaveParentChildRelation, onSaveUnion }: Props) {
+export function PersonDetailPanel({ person, sources, citations, persons, relations, unions, onChange, onSaveCitation, onDeleteCitation, events, names = [], places = [], onSaveName, onDeleteName, onSaveEvent, onDeleteEvent, onDeleteParentChildRelation, onDeleteUnion, onSaveParentChildRelation, onSaveUnion }: Props) {
   if (!person) return <aside className="detail"><h2>人物詳細</h2><p>人物ノードをクリックしてください。</p></aside>;
+  const personNames = names.filter((name) => name.person_id === person.id);
+  const placeById = new Map(places.map((place) => [place.id, place]));
   const personEvents = (events ?? []).filter((e) => e.target_type === 'person' && e.target_id === person.id);
   const eventCitationById = new Map(citations.filter((c) => c.target_type === 'event').map((c) => [c.target_id, c]));
   const sourceById = new Map(sources.map((source) => [source.id, source]));
@@ -99,6 +106,7 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
       target_id: person.id,
       date_text: String(fd.get('date_text') ?? '').trim() || undefined,
       place_text: String(fd.get('place_text') ?? '').trim() || undefined,
+      place_id: String(fd.get('place_id') ?? '').trim() || undefined,
       description: String(fd.get('description') ?? '').trim() || undefined,
       confidence: String(fd.get('confidence') ?? 'confirmed') as Event['confidence'],
       note: String(fd.get('note') ?? '').trim() || undefined,
@@ -122,6 +130,15 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
     form.reset();
   };
 
+  const saveName = (form: HTMLFormElement, existing?: Name) => {
+    const fd = new FormData(form);
+    const now = new Date().toISOString();
+    const nameText = String(fd.get('name_text') ?? '').trim();
+    if (!nameText) return;
+    onSaveName?.({ ...(existing ?? { id: crypto.randomUUID(), person_id: person.id, created_at: now }), person_id: person.id, name_type: String(fd.get('name_type') ?? 'alias') as NameType, name_text: nameText, valid_from_text: String(fd.get('valid_from_text') ?? '').trim() || undefined, valid_to_text: String(fd.get('valid_to_text') ?? '').trim() || undefined, confidence: String(fd.get('confidence') ?? 'confirmed') as Name['confidence'], review_status: String(fd.get('review_status') ?? 'unreviewed') as Name['review_status'], note: String(fd.get('note') ?? '').trim() || undefined, updated_at: now });
+    form.reset();
+  };
+
   return <aside className="detail"><h2>人物詳細 {personCitations.length > 0 && <span className="badge">出典あり</span>}</h2>
     <label>表示名<input value={person.display_name} onChange={(e)=>update('display_name',e.target.value)}/></label>
     <label>生年月日<input value={person.birth_date_text ?? ''} onChange={(e)=>update('birth_date_text',e.target.value)}/></label>
@@ -129,14 +146,20 @@ export function PersonDetailPanel({ person, sources, citations, persons, relatio
     <label>称号<input value={person.rank_title ?? ''} onChange={(e)=>update('rank_title',e.target.value)}/></label>
     <label>備考<textarea value={person.note ?? ''} onChange={(e)=>update('note',e.target.value)}/></label>
 
+
+    <section className="citation-section"><h3>名前・別名</h3>
+      <p className="help-text">Person.display_nameは主表示名として維持し、Nameは別名・旧名・通称などの横付け情報として保存します。</p>
+      <details><summary>Nameを追加</summary><NameForm onSubmit={(form)=>saveName(form)} /></details>
+      {personNames.length === 0 ? <p>この人物に紐づくNameはありません。</p> : <ul className="citation-list">{personNames.map((name)=><li key={name.id}><strong>{name.name_text}</strong> <span className="badge">{name.name_type}</span><dl><dt>有効期間</dt><dd>{name.valid_from_text || '-'} 〜 {name.valid_to_text || '-'}</dd><dt>確度</dt><dd>{name.confidence ?? '-'}</dd><dt>レビュー</dt><dd>{name.review_status ?? '-'}</dd><dt>メモ</dt><dd>{name.note || '-'}</dd></dl><details><summary>編集</summary><NameForm name={name} onSubmit={(form)=>saveName(form, name)} /></details><button type="button" onClick={()=>onDeleteName?.(name.id)}>Nameを削除</button></li>)}</ul>}
+    </section>
     <section className="citation-section"><h3>出来事（Event）</h3>
       <p className="help-text">出生・死亡・婚姻・転籍・入籍・除籍などを人物に紐づけて記録します。家系図ノード上にはまだ表示しません。</p>
-      <details><summary>この人物にEventを追加</summary><EventForm sources={sources} onSubmit={(form) => saveEvent(form)} /></details>
+      <details><summary>この人物にEventを追加</summary><EventForm sources={sources} places={places} onSubmit={(form) => saveEvent(form)} /></details>
       {personEvents.length === 0 ? <p>この人物に紐づくEventはありません。</p> : <ul className="citation-list">{personEvents.map((event) => {
         const eventCitation = eventCitationById.get(event.id);
         return <li key={event.id}><strong>{eventTypeLabels[event.event_type] ?? event.event_type}</strong> {eventCitation ? <span className="badge">出典あり</span> : <span className="badge">出典なし</span>}
-          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>出典</dt><dd>{eventCitation ? (sourceById.get(eventCitation.source_id)?.title ?? '参照先資料なし') : 'なし'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
-          <details><summary>編集</summary><EventForm event={event} citation={eventCitation} sources={sources} onSubmit={(form) => saveEvent(form, event)} /></details>
+          <dl><dt>日付</dt><dd>{event.date_text || '-'}</dd><dt>場所</dt><dd>{event.place_text || '-'}</dd><dt>Place参照</dt><dd>{event.place_id ? (placeById.get(event.place_id)?.name ?? `参照切れ(${event.place_id})`) : '-'}</dd><dt>説明</dt><dd>{event.description || '-'}</dd><dt>確度</dt><dd>{event.confidence ? confidenceLabels[event.confidence] : '-'}</dd><dt>出典</dt><dd>{eventCitation ? (sourceById.get(eventCitation.source_id)?.title ?? '参照先資料なし') : 'なし'}</dd><dt>メモ</dt><dd>{event.note || '-'}</dd></dl>
+          <details><summary>編集</summary><EventForm event={event} citation={eventCitation} sources={sources} places={places} onSubmit={(form) => saveEvent(form, event)} /></details>
           <button type="button" onClick={() => onDeleteEvent?.(event.id)}>Eventを削除</button>
         </li>;
       })}</ul>}
@@ -212,11 +235,11 @@ function CitationForm({ sources, citation, allowNewSource = true, onSubmit }: { 
 }
 
 
-function EventForm({ sources, event, citation, onSubmit }: { sources: Source[]; event?: Event; citation?: Citation; onSubmit: (form: HTMLFormElement) => void }) {
+function EventForm({ sources, places = [], event, citation, onSubmit }: { sources: Source[]; places?: Place[]; event?: Event; citation?: Citation; onSubmit: (form: HTMLFormElement) => void }) {
   return <form className="stack-form" onSubmit={(e) => { e.preventDefault(); onSubmit(e.currentTarget); }}>
     <label>出来事種別<select name="event_type" defaultValue={event?.event_type ?? 'birth'}>{eventTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>日付テキスト<input name="date_text" defaultValue={event?.date_text ?? ''} /></label>
-    <label>場所<input name="place_text" defaultValue={event?.place_text ?? ''} /></label>
+    <label>場所<input name="place_text" defaultValue={event?.place_text ?? ''} /></label><label>Place参照<select name="place_id" defaultValue={event?.place_id ?? ''}><option value="">選択しない</option>{places.map((place)=><option key={place.id} value={place.id}>{place.name}</option>)}</select></label>
     <label>説明<textarea name="description" defaultValue={event?.description ?? ''} /></label>
     <label>確度<select name="confidence" defaultValue={event?.confidence ?? 'confirmed'}>{Object.entries(confidenceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label>メモ<textarea name="note" defaultValue={event?.note ?? ''} /></label>
@@ -266,5 +289,19 @@ function UnionForm({ union, onSubmit }: { union: Union; onSubmit: (patch: Partia
     <label>レビュー状態<select name="review_status" defaultValue={union.review_status ?? ''}><option value="">未設定</option>{Object.entries(reviewStatusLabels).map(([value, label]) => <option key={value} value={value}>{value} / {label}</option>)}</select></label>
     <label>メモ<textarea name="note" defaultValue={union.note ?? ''} /></label>
     <button className="primary" type="submit">夫婦関係を保存</button>
+  </form>;
+}
+
+function NameForm({ name, onSubmit }: { name?: Name; onSubmit: (form: HTMLFormElement) => void }) {
+  const nameTypes: NameType[] = ['primary','birth','maiden','alias','childhood','posthumous','courtesy','legal','other'];
+  return <form className="stack-form" onSubmit={(e)=>{ e.preventDefault(); onSubmit(e.currentTarget); }}>
+    <label>name_type<select name="name_type" defaultValue={name?.name_type ?? 'alias'}>{nameTypes.map((type)=><option key={type} value={type}>{type}</option>)}</select></label>
+    <label>name_text<input name="name_text" required defaultValue={name?.name_text ?? ''} /></label>
+    <label>valid_from_text<input name="valid_from_text" defaultValue={name?.valid_from_text ?? ''} /></label>
+    <label>valid_to_text<input name="valid_to_text" defaultValue={name?.valid_to_text ?? ''} /></label>
+    <label>confidence<select name="confidence" defaultValue={name?.confidence ?? 'confirmed'}>{Object.keys(confidenceLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
+    <label>review_status<select name="review_status" defaultValue={name?.review_status ?? 'unreviewed'}>{Object.keys(reviewStatusLabels).map((value)=><option key={value} value={value}>{value}</option>)}</select></label>
+    <label>note<textarea name="note" defaultValue={name?.note ?? ''} /></label>
+    <button className="primary" type="submit">保存</button>
   </form>;
 }

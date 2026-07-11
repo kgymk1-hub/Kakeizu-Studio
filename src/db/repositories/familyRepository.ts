@@ -1,8 +1,8 @@
 import { db } from '../dexieDb';
-import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union } from '../../models';
+import type { Citation, Event, ImportBatch, Name, ParentChildRelation, Person, Place, Source, Union } from '../../models';
 
 export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatch: ImportBatch}) {
-  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events], async () => {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places], async () => {
     await db.persons.clear();
     await db.unions.clear();
     await db.parentChildRelations.clear();
@@ -10,6 +10,8 @@ export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; 
     await db.sources.clear();
     await db.citations.clear();
     await db.events.clear();
+    await db.names?.clear();
+    await db.places?.clear();
     await db.importBatches.put(data.importBatch);
     await db.persons.bulkPut(data.persons);
     await db.unions.bulkPut(data.unions);
@@ -17,8 +19,8 @@ export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; 
   });
 }
 
-export async function saveBackupData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches: ImportBatch[]; sources?: Source[]; citations?: Citation[]; events?: Event[]}) {
-  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events], async () => {
+export async function saveBackupData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches: ImportBatch[]; sources?: Source[]; citations?: Citation[]; events?: Event[]; names?: Name[]; places?: Place[]}) {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places], async () => {
     await db.persons.clear();
     await db.unions.clear();
     await db.parentChildRelations.clear();
@@ -26,6 +28,8 @@ export async function saveBackupData(data: {persons: Person[]; unions: Union[]; 
     await db.sources.clear();
     await db.citations.clear();
     await db.events.clear();
+    await db.names?.clear();
+    await db.places?.clear();
     await db.persons.bulkPut(data.persons);
     await db.unions.bulkPut(data.unions);
     await db.parentChildRelations.bulkPut(data.parentChildRelations);
@@ -33,11 +37,13 @@ export async function saveBackupData(data: {persons: Person[]; unions: Union[]; 
     await db.sources.bulkPut(data.sources ?? []);
     await db.citations.bulkPut(data.citations ?? []);
     await db.events.bulkPut(data.events ?? []);
+    await db.names?.bulkPut(data.names ?? []);
+    await db.places?.bulkPut(data.places ?? []);
   });
 }
 
 export async function loadFamilyData() {
-  const [persons, unions, parentChildRelations, importBatches, sources, citations, events] = await Promise.all([
+  const [persons, unions, parentChildRelations, importBatches, sources, citations, events, names, places] = await Promise.all([
     db.persons.toArray(),
     db.unions.toArray(),
     db.parentChildRelations.toArray(),
@@ -45,8 +51,10 @@ export async function loadFamilyData() {
     db.sources.toArray(),
     db.citations.toArray(),
     db.events.toArray(),
+    (db.names ? db.names.toArray() : Promise.resolve([])),
+    (db.places ? db.places.toArray() : Promise.resolve([])),
   ]);
-  return { persons, unions, parentChildRelations, importBatches, sources, citations, events };
+  return { persons, unions, parentChildRelations, importBatches, sources, citations, events, names, places };
 }
 
 export async function updatePerson(person: Person) {
@@ -70,13 +78,15 @@ export async function updateUnion(unionId: string, patch: Partial<Omit<Union, 'i
   return next;
 }
 
-export async function saveKosekiEntryData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; citations: Citation[]; events?: Event[]}) {
-  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.citations, db.events], async () => {
+export async function saveKosekiEntryData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; citations: Citation[]; events?: Event[]; names?: Name[]; places?: Place[]}) {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.citations, db.events, db.names, db.places], async () => {
     await db.persons.bulkPut(data.persons);
     await db.unions.bulkPut(data.unions);
     await db.parentChildRelations.bulkPut(data.parentChildRelations);
     await db.citations.bulkPut(data.citations);
     await db.events.bulkPut(data.events ?? []);
+    await db.names?.bulkPut(data.names ?? []);
+    await db.places?.bulkPut(data.places ?? []);
   });
 }
 
@@ -93,7 +103,7 @@ export async function addOrUpdateUnions(unions: Union[]) {
 }
 
 export async function clearFamilyData() {
-  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events], async () => {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places], async () => {
     await db.persons.clear();
     await db.unions.clear();
     await db.parentChildRelations.clear();
@@ -101,6 +111,8 @@ export async function clearFamilyData() {
     await db.sources.clear();
     await db.citations.clear();
     await db.events.clear();
+    await db.names?.clear();
+    await db.places?.clear();
   });
 }
 

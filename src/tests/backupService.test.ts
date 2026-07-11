@@ -9,7 +9,7 @@ const citation: Citation = { id: 'c1', source_id: 's1', target_type: 'person', t
 describe('backupService Source/Citation', () => {
   it('JSONバックアップにsources/citationsが含まれる', () => {
     const parsed = JSON.parse(createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [source], citations: [citation] }));
-    expect(parsed.schema_version).toBe('1.3');
+    expect(parsed.schema_version).toBe('1.4');
     expect(parsed.sources).toEqual([source]);
     expect(parsed.citations).toEqual([citation]);
   });
@@ -35,7 +35,7 @@ describe('backupService events', () => {
   it('JSONバックアップにeventsとsettingsが含まれる', () => {
     const event: Event = { id:'e1', event_type:'birth', target_type:'person', target_id:'p1', created_at:'2026-01-01T00:00:00.000Z', updated_at:'2026-01-01T00:00:00.000Z' };
     const parsed = JSON.parse(createJsonBackup({ persons:[], unions:[], parent_child_relations:[], import_batches:[], sources:[], citations:[], events:[event] }));
-    expect(parsed.schema_version).toBe('1.3');
+    expect(parsed.schema_version).toBe('1.4');
     expect(parsed.events).toEqual([event]);
     expect(parsed.projects[0].id).toBe('default-project');
     expect(parsed.view_settings[0].tree_display_mode).toBe('standard');
@@ -86,7 +86,31 @@ describe('backupService v1.3 settings compatibility', () => {
   it('schema_version 1.3 の設定を作成・復元できる', () => {
     const json = createJsonBackup({ persons: [], unions: [], parent_child_relations: [], import_batches: [], sources: [], citations: [], view_settings: [{ id: 'v1', project_id: 'default-project', tree_display_mode: 'compact', show_relation_legend: false, created_at: now, updated_at: now }] });
     const parsed = parseJsonBackup(json);
-    expect(parsed.schema_version).toBe('1.3');
+    expect(parsed.schema_version).toBe('1.4');
     expect(parsed.view_settings[0].tree_display_mode).toBe('compact');
+  });
+});
+
+describe('backupService v1.4 Name / Place compatibility', () => {
+  it('schema_version 1.4 JSONを作成・復元でき、names / placesを含む', () => {
+    const name = { id:'n1', person_id:'p1', name_type:'alias' as const, name_text:'旧姓 山田花子', created_at:now, updated_at:now };
+    const place = { id:'pl1', place_type:'event' as const, name:'新潟県新潟市', created_at:now, updated_at:now };
+    const event = { id:'e-place', event_type:'birth' as const, target_type:'person' as const, target_id:'p1', place_text:'新潟', place_id:'pl1', created_at:now, updated_at:now };
+    const sourceWithPlace = { ...source, id:'s-place', place_id:'missing-place' };
+    const parsed = parseJsonBackup(createJsonBackup({ persons:[{ id:'p1', display_name:'花子', created_at:now, updated_at:now }], unions:[], parent_child_relations:[], import_batches:[], sources:[sourceWithPlace], citations:[{ ...citation, id:'c-name', target_type:'name', target_id:'n1' }, { ...citation, id:'c-place', target_type:'place', target_id:'pl1' }], events:[event], names:[name], places:[place] }));
+    expect(parsed.schema_version).toBe('1.4');
+    expect(parsed.names).toEqual([name]);
+    expect(parsed.places).toEqual([place]);
+    expect(parsed.events[0].place_id).toBe('pl1');
+    expect(parsed.sources[0].place_id).toBe('missing-place');
+  });
+
+  it('1.3以前やnames / placesがないJSONでも空配列補完して復元できる', () => {
+    for (const schema_version of ['1.0', '1.1', '1.2', '1.3'] as const) {
+      const parsed = parseJsonBackup(JSON.stringify({ schema_version, exported_at: now, persons: [], unions: [], parent_child_relations: [], import_batches: [] }));
+      expect(parsed.names).toEqual([]);
+      expect(parsed.places).toEqual([]);
+      expect(parsed.projects[0].id).toBe('default-project');
+    }
   });
 });

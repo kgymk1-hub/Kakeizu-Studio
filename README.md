@@ -8,6 +8,29 @@ Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript 
 
 > v0.8.0では、Project / 表示設定 / 出力設定 / プライバシー設定を正式版として整理し、単一default project相当のProjectモデル、ViewSetting、ExportSetting、PrivacySettingをDBへ保存できるようにしました。
 
+
+## v0.9 development: Name / Place 最小版
+
+Kakeizu Studio v0.9は開発中です。package version、package-lock version、Appヘッダー、README冒頭Versionはまだ `0.8.0` のまま維持します。
+
+- 第1フェーズ：Name / Place現状棚卸し
+- 第2フェーズ：Nameモデル最小版
+- 第3フェーズ：PersonとNameの最小連携
+- 第4フェーズ：Placeモデル最小版
+- 第5フェーズ：Event / Source とPlaceの最小連携
+- 第6フェーズ：Name / Place一覧・検索最小版
+- 第7フェーズ：Citation target_type name / place の準備
+- 第8フェーズ：JSONバックアップ・DB互換性確認
+
+方針:
+
+- `Person.display_name` は引き続き主表示名として維持します。
+- `Event.place_text` は引き続き表示用場所テキストとして維持します。
+- Name / Placeは既存フィールドを置き換えず、横に追加する最小版です。
+- JSON backup `schema_version` を `1.4` に上げる場合も、`1.3` 以前の復元互換を維持します。
+- Dexie schema versionを `5` に上げる場合も、既存 `version(1)`〜`version(4)` を維持します。
+- 標準CSVセット構造は今回は変更せず、`names.csv` / `places.csv` は追加しません。
+
 ## v0.8.0: Project / 表示設定 / 出力設定 / プライバシー設定
 
 v0.8.0では、単一default project相当のProjectモデル、ViewSetting、ExportSetting、PrivacySettingを追加し、表示設定・出力設定・公開用出力モードをDBに保存できるようにしました。また、Project / settingsをJSONバックアップに含めるため、JSON backup `schema_version` を `1.3` に更新しました。

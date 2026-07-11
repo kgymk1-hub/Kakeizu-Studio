@@ -1,4 +1,4 @@
-import type { Citation, Event, ParentChildRelation, Person, Source, Union, ValidationIssue, ValidationSeverity } from '../models';
+import type { Citation, Event, Name, ParentChildRelation, Person, Place, Source, Union, ValidationIssue, ValidationSeverity } from '../models';
 
 type ValidatedEntity = Person | Event | ParentChildRelation | Union;
 type ValidatedTargetType = 'person' | 'event' | 'relation' | 'union';
@@ -10,6 +10,8 @@ export interface ValidateFamilyDataInput {
   events: Event[];
   sources: Source[];
   citations: Citation[];
+  names?: Name[];
+  places?: Place[];
 }
 
 const severityRank: Record<ValidationSeverity, number> = { error: 0, warning: 1, info: 2 };
@@ -24,13 +26,15 @@ export function extractYear(value?: string): number | undefined {
 }
 
 export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIssue[] {
-  const { persons, unions, parentChildRelations, events, sources, citations } = input;
+  const { persons, unions, parentChildRelations, events, sources, citations, names = [], places = [] } = input;
   const issues: ValidationIssue[] = [];
   const personIds = new Set(persons.map((p) => p.id));
   const unionIds = new Set(unions.map((u) => u.id));
   const relationIds = new Set(parentChildRelations.map((r) => r.id));
   const eventIds = new Set(events.map((e) => e.id));
   const sourceIds = new Set(sources.map((s) => s.id));
+  const nameIds = new Set(names.map((n) => n.id));
+  const placeIds = new Set(places.map((p) => p.id));
   const citationsByTarget = new Set(citations.map((c) => `${c.target_type}:${c.target_id}`));
   const personById = new Map(persons.map((p) => [p.id, p]));
 
@@ -123,7 +127,8 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (c.target_type === 'event' && !eventIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないEvent ${c.target_id} を参照しています。`, [c.target_id]);
     if (c.target_type === 'union' && !unionIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないUnion ${c.target_id} を参照しています。`, [c.target_id]);
     if (c.target_type === 'relation' && !relationIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しない親子関係 ${c.target_id} を参照しています。`, [c.target_id]);
-    // name/place は現時点で実体モデルが未実装のため、参照先不明エラーにはしない。
+    if (c.target_type === 'name' && !nameIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないName ${c.target_id} を参照しています。`, [c.target_id]);
+    if (c.target_type === 'place' && !placeIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないPlace ${c.target_id} を参照しています。`, [c.target_id]);
   });
 
   function addBroken(target_type: 'person' | 'event' | 'union' | 'relation' | 'citation', target_id: string, message: string, related_ids?: string[]) {
