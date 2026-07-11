@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Event, EventType, ParentChildRelation, Person, SelectableTarget, Union } from '../../models';
+import { EmptyState } from '../common/EmptyState';
 import { eventTypeOptions, filterEvents, resolveEventTargetSummary } from './eventListFilter';
 
 interface Props {
@@ -26,7 +27,7 @@ export function EventListPanel({ events, persons, unions, relations, onSelectTar
       <label>出来事種別<select value={eventType} onChange={(e) => setEventType(e.target.value as 'all' | EventType)}>{eventTypeOptions.map((value) => <option key={value} value={value}>{labelAll(value)}</option>)}</select></label>
     </div>
     <p className="list-panel-count event-list-count">{filteredEvents.length} / {events.length} 件を表示</p>
-    {filteredEvents.length === 0 ? <p className="notice list-panel-empty">条件に一致する出来事がありません。</p> : <ul className="list-card-list event-list-cards">
+    {filteredEvents.length === 0 ? <EmptyState className="notice list-panel-empty">条件に一致する出来事がありません。</EmptyState> : <ul className="list-card-list event-list-cards">
       {filteredEvents.map((event) => {
         const target = resolveEventTargetSummary(event, data);
         return <li key={event.id}>
