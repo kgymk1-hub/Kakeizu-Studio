@@ -32,6 +32,9 @@ const targetTypeLabels: Partial<Record<ValidationTargetType, string>> = {
   union: '夫婦関係',
   relation: '親子関係',
   citation: 'Citation',
+  source: 'Source',
+  name: 'Name',
+  place: 'Place',
 };
 
 export function countValidationIssues(issues: ValidationIssue[]): ValidationCounts {

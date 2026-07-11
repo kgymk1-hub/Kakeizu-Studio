@@ -13,7 +13,7 @@ export type ValidationCategory =
   | 'self_reference'
   | 'date_inconsistency'
   | 'age_warning';
-export type ValidationTargetType = 'person' | 'event' | 'union' | 'relation' | 'citation' | 'name' | 'place';
+export type ValidationTargetType = 'person' | 'event' | 'union' | 'relation' | 'citation' | 'source' | 'name' | 'place';
 export type SelectableTargetType = 'person' | 'event' | 'union' | 'relation' | 'source' | 'citation' | 'name' | 'place';
 export interface SelectableTarget { target_type: SelectableTargetType; target_id: string; }
 export type EventType = 'birth' | 'death' | 'marriage' | 'divorce' | 'adoption' | 'recognition' | 'entry_registry' | 'removal_registry' | 'transfer_registry' | 'name_change' | 'residence' | 'occupation' | 'title' | 'other';

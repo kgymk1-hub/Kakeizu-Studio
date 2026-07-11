@@ -49,6 +49,19 @@
 - 1.3以前のJSONは `names` / `places` がなくても空配列として補完する。
 - Project / ViewSetting / ExportSetting / PrivacySettingの補完は維持する。
 
+
+## 補完フェーズ：Place最小編集導線とName / Place境界整理
+
+- Name / Place一覧パネルにPlace追加・編集・削除の最小導線を追加する。必須編集項目は `name` / `place_type` とし、`normalized_name`、住所、国、都道府県、市区町村、地区、公開レベル、確度、レビュー、メモは任意で扱う。
+- Place一覧の検索・typeフィルタ・件数表示は維持し、追加・編集・削除後に一覧へ即時反映する。Place詳細専用画面は作らない。
+- Place削除時は、そのPlaceを参照している `Event.place_id` / `Source.place_id` をクリアする。Event / Source本体は削除せず、`Event.place_text`、`Source.honseki_text`、`Source.repository` も同期上書きしない。
+- `Event.place_id` / `Source.place_id` が存在するが対応Placeが存在しない場合は、Validationで `broken_reference` のwarningとして検出する。表示・JSON復元は参照切れでも落ちない安全表示を維持する。
+- `Source.place_id` は型・Dexie・JSONで保持する任意参照であり、v0.9補完フェーズではSource詳細画面を新設しない。既存の `honseki_text` / `repository` が表示・編集用テキストとして残る。
+- Name / PlaceはJSONバックアップでは `schema_version: "1.4"` として保存・復元する。
+- 標準CSVセット構造はv0.9では変更しない。そのため `names.csv` / `places.csv` は出力せず、標準CSVセット経由ではName / Place実体を入出力しない。
+- `citations.csv` で `target_type=name/place` を扱う場合も、標準CSVセット内にName / Place実体CSVがないため、標準CSVセット経由ではName / Place実体を復元しない。安全表示・検証準備までを現時点の範囲とし、この制限はv1.0以降または標準CSVセット拡張フェーズで再検討する。
+- 今回やらないことは、v0.9.0リリース固定、package / README冒頭 / AppヘッダーVersion変更、RELEASE_NOTES正式追記、タグ手順追記、Name詳細専用画面、Place詳細専用画面、Source詳細画面新設、標準CSVセットへの `names.csv` / `places.csv` 追加、標準CSVセット構造変更、地図表示、緯度経度管理、地名階層の本格管理、既存テキストフィールドの廃止・完全同期、v1.0以降機能。
+
 ## Dexie schema version(5)追加理由
 
 Name / Placeを横付けテーブルとして保存するため、既存 `version(1)`〜`version(4)` を維持したうえで `version(5)` に `names` / `places` をまとめて追加する。
