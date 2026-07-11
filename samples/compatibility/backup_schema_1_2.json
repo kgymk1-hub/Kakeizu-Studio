@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.2",
+  "exported_at": "2026-07-01T00:00:00.000Z",
+  "persons": [
+    {
+      "id": "compat-v12-person",
+      "display_name": "互換確認 一二",
+      "gender": "unknown",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "unions": [],
+  "parent_child_relations": [],
+  "import_batches": [],
+  "sources": [
+    {
+      "id": "compat-v12-source",
+      "source_type": "book",
+      "title": "互換確認資料1.2",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "compat-v12-event",
+      "event_type": "birth",
+      "target_type": "person",
+      "target_id": "compat-v12-person",
+      "review_status": "reviewed",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "citations": [
+    {
+      "id": "compat-v12-citation-person",
+      "source_id": "compat-v12-source",
+      "target_type": "person",
+      "target_id": "compat-v12-person",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    },
+    {
+      "id": "compat-v12-citation-event",
+      "source_id": "compat-v12-source",
+      "target_type": "event",
+      "target_id": "compat-v12-event",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ]
+}

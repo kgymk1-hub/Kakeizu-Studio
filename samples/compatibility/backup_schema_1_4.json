@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.4",
+  "exported_at": "2026-07-01T00:00:00.000Z",
+  "persons": [
+    {
+      "id": "compat-v14-person",
+      "display_name": "互換確認 一四",
+      "gender": "unknown",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "unions": [],
+  "parent_child_relations": [],
+  "import_batches": [],
+  "sources": [
+    {
+      "id": "compat-v14-source",
+      "source_type": "book",
+      "title": "互換確認資料1.4",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z",
+      "place_id": "compat-v14-place"
+    }
+  ],
+  "events": [
+    {
+      "id": "compat-v14-event",
+      "event_type": "birth",
+      "target_type": "person",
+      "target_id": "compat-v14-person",
+      "review_status": "reviewed",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z",
+      "place_id": "compat-v14-place",
+      "place_text": "新潟県架空市互換地区"
+    }
+  ],
+  "names": [
+    {
+      "id": "compat-v14-name",
+      "person_id": "compat-v14-person",
+      "name_type": "alias",
+      "name_text": "互換確認 一四別名",
+      "confidence": "confirmed",
+      "review_status": "reviewed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "places": [
+    {
+      "id": "compat-v14-place",
+      "place_type": "residence",
+      "name": "新潟県架空市互換地区",
+      "prefecture": "新潟県",
+      "municipality": "架空市",
+      "confidence": "confirmed",
+      "review_status": "reviewed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "citations": [
+    {
+      "id": "compat-v14-citation-person",
+      "source_id": "compat-v14-source",
+      "target_type": "person",
+      "target_id": "compat-v14-person",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    },
+    {
+      "id": "compat-v14-citation-event",
+      "source_id": "compat-v14-source",
+      "target_type": "event",
+      "target_id": "compat-v14-event",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    },
+    {
+      "id": "compat-v14-citation-name",
+      "source_id": "compat-v14-source",
+      "target_type": "name",
+      "target_id": "compat-v14-name",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    },
+    {
+      "id": "compat-v14-citation-place",
+      "source_id": "compat-v14-source",
+      "target_type": "place",
+      "target_id": "compat-v14-place",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "compat-project-v14",
+      "name": "互換プロジェクト1.4",
+      "description": "互換確認用1.4",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "view_settings": [
+    {
+      "id": "compat-view-v14",
+      "project_id": "compat-project-v14",
+      "tree_display_mode": "compact",
+      "show_relation_legend": false,
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "export_settings": [
+    {
+      "id": "compat-export-v14",
+      "project_id": "compat-project-v14",
+      "show_title": false,
+      "title": "互換確認1.4",
+      "show_legend": false,
+      "background": "transparent",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "privacy_settings": [
+    {
+      "id": "compat-privacy-v14",
+      "project_id": "compat-project-v14",
+      "public_output_mode": true,
+      "hide_living_persons": true,
+      "hide_private_persons": false,
+      "hide_hidden_persons": false,
+      "hide_honseki": false,
+      "mask_living_dates": false,
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ]
+}

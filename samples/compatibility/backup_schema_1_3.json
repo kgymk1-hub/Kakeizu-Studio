@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.3",
+  "exported_at": "2026-07-01T00:00:00.000Z",
+  "persons": [
+    {
+      "id": "compat-v13-person",
+      "display_name": "互換確認 一三",
+      "gender": "unknown",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "unions": [],
+  "parent_child_relations": [],
+  "import_batches": [],
+  "sources": [
+    {
+      "id": "compat-v13-source",
+      "source_type": "book",
+      "title": "互換確認資料1.3",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "compat-v13-event",
+      "event_type": "birth",
+      "target_type": "person",
+      "target_id": "compat-v13-person",
+      "review_status": "reviewed",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "citations": [
+    {
+      "id": "compat-v13-citation-person",
+      "source_id": "compat-v13-source",
+      "target_type": "person",
+      "target_id": "compat-v13-person",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    },
+    {
+      "id": "compat-v13-citation-event",
+      "source_id": "compat-v13-source",
+      "target_type": "event",
+      "target_id": "compat-v13-event",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "compat-project-v13",
+      "name": "互換プロジェクト1.3",
+      "description": "互換確認用1.3",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "view_settings": [
+    {
+      "id": "compat-view-v13",
+      "project_id": "compat-project-v13",
+      "tree_display_mode": "compact",
+      "show_relation_legend": false,
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "export_settings": [
+    {
+      "id": "compat-export-v13",
+      "project_id": "compat-project-v13",
+      "show_title": false,
+      "title": "互換確認1.3",
+      "show_legend": false,
+      "background": "transparent",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "privacy_settings": [
+    {
+      "id": "compat-privacy-v13",
+      "project_id": "compat-project-v13",
+      "public_output_mode": true,
+      "hide_living_persons": true,
+      "hide_private_persons": false,
+      "hide_hidden_persons": false,
+      "hide_honseki": false,
+      "mask_living_dates": false,
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ]
+}
