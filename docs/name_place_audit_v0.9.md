@@ -107,3 +107,9 @@ v0.9.0リリース固定、package / README冒頭 / AppヘッダーVersion変更
 ## 次フェーズ
 
 次は **v0.9 第10フェーズ：v0.9.0リリース固定**。
+
+## 第10フェーズ：v0.9.0リリース固定
+
+v0.9.0リリース固定では、package / README / Appヘッダー / RELEASE_NOTES を0.9.0へ更新し、Name / Place 最小版フェーズを正式版として固定した。
+
+このリリースでは、Dexie schema version(5) と JSON backup schema_version 1.4 を維持する。標準CSVセット構造、names.csv / places.csv、Name詳細専用画面、Place詳細専用画面、Source編集UIでのPlace選択、Citation編集UIでのname/place本格選択は追加しない。
