@@ -16,7 +16,7 @@ export interface ValidateFamilyDataInput {
 
 const severityRank: Record<ValidationSeverity, number> = { error: 0, warning: 1, info: 2 };
 const labels: Record<ValidatedTargetType, string> = { person: '人物', event: '出来事', relation: '親子関係', union: '夫婦関係' };
-const citationTargetLabels = { ...labels, citation: 'Citation' } as const;
+const citationTargetLabels = { ...labels, citation: 'Citation', source: 'Source' } as const;
 
 export function extractYear(value?: string): number | undefined {
   const normalized = value?.trim();
@@ -68,6 +68,7 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (e.target_type === 'person' && !personIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しないPerson ${e.target_id} を参照しています。`, [e.target_id]);
     if (e.target_type === 'union' && !unionIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しないUnion ${e.target_id} を参照しています。`, [e.target_id]);
     if (e.target_type === 'relation' && !relationIds.has(e.target_id)) addBroken('event', e.id, `Event ${e.id} は存在しない親子関係 ${e.target_id} を参照しています。`, [e.target_id]);
+    if (e.place_id && !placeIds.has(e.place_id)) addBroken('event', e.id, `Eventのplace_idが存在しないPlace ${e.place_id} を参照しています。`, [e.place_id], 'warning');
     if (e.target_type === 'person') {
       const targetPerson = personById.get(e.target_id);
       const eventYear = extractYear(e.date_text);
@@ -121,6 +122,10 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     }
   });
 
+  sources.forEach((source) => {
+    if (source.place_id && !placeIds.has(source.place_id)) addBroken('source', source.id, `Sourceのplace_idが存在しないPlace ${source.place_id} を参照しています。`, [source.place_id], 'warning');
+  });
+
   citations.forEach((c) => {
     if (!sourceIds.has(c.source_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないSource ${c.source_id} を参照しています。`, [c.source_id]);
     if (c.target_type === 'person' && !personIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないPerson ${c.target_id} を参照しています。`, [c.target_id]);
@@ -131,8 +136,8 @@ export function validateFamilyData(input: ValidateFamilyDataInput): ValidationIs
     if (c.target_type === 'place' && !placeIds.has(c.target_id)) addBroken('citation', c.id, `Citation ${c.id} は存在しないPlace ${c.target_id} を参照しています。`, [c.target_id]);
   });
 
-  function addBroken(target_type: 'person' | 'event' | 'union' | 'relation' | 'citation', target_id: string, message: string, related_ids?: string[]) {
-    add({ severity: 'error', category: 'broken_reference', target_type, target_id, title: `${citationTargetLabels[target_type]}の参照先が見つかりません`, message, related_ids });
+  function addBroken(target_type: 'person' | 'event' | 'union' | 'relation' | 'citation' | 'source', target_id: string, message: string, related_ids?: string[], severity: ValidationSeverity = 'error') {
+    add({ severity, category: 'broken_reference', target_type, target_id, title: `${citationTargetLabels[target_type]}の参照先が見つかりません`, message, related_ids });
   }
 
   return issues.sort((a, b) => severityRank[a.severity] - severityRank[b.severity] || (a.category ?? '').localeCompare(b.category ?? '') || (a.target_type ?? '').localeCompare(b.target_type ?? ''));
