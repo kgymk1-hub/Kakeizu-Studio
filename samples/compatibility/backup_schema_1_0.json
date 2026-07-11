@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "exported_at": "2026-07-01T00:00:00.000Z",
+  "persons": [
+    {
+      "id": "compat-v10-person",
+      "display_name": "互換確認 一〇",
+      "gender": "unknown",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "unions": [],
+  "parent_child_relations": [],
+  "import_batches": []
+}

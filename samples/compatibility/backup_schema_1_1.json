@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.1",
+  "exported_at": "2026-07-01T00:00:00.000Z",
+  "persons": [
+    {
+      "id": "compat-v11-person",
+      "display_name": "互換確認 一一",
+      "gender": "unknown",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "unions": [],
+  "parent_child_relations": [],
+  "import_batches": [],
+  "sources": [
+    {
+      "id": "compat-v11-source",
+      "source_type": "book",
+      "title": "互換確認資料1.1",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "citations": [
+    {
+      "id": "compat-v11-citation-person",
+      "source_id": "compat-v11-source",
+      "target_type": "person",
+      "target_id": "compat-v11-person",
+      "confidence": "confirmed",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z"
+    }
+  ]
+}
