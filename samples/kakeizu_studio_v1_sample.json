@@ -257,30 +257,38 @@
       "id": "sample-import-batch-01",
       "external_id": "sample-import-batch-01",
       "imported_at": "2026-07-01T00:00:00.000Z",
-      "import_type": "json",
-      "source_name": "Kakeizu Studio v1 sample",
+      "import_type": "csv_standard",
+      "source_name": "青葉家サンプル標準CSVセット",
       "imported_count": 7,
       "warning_count": 2,
       "error_count": 0,
       "mode": "standard_csv_set",
+      "import_policy": "replace_all",
+      "placeholder_person_policy": "warn_and_skip",
       "status": "completed_with_warnings",
-      "source_label": "v1.0 full feature sample JSON",
+      "source_label": "青葉家サンプル標準CSVセット",
       "file_names": [
-        "samples/kakeizu_studio_v1_sample.json"
+        "manifest.json",
+        "persons.csv",
+        "unions.csv",
+        "parent_child_relations.csv",
+        "sources.csv",
+        "citations.csv",
+        "events.csv"
       ],
-      "total_rows": 58,
+      "total_rows": 50,
       "imported_counts": {
         "persons": 7,
         "unions": 3,
         "relations": 6,
         "events": 7,
         "sources": 4,
-        "citations": 27
+        "citations": 23
       },
       "unresolved_reference_count": 0,
       "placeholder_person_candidate_count": 0,
       "created_at": "2026-07-01T00:00:00.000Z",
-      "note": "このデータはKakeizu Studioの機能確認用に作成した架空の家系です。実在の人物・戸籍・住所・資料とは関係ありません。"
+      "note": "標準CSVセットで中核データを反映した架空の履歴です。Name / Placeとそれらを対象とするCitationはサンプル確認用に別途追加されています。実在の人物・戸籍・住所・資料とは関係ありません。"
     }
   ],
   "sources": [
