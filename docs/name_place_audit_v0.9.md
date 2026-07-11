@@ -84,6 +84,26 @@ v0.9ではName / Placeの最小モデルとUI、JSON/DB互換を優先する。`
 
 v0.9.0リリース固定、package / README冒頭 / AppヘッダーVersion変更、RELEASE_NOTES正式追記、タグ手順追記、Name/Place完全詳細画面、標準CSVセットへの names.csv / places.csv 追加、地図表示、緯度経度管理、GEDCOM、親等計算、v1.0以降機能は行わない。
 
+## 第9フェーズ：v0.9全体仕上げ確認
+
+- v0.9第1〜第8フェーズと補完フェーズの接続を確認し、Name / Placeが既存フィールドの置き換えではなく横付け追加であることをREADMEと本ドキュメントに整理する。
+- Person詳細のName追加・編集・削除、Name / Place一覧・検索、Place追加・編集・削除、Citation `target_type=name/place` の安全表示、Validationの参照検証、JSON backup `schema_version: "1.4"`、Dexie `version(5)`、標準CSVセット境界を仕上げ確認する。
+- package / package-lock / Appヘッダー / README冒頭Versionは `0.8.0` のまま維持し、v0.9.0正式固定、RELEASE_NOTES正式追記、タグ手順追記は第10フェーズへ送る。
+
+## v0.9全体まとめ
+
+- v0.9で実装済み: `NameType` / `Name`、`PlaceType` / `Place`、Dexie `names` / `places`、Person詳細のName表示・追加・編集・削除、Name / Place一覧・検索、Place追加・編集・削除、Event / Sourceの任意 `place_id`、Citation `target_type=name/place` の安全表示・検証準備、JSONバックアップ1.4保存・復元。
+- NameはPerson表示名の置き換えではない。`Person.display_name`、`family_name`、`given_name`、`birth_family_name` 等を維持し、Name編集でPerson本体を自動上書きしない。
+- Placeは既存場所テキストの置き換えではない。`Event.place_text`、`Source.honseki_text`、`Source.repository` を維持し、Place編集でこれらを自動上書きしない。
+- Place削除時は、そのPlaceを参照している `Event.place_id` / `Source.place_id` をクリアする。Event / Source本体、`Event.place_text`、`Source.honseki_text`、`Source.repository` は削除・同期上書きしない。
+- `Event.place_id` / `Source.place_id` が参照切れの場合はValidation warningで検出し、画面表示とJSON復元は落ちない安全表示を維持する。
+- `Source.place_id` は型・DB・JSONで保持する任意Place参照であり、Source編集UIでのPlace選択は将来対応。
+- Citation `target_type=name/place` はSource / Citation一覧で対象名を解決し、参照切れでも落ちない。Validationでもname/place参照切れを検出する。Citation編集UIでのname/place本格選択は将来対応。
+- JSONバックアップはName / Place実体を保存・復元するため `schema_version: "1.4"` に上げた。1.3以前のJSONでは `names` / `places` を空配列補完し、Project / ViewSetting / ExportSetting / PrivacySettingなど既存補完を維持する。
+- Dexie schema `version(5)` は、既存 `version(1)`〜`version(4)` を維持したうえで `names` / `places` を追加し、Event / Sourceの任意Place参照保存に対応するために追加した。
+- 標準CSVセットは従来の persons / unions / parent_child_relations / sources / citations / events / manifest 構造のまま維持する。`names.csv` / `places.csv` は追加せず、標準CSVセット経由ではName / Place実体を入出力しない。`citations.csv` の `target_type=name/place` は安全表示・検証対象だが、Name / Place実体復元は将来対応。
+- v0.8のProject / settings / Privacy、v0.7のCSVインポート・標準CSVセット・ImportBatch / ImportReportの既存境界は維持する。
+
 ## 次フェーズ
 
-次は **v0.9 第9フェーズ：v0.9全体仕上げ確認**。
+次は **v0.9 第10フェーズ：v0.9.0リリース固定**。
