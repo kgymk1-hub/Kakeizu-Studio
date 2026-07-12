@@ -284,7 +284,7 @@ JSONバックアップの現行出力は`schema_version: "1.4"`です。schema 1
 - Media / 添付ファイル、GEDCOM、親等計算、法定相続人判定、相続関係説明図、OCR / AI支援は未実装です。
 - 大規模データ向け仮想スクロール、ページネーションは未実装です。
 
-詳細は`docs/known_limitations_v1.0.md`を参照してください。package / App versionの`1.0.0`固定、Git tag、GitHub Release、実ブラウザ手動確認は既知制限ではなく、正式リリース前の残作業として統合Dで扱います。
+詳細は`docs/known_limitations_v1.0.md`を参照してください。実ブラウザ手動確認は既知制限ではなく、統合Dへ進む前に実施する正式リリース前の確認作業です。package / App / README versionの`1.0.0`固定、Git tag、GitHub Releaseは統合Dで実施します。
 
 ## 主な機能
 
