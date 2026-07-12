@@ -20,9 +20,17 @@ v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0ま
 
 ## Changed
 
+- インポート関連UI文言を整理しました。
+- 表示専用パネルを分離しました。
+- `EmptyState`を共通化しました。
+- `MetricPills`を共通化しました。
+- list系CSS重複を整理しました。
+- モバイル検索欄の全幅表示を復元しました。
 - READMEをv1.0.0 Release Candidateの現在状態に整理しました。
 - 仕様書をVersion 1.6へ更新し、v1.0.0 Release Candidateの安定版仕上げと統合C方針を反映しました。
 - 旧schema復元後の再出力方針をschema 1.4固定として整理しました。
+
+これらは安定化・可読性・保守性を目的とする整理であり、DB schema、JSON schema、標準CSVセット構造を変更していません。
 
 ## Fixed
 
@@ -53,18 +61,30 @@ v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0ま
 
 ## Testing
 
-- 自動テスト: 31 files / 332 tests
-- P0テスト: 6 files / 128 tests
-- build: success
-- TypeScript: success
+- 自動テスト: 31 test files / 332 tests
+- P0 related tests: 6 test files / 128 tests
+- `npm run build`: success
+- `npx tsc --noEmit`: success
 - JSON schema 1.0〜1.4代表fixture: success
+- GitHub Actions deploy: success
+- GitHub Pages technical verification: completed
+- Manual browser verification: not performed
+- Manual checklist: 0 / 50
+- 公開確認は外部環境およびGitHub Actionsの成功結果を使用。詳細は`docs/v1_release_verification.md`を参照。
 
 ## Known limitations
 
-- 実ブラウザ手動確認は未実施です。
-- 手動確認チェックリストは未完了です。
-- package / App version 1.0.0固定、v1.0.0 tag、GitHub Releaseは未実施です。
-- JSON復元は現在データを全置換するため、復元前バックアップを推奨します。
+- CSV実保存は`replace_all`のみです。
+- Projectは単一Project相当です。
+- Name / Placeは最小版です。
+- 標準CSVセットにName / Placeはありません。
+- 公開用CSV / JSONはありません。
+- Mediaはありません。
+- GEDCOMはありません。
+- 親等・相続判定はありません。
+- OCR / AI支援はありません。
+
+詳細: `docs/known_limitations_v1.0.md`
 
 ## Release checklist
 
