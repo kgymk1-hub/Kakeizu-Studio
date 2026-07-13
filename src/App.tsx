@@ -18,7 +18,7 @@ import { importSimpleCsv } from './services/csvImportService';
 import { exportSimpleCsv } from './services/csvExportService';
 import { buildFamilyLayout, sanitizeSelectedPersonId } from './services/layoutService';
 import { createJsonBackup, parseJsonBackup } from './services/backupService';
-import { createDefaultExportSetting, createDefaultPrivacySetting, createDefaultProject, createDefaultViewSetting, loadProjectSettings, saveExportSetting, savePrivacySetting, saveProject, saveViewSetting } from './services/projectSettingsService';
+import { createDefaultExportSetting, createDefaultPrivacySetting, createDefaultProject, createDefaultViewSetting, loadProjectSettings, normalizeRestoredProjectSettings, saveExportSetting, savePrivacySetting, saveProject, saveViewSetting } from './services/projectSettingsService';
 import { createStandardCsvSetZip, parseStandardCsvSetFileList, parseStandardCsvSetZip, type StandardCsvSetPreview } from './services/standardCsvSetService';
 import { downloadElementAsPdf, downloadElementAsPng, downloadSvgFromElement } from './services/exportImageService';
 import { validateFamilyData } from './services/validationService';
@@ -391,10 +391,13 @@ export default function App() {
     if (!confirm('現在のデータを置き換えます。よろしいですか？')) return;
     try {
       const backup = parseJsonBackup(await file.text());
-      await saveBackupData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, sources: backup.sources, citations: backup.citations, events: backup.events, names: backup.names, places: backup.places });
-      const nextProject = backup.projects[0] ?? createDefaultProject(); const nextView = backup.view_settings[0] ?? createDefaultViewSetting(nextProject.id); const nextExport = backup.export_settings[0] ?? createDefaultExportSetting(nextProject.id); const nextPrivacy = backup.privacy_settings[0] ?? createDefaultPrivacySetting(nextProject.id);
-      await Promise.all([saveProject(nextProject), saveViewSetting(nextView), saveExportSetting(nextExport), savePrivacySetting(nextPrivacy)]); setProject(nextProject); setViewSetting(nextView); setExportSetting(nextExport); setPrivacySetting(nextPrivacy);
-      applyData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, sources: backup.sources, citations: backup.citations, events: backup.events, names: backup.names, places: backup.places, issues: [] });
+      const normalizedSettings = normalizeRestoredProjectSettings(backup);
+      await saveBackupData({ persons: backup.persons, unions: backup.unions, parentChildRelations: backup.parent_child_relations, importBatches: backup.import_batches, sources: backup.sources, citations: backup.citations, events: backup.events, names: backup.names, places: backup.places, ...normalizedSettings });
+      const [persistedData, persistedSettings] = await Promise.all([loadFamilyData(), loadProjectSettings()]);
+      if (persistedData.citations.length !== backup.citations.length || persistedSettings.project.id !== normalizedSettings.project.id || persistedSettings.viewSetting.id !== normalizedSettings.viewSetting.id || persistedSettings.exportSetting.id !== normalizedSettings.exportSetting.id || persistedSettings.privacySetting.id !== normalizedSettings.privacySetting.id) throw new Error('JSONバックアップ復元後の再読込検証に失敗しました。');
+      setProject(persistedSettings.project); setViewSetting(persistedSettings.viewSetting); setExportSetting(persistedSettings.exportSetting); setPrivacySetting(persistedSettings.privacySetting);
+      applyData({ ...persistedData, issues: [] });
+      setSelectedId(undefined); setStandardPreview(undefined); setLastImportReport(undefined);
       setStatus('JSONバックアップを復元しました。');
     } catch (error) {
       console.error('JSONバックアップの復元に失敗しました。', error);

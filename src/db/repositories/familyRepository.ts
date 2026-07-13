@@ -1,5 +1,5 @@
 import { db } from '../dexieDb';
-import type { Citation, Event, ImportBatch, Name, ParentChildRelation, Person, Place, Source, Union } from '../../models';
+import type { Citation, Event, ExportSetting, ImportBatch, Name, ParentChildRelation, Person, Place, PrivacySetting, Project, Source, Union, ViewSetting } from '../../models';
 
 export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatch: ImportBatch}) {
   await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places], async () => {
@@ -19,8 +19,8 @@ export async function saveFamilyData(data: {persons: Person[]; unions: Union[]; 
   });
 }
 
-export async function saveBackupData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches: ImportBatch[]; sources?: Source[]; citations?: Citation[]; events?: Event[]; names?: Name[]; places?: Place[]}) {
-  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places], async () => {
+export async function saveBackupData(data: {persons: Person[]; unions: Union[]; parentChildRelations: ParentChildRelation[]; importBatches: ImportBatch[]; sources?: Source[]; citations?: Citation[]; events?: Event[]; names?: Name[]; places?: Place[]; project?: Project; viewSetting?: ViewSetting; exportSetting?: ExportSetting; privacySetting?: PrivacySetting}) {
+  await db.transaction('rw', [db.persons, db.unions, db.parentChildRelations, db.importBatches, db.sources, db.citations, db.events, db.names, db.places, db.projects, db.viewSettings, db.exportSettings, db.privacySettings], async () => {
     await db.persons.clear();
     await db.unions.clear();
     await db.parentChildRelations.clear();
@@ -30,6 +30,16 @@ export async function saveBackupData(data: {persons: Person[]; unions: Union[]; 
     await db.events.clear();
     await db.names?.clear();
     await db.places?.clear();
+    if (data.project && data.viewSetting && data.exportSetting && data.privacySetting) {
+      await db.projects.clear();
+      await db.viewSettings.clear();
+      await db.exportSettings.clear();
+      await db.privacySettings.clear();
+      await db.projects.put(data.project);
+      await db.viewSettings.put(data.viewSetting);
+      await db.exportSettings.put(data.exportSetting);
+      await db.privacySettings.put(data.privacySetting);
+    }
     await db.persons.bulkPut(data.persons);
     await db.unions.bulkPut(data.unions);
     await db.parentChildRelations.bulkPut(data.parentChildRelations);
