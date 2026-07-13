@@ -22,6 +22,23 @@ export function createDefaultPrivacySetting(projectId = DEFAULT_PROJECT_ID, date
   return { id: DEFAULT_PRIVACY_SETTING_ID, project_id: projectId, public_output_mode: false, hide_living_persons: false, hide_private_persons: true, hide_hidden_persons: true, hide_honseki: true, mask_living_dates: true, created_at: date, updated_at: date };
 }
 
+
+export function normalizeRestoredProjectSettings(input: { projects?: Project[]; view_settings?: ViewSetting[]; export_settings?: ExportSetting[]; privacy_settings?: PrivacySetting[] }, date = now()) {
+  const sourceProject = input.projects?.[0];
+  const project: Project = { ...createDefaultProject(date), ...sourceProject, id: DEFAULT_PROJECT_ID, created_at: sourceProject?.created_at ?? date, updated_at: sourceProject?.updated_at ?? date };
+
+  const sourceView = input.view_settings?.[0];
+  const viewSetting: ViewSetting = { ...createDefaultViewSetting(DEFAULT_PROJECT_ID, date), ...sourceView, id: DEFAULT_VIEW_SETTING_ID, project_id: DEFAULT_PROJECT_ID, created_at: sourceView?.created_at ?? date, updated_at: sourceView?.updated_at ?? date };
+
+  const sourceExport = input.export_settings?.[0];
+  const exportSetting: ExportSetting = { ...createDefaultExportSetting(DEFAULT_PROJECT_ID, date), ...sourceExport, id: DEFAULT_EXPORT_SETTING_ID, project_id: DEFAULT_PROJECT_ID, created_at: sourceExport?.created_at ?? date, updated_at: sourceExport?.updated_at ?? date };
+
+  const sourcePrivacy = input.privacy_settings?.[0];
+  const privacySetting: PrivacySetting = { ...createDefaultPrivacySetting(DEFAULT_PROJECT_ID, date), ...sourcePrivacy, id: DEFAULT_PRIVACY_SETTING_ID, project_id: DEFAULT_PROJECT_ID, created_at: sourcePrivacy?.created_at ?? date, updated_at: sourcePrivacy?.updated_at ?? date };
+
+  return { project, viewSetting, exportSetting, privacySetting };
+}
+
 export async function ensureDefaultProjectAndSettings() {
   const date = now();
   let project = await db.projects.get(DEFAULT_PROJECT_ID);

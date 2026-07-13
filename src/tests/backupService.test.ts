@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Citation, Source } from '../models';
 import { createJsonBackup, parseJsonBackup } from '../services/backupService';
+import { normalizeRestoredProjectSettings } from '../services/projectSettingsService';
 
 const now = '2026-07-05T00:00:00.000Z';
 const source: Source = { id: 's1', source_type: 'book', title: '本', created_at: now, updated_at: now };
@@ -148,5 +149,22 @@ describe('backupService v1.4 Name / Place compatibility', () => {
       expect(parsed.places).toEqual([]);
       expect(parsed.projects[0].id).toBe('default-project');
     }
+  });
+});
+
+
+describe('backup restore settings normalization', () => {
+  it('復元時は設定IDをdefault IDへ正規化し値を維持する', () => {
+    const normalized = normalizeRestoredProjectSettings({
+      projects: [{ id: 'sample-project-01', name: '青葉家サンプル', description: 'sample', created_at: now, updated_at: now }],
+      view_settings: [{ id: 'sample-view-setting-01', project_id: 'sample-project-01', tree_display_mode: 'detailed', show_relation_legend: true, created_at: now, updated_at: now }],
+      export_settings: [{ id: 'sample-export-setting-01', project_id: 'sample-project-01', show_title: true, title: '青葉家サンプル家系図', show_legend: true, background: 'soft', created_at: now, updated_at: now }],
+      privacy_settings: [{ id: 'sample-privacy-setting-01', project_id: 'sample-project-01', public_output_mode: true, hide_living_persons: true, hide_private_persons: false, hide_hidden_persons: false, hide_honseki: false, mask_living_dates: false, created_at: now, updated_at: now }],
+    }, now);
+
+    expect(normalized.project).toMatchObject({ id: 'default-project', name: '青葉家サンプル', description: 'sample' });
+    expect(normalized.viewSetting).toMatchObject({ id: 'default-view-setting', project_id: 'default-project', tree_display_mode: 'detailed', show_relation_legend: true });
+    expect(normalized.exportSetting).toMatchObject({ id: 'default-export-setting', project_id: 'default-project', title: '青葉家サンプル家系図', background: 'soft' });
+    expect(normalized.privacySetting).toMatchObject({ id: 'default-privacy-setting', project_id: 'default-project', public_output_mode: true, mask_living_dates: false });
   });
 });

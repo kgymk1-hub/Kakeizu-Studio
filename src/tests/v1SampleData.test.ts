@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { BackupData } from '../services/backupService';
 import { createJsonBackup, parseJsonBackup } from '../services/backupService';
+import { buildFamilyLayout } from '../services/layoutService';
 import { validateFamilyData } from '../services/validationService';
 
 const samplePath = resolve(process.cwd(), 'samples/kakeizu_studio_v1_sample.json');
@@ -167,6 +168,26 @@ describe('Kakeizu Studio v1 sample JSON', () => {
     expect(roundTripped.view_settings).toEqual(data.view_settings);
     expect(roundTripped.export_settings).toEqual(data.export_settings);
     expect(roundTripped.privacy_settings).toEqual(data.privacy_settings);
+  });
+
+
+
+  it('Citation総数27とName/Place Citation各2件、ImportBatch内23件を区別する', () => {
+    const data = loadSample();
+    expect(data.citations).toHaveLength(27);
+    expect(data.citations.filter((citation) => citation.target_type === 'name')).toHaveLength(2);
+    expect(data.citations.filter((citation) => citation.target_type === 'place')).toHaveLength(2);
+    expect(data.import_batches[0].imported_counts?.citations).toBe(23);
+  });
+
+  it('v1サンプルの描画edge数はspouse 6本、union-child 3本でID重複がない', () => {
+    const data = loadSample();
+    const layout = buildFamilyLayout(data.persons, data.unions, data.parent_child_relations);
+    const edgeIds = layout.layoutEdges.map((edge) => edge.id);
+    expect(layout.layoutEdges.filter((edge) => edge.type === 'spouse')).toHaveLength(6);
+    expect(layout.layoutEdges.filter((edge) => edge.type === 'union-child')).toHaveLength(3);
+    expect(layout.layoutEdges).toHaveLength(9);
+    expect(new Set(edgeIds).size).toBe(edgeIds.length);
   });
 
   it('ImportBatchの方式・ファイル・件数が標準CSVセット履歴として整合する', () => {

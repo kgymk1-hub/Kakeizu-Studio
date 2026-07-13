@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ParentChildRelation, Person, Union } from '../models';
-import { buildFamilyLayout, calculateLayoutViewBox, sanitizeSelectedPersonId } from '../services/layoutService';
+import { buildFamilyLayout, calculateLayoutViewBox, mergeUnionChildRelationDisplayState, sanitizeSelectedPersonId } from '../services/layoutService';
 
 const now = '2026-01-01T00:00:00.000Z';
 const person = (id: string, name = id, generation_no?: number): Person => ({ id, external_id: id, display_name: name, generation_no, confidence: 'confirmed', review_status: 'reviewed', created_at: now, updated_at: now });
@@ -50,6 +50,26 @@ describe('layoutService', () => {
     const layout = buildFamilyLayout([person('father'), person('mother'), person('child')], [u], [r]);
     expect(layout.layoutEdges.find((e) => e.type === 'spouse')).toMatchObject({ union_type: 'partner', status: 'divorced', end_reason: 'divorce', confidence: 'uncertain', review_status: 'unreviewed' });
     expect(layout.layoutEdges.find((e) => e.type === 'union-child')).toMatchObject({ relation_type: 'adoptive', confidence: 'disputed', review_status: 'unreviewed' });
+  });
+
+
+
+  it('同一Union・同一childの親子線を1本に集約しedge IDを一意にする', () => {
+    const relations = [relation('r1', 'father', 'child', 'u1'), relation('r2', 'mother', 'child', 'u1')];
+    const layout = buildFamilyLayout([person('father'), person('mother'), person('child')], [union('u1', 'father', 'mother')], relations);
+    const unionChildEdges = layout.layoutEdges.filter((e) => e.type === 'union-child');
+    const edgeIds = layout.layoutEdges.map((e) => e.id);
+    expect(unionChildEdges).toHaveLength(1);
+    expect(unionChildEdges[0].id).toBe('e-union-child-u1-child');
+    expect(new Set(edgeIds).size).toBe(edgeIds.length);
+  });
+
+  it('Union-child表示属性は低いconfidenceとunreviewedを優先して集約する', () => {
+    const merged = mergeUnionChildRelationDisplayState([
+      { ...relation('r1', 'father', 'child', 'u1'), confidence: 'confirmed', review_status: 'reviewed' },
+      { ...relation('r2', 'mother', 'child', 'u1'), confidence: 'uncertain', review_status: 'unreviewed' },
+    ]);
+    expect(merged).toMatchObject({ relation_type: 'biological', confidence: 'uncertain', review_status: 'unreviewed' });
   });
 
   it('selected person IDが存在しない場合は安全にundefinedへ正規化する', () => {

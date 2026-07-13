@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Citation, Event, ImportBatch, ParentChildRelation, Person, Source, Union } from '../models';
+import type { Citation, Event, ExportSetting, ImportBatch, ParentChildRelation, Person, PrivacySetting, Project, Source, Union, ViewSetting } from '../models';
 
 type Row = { id: string };
 const stores = {
@@ -10,6 +10,10 @@ const stores = {
   sources: new Map<string, Source>(),
   citations: new Map<string, Citation>(),
   events: new Map<string, Event>(),
+  projects: new Map<string, Project>(),
+  viewSettings: new Map<string, ViewSetting>(),
+  exportSettings: new Map<string, ExportSetting>(),
+  privacySettings: new Map<string, PrivacySetting>(),
 };
 
 function makeTable<T extends Row>(store: Map<string, T>) {
@@ -41,6 +45,10 @@ vi.mock('../db/dexieDb', () => ({
     sources: makeTable(stores.sources),
     citations: makeTable(stores.citations),
     events: makeTable(stores.events),
+    projects: makeTable(stores.projects),
+    viewSettings: makeTable(stores.viewSettings),
+    exportSettings: makeTable(stores.exportSettings),
+    privacySettings: makeTable(stores.privacySettings),
     transaction: async (_mode: string, _tables: unknown[], cb: () => Promise<void>) => { await cb(); },
   },
 }));
@@ -140,5 +148,25 @@ describe('relation update repository', () => {
   it('存在しないParentChildRelation/Union更新で落ちない', async () => {
     await expect(repo.updateParentChildRelation('missing', { relation_type: 'unknown' })).resolves.toBeUndefined();
     await expect(repo.updateUnion('missing', { union_type: 'unknown' })).resolves.toBeUndefined();
+  });
+});
+
+
+describe('familyRepository backup settings replacement', () => {
+  it('saveBackupDataが設定storeをクリアして正規化済みdefault IDの1組だけを保存する', async () => {
+    stores.projects.set('sample-project-01', { id: 'sample-project-01', name: 'old', created_at: now, updated_at: now });
+    stores.viewSettings.set('sample-view-setting-01', { id: 'sample-view-setting-01', project_id: 'sample-project-01', tree_display_mode: 'standard', show_relation_legend: false, created_at: now, updated_at: now });
+    const project: Project = { id: 'default-project', name: '青葉家サンプル', created_at: now, updated_at: now };
+    const viewSetting: ViewSetting = { id: 'default-view-setting', project_id: 'default-project', tree_display_mode: 'detailed', show_relation_legend: true, created_at: now, updated_at: now };
+    const exportSetting: ExportSetting = { id: 'default-export-setting', project_id: 'default-project', show_title: true, title: '青葉家サンプル家系図', show_legend: true, background: 'soft', created_at: now, updated_at: now };
+    const privacySetting: PrivacySetting = { id: 'default-privacy-setting', project_id: 'default-project', public_output_mode: false, hide_living_persons: false, hide_private_persons: true, hide_hidden_persons: true, hide_honseki: true, mask_living_dates: true, created_at: now, updated_at: now };
+
+    await repo.saveBackupData({ persons: [person], unions: [], parentChildRelations: [], importBatches: [importBatch], sources: [source], citations: [citation], events: [event], project, viewSetting, exportSetting, privacySetting });
+
+    expect([...stores.projects.values()]).toEqual([project]);
+    expect([...stores.viewSettings.values()]).toEqual([viewSetting]);
+    expect([...stores.exportSettings.values()]).toEqual([exportSetting]);
+    expect([...stores.privacySettings.values()]).toEqual([privacySetting]);
+    expect([...stores.citations.values()]).toHaveLength(1);
   });
 });

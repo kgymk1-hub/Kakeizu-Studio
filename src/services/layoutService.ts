@@ -1,4 +1,4 @@
-import type { LayoutEdge, LayoutNode, ParentChildRelation, Person, Union, ValidationIssue } from '../models';
+import type { Confidence, LayoutEdge, LayoutNode, ParentChildRelation, Person, RelationType, ReviewStatus, Union, ValidationIssue } from '../models';
 
 const PERSON_WIDTH = 176;
 const PERSON_HEIGHT = 84;
@@ -11,6 +11,20 @@ const VIEWBOX_PADDING = 88;
 
 export interface LayoutViewBox { x: number; y: number; width: number; height: number; }
 export interface FamilyLayout { layoutNodes: LayoutNode[]; layoutEdges: LayoutEdge[]; viewBox: LayoutViewBox; issues: ValidationIssue[]; }
+
+
+export function mergeUnionChildRelationDisplayState(relations: ParentChildRelation[]): Pick<LayoutEdge, 'relation_type' | 'confidence' | 'review_status'> {
+  const relationTypes = new Set(relations.map((r) => r.relation_type));
+  const confidenceRank: Record<Confidence, number> = { disputed: 0, uncertain: 1, likely: 2, confirmed: 3 };
+  const relation_type: RelationType = relationTypes.size === 1 ? relations[0].relation_type : 'disputed';
+  const confidence = relations.reduce<Confidence | undefined>((worst, relation) => {
+    if (!relation.confidence) return worst;
+    if (!worst) return relation.confidence;
+    return confidenceRank[relation.confidence] < confidenceRank[worst] ? relation.confidence : worst;
+  }, undefined);
+  const review_status: ReviewStatus | undefined = relations.some((r) => r.review_status === 'unreviewed') ? 'unreviewed' : relations.find((r) => r.review_status)?.review_status;
+  return { relation_type, confidence, review_status };
+}
 
 export function calculateLayoutViewBox(nodes: LayoutNode[], padding = VIEWBOX_PADDING): LayoutViewBox {
   if (nodes.length === 0) return { x: 0, y: 0, width: 1100, height: 760 };
@@ -64,9 +78,18 @@ export function buildFamilyLayout(persons: Person[], unions: Union[], relations:
     if (personIds.has(u.partner1_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.partner1_id}-${u.id}`, type: 'spouse', from: u.partner1_id, to: u.id, union_type: u.union_type, status: u.status, end_reason: u.end_reason, confidence: u.confidence, review_status: u.review_status });
     if (u.partner2_id && personIds.has(u.partner2_id) && unionIds.has(u.id)) edges.push({ id: `e-${u.id}-${u.partner2_id}`, type: 'spouse', from: u.id, to: u.partner2_id, union_type: u.union_type, status: u.status, end_reason: u.end_reason, confidence: u.confidence, review_status: u.review_status });
   });
+  const unionChildGroups = new Map<string, ParentChildRelation[]>();
   relations.forEach((r) => {
-    const from = r.union_id && unionIds.has(r.union_id) ? r.union_id : r.parent_id;
-    if (personIds.has(r.child_id) && (unionIds.has(from) || personIds.has(from))) edges.push({ id: `e-${from}-${r.child_id}`, type: r.union_id ? 'union-child' : 'parent-child', from, to: r.child_id, relation_type: r.relation_type, confidence: r.confidence, review_status: r.review_status });
+    if (r.union_id && unionIds.has(r.union_id)) {
+      const key = `${r.union_id}::${r.child_id}`;
+      unionChildGroups.set(key, [...(unionChildGroups.get(key) ?? []), r]);
+      return;
+    }
+    if (personIds.has(r.child_id) && personIds.has(r.parent_id)) edges.push({ id: `e-parent-child-${r.id}`, type: 'parent-child', from: r.parent_id, to: r.child_id, relation_type: r.relation_type, confidence: r.confidence, review_status: r.review_status });
+  });
+  unionChildGroups.forEach((group) => {
+    const first = group[0];
+    if (personIds.has(first.child_id) && first.union_id && unionIds.has(first.union_id)) edges.push({ id: `e-union-child-${first.union_id}-${first.child_id}`, type: 'union-child', from: first.union_id, to: first.child_id, ...mergeUnionChildRelationDisplayState(group) });
   });
 
   return { layoutNodes: nodes, layoutEdges: edges, viewBox: calculateLayoutViewBox(nodes), issues };
