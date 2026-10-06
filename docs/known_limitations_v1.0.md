@@ -17,7 +17,7 @@
 | KL-011 | JSONバックアップ | 公開用マスクを適用しません。元データを完全保存します。 | 外部共有前にJSONの取り扱いに注意してください。 | 公開用JSON出力。 |
 | KL-012 | Project | 単一default project相当です。 | Projectは設定管理の器であり、データ分離単位ではありません。 | 本格的な複数Project切替。 |
 | KL-013 | Project | Person等へのproject_idはありません。 | 複数家系の分離は別バックアップで管理してください。 | project_id付与と分離保存。 |
-| KL-014 | Project | Project削除・複製はありません。 | 現在は設定の保存・復元単位として扱ってください。 | Project管理UI。 |
+| KL-014 | Project | Project名の変更フォーム、削除・複製はありません。 | 現在は設定の保存・復元単位として扱ってください。 | Project管理UI。 |
 | KL-015 | Privacy / 公開用出力 | 表示とPNG / PDF / SVG向けの最小版です。 | 通常CSV / JSONはマスクしません。 | 公開用CSV / 公開用JSON。 |
 | KL-016 | Privacy / 公開用出力 | 公開用PDF専用レイアウトはありません。 | 既存出力レイアウト上でマスクを確認してください。 | 専用レイアウト。 |
 | KL-017 | Privacy / 公開用出力 | 生存者判定は最小版です。 | is_living等の入力を確認してください。 | 推定ルール拡張。 |
@@ -28,7 +28,7 @@
 | KL-022 | Place | Event.place_text / Source.honseki_text / Source.repositoryを置き換えません。 | 場所の正規化・再利用候補として扱ってください。 | 自動同期・置換支援。 |
 | KL-023 | Place | 詳細専用画面、地図、緯度経度はありません。 | 文字列と最小項目で管理してください。 | Place詳細・地図連携。 |
 | KL-024 | Place | 標準CSVセット非対応です。 | Placeを含む移行にはJSONバックアップを使用してください。 | places.csv対応。 |
-| KL-025 | Event | Person基本情報と自動同期しません。 | birth等のEventとPerson基本項目は必要に応じて手動で整合してください。 | 同期候補提示。 |
+| KL-025 | Event | Person基本情報と自動同期しません。編集フォームはperson対象のみです。 | birth等のEventとPerson基本項目は必要に応じて手動で整合してください。union / relation対象は一覧・選択とJSON保存・復元で扱います。 | 同期候補提示、関係対象Eventの編集UI。 |
 | KL-026 | Event | marriageからUnion、adoptionからRelationを作りません。 | 関係データは別途作成してください。 | Event起点の関係作成。 |
 | KL-027 | Event | 家系図ノード上にEventを表示しません。 | Event一覧・詳細で確認してください。 | タイムライン・ノード表示。 |
 | KL-028 | Source / Citation | 詳細専用画面、添付ファイル管理、Mediaはありません。 | 最小版パネルとJSON保存で管理してください。 | Source/Citation詳細とMedia。 |
