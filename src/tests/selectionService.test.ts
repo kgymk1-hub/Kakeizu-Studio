@@ -11,6 +11,8 @@ const persons: Person[] = [
 const events: Event[] = [
   { id: 'e1', event_type: 'birth', target_type: 'person', target_id: 'p2', created_at: now, updated_at: now },
   { id: 'e-union', event_type: 'marriage', target_type: 'union', target_id: 'u1', created_at: now, updated_at: now },
+  { id: 'e-relation', event_type: 'adoption', target_type: 'relation', target_id: 'r1', created_at: now, updated_at: now },
+  { id: 'e-missing-union', event_type: 'marriage', target_type: 'union', target_id: 'missing', created_at: now, updated_at: now },
 ];
 const unions: Union[] = [{ id: 'u1', partner1_id: 'p1', partner2_id: 'p3', union_type: 'marriage', created_at: now, updated_at: now }];
 const relations: ParentChildRelation[] = [{ id: 'r1', parent_id: 'p1', child_id: 'p2', relation_type: 'biological', created_at: now, updated_at: now }];
@@ -21,9 +23,11 @@ describe('resolveSelectableTargetToPersonId', () => {
     expect(resolveSelectableTargetToPersonId({ target_type: 'person', target_id: 'p1' }, data)).toBe('p1');
   });
 
-  it('event targetは人物対象Eventの場合に関連人物へ誘導する', () => {
+  it('event targetは人物と関係対象Eventの関連人物へ誘導する', () => {
     expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'e1' }, data)).toBe('p2');
-    expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'e-union' }, data)).toBeUndefined();
+    expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'e-union' }, data)).toBe('p1');
+    expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'e-relation' }, data)).toBe('p2');
+    expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'e-missing-union' }, data)).toBeUndefined();
   });
 
   it('union targetはpartner人物へ誘導する', () => {
@@ -37,6 +41,11 @@ describe('resolveSelectableTargetToPersonId', () => {
   it('存在しないtarget_idでもクラッシュせずundefinedを返す', () => {
     expect(resolveSelectableTargetToPersonId({ target_type: 'person', target_id: 'missing' }, data)).toBeUndefined();
     expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'missing' }, data)).toBeUndefined();
+  });
+
+  it('不正なEvent参照が自分を指しても再帰しない', () => {
+    const invalidEvent = { id: 'self', target_type: 'event', target_id: 'self' } as unknown as Event;
+    expect(resolveSelectableTargetToPersonId({ target_type: 'event', target_id: 'self' }, { ...data, events: [invalidEvent] })).toBeUndefined();
   });
 
   it('source / citation targetでもクラッシュせずundefinedを返す', () => {

@@ -14,7 +14,8 @@ export function resolveSelectableTargetToPersonId(target: SelectableTarget, data
 
   if (target.target_type === 'event') {
     const event = data.events.find((e) => e.id === target.target_id);
-    return event?.target_type === 'person' && hasPerson(data.persons, event.target_id) ? event.target_id : undefined;
+    if (!event || !['person', 'union', 'relation'].includes(event.target_type)) return undefined;
+    return resolveSelectableTargetToPersonId({ target_type: event.target_type, target_id: event.target_id }, data);
   }
 
   if (target.target_type === 'union') {
