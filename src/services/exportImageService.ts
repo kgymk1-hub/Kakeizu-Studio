@@ -4,7 +4,15 @@ type JsPdfModule = typeof import('jspdf');
 async function renderElementToCanvas(element: HTMLElement) {
   const module: Html2CanvasModule = await import('html2canvas');
   const html2canvas = module.default;
-  return html2canvas(element, { backgroundColor: '#ffffff', scale: 2 });
+  const target = getExportElement(element);
+  const { width, height } = getElementSize(target);
+  return html2canvas(target, {
+    backgroundColor: '#ffffff', scale: 2, width, height,
+    onclone: (_document, clonedElement) => {
+      clonedElement.style.width = `${width}px`;
+      clonedElement.style.overflow = 'visible';
+    },
+  });
 }
 
 export async function downloadElementAsPng(element: HTMLElement, filename = 'kakeizu.png') {
@@ -18,8 +26,8 @@ export async function downloadElementAsPng(element: HTMLElement, filename = 'kak
 export async function downloadElementAsPdf(element: HTMLElement, filename = 'kakeizu.pdf') {
   const canvas = await renderElementToCanvas(element);
   const { jsPDF }: JsPdfModule = await import('jspdf');
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
-  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
+  const pdf = new jsPDF({ orientation: canvas.width >= canvas.height ? 'landscape' : 'portrait', unit: 'px', format: [canvas.width, canvas.height], compress: true });
+  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height, undefined, 'FAST');
   pdf.save(filename);
 }
 
@@ -53,11 +61,16 @@ function getElementSize(element: HTMLElement) {
   };
 }
 
+function getExportElement(element: HTMLElement): HTMLElement {
+  return element.querySelector<HTMLElement>('.tree-export-preview') ?? element;
+}
+
 function escapeXml(value: string) {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export function createSvgTextFromElement(element: HTMLElement) {
+  element = getExportElement(element);
   const clone = element.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('[data-html2canvas-ignore="true"]').forEach((ignored) => ignored.remove());
   clone.querySelectorAll('svg').forEach((svg) => {

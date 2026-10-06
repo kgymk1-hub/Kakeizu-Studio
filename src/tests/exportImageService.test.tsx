@@ -23,6 +23,16 @@ afterEach(() => {
 });
 
 describe('SVG export', () => {
+  it('長いサイドバーに伸ばされた外枠ではなく家系図の寸法で出力する', () => {
+    const { host, root, element } = renderTree();
+    const tree = element.querySelector<HTMLElement>('.tree-export-preview')!;
+    Object.defineProperties(element, { scrollWidth: { value: 1000 }, scrollHeight: { value: 9000 } });
+    Object.defineProperties(tree, { scrollWidth: { value: 980 }, scrollHeight: { value: 1000 } });
+    expect(createSvgTextFromElement(element)).toContain('viewBox="0 0 980 1000"');
+    act(() => { root.unmount(); });
+    host.remove();
+  });
+
   it('SVG出力用の文字列にSVG、タイトル、凡例、背景が含まれ、操作UIが含まれない', () => {
     const { host, root, element } = renderTree();
     const svgText = createSvgTextFromElement(element);
