@@ -19,7 +19,7 @@
   "devDependencies": {
     "typescript": "latest",
     "vite": "latest",
-    "vitest": "latest",
+    "vitest": "4.1.11",
     "jsdom": "latest",
     "@types/node": "latest",
     "@types/papaparse": "latest",
