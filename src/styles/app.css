@@ -14,7 +14,8 @@ button:disabled{opacity:.55;cursor:not-allowed}.import-steps{display:flex;gap:6p
    Shared list/search layout rules are defined below. */
 .person-list-controls .person-search-label,
 .event-list-controls .event-search-label,
-.source-citation-controls .source-citation-search-label {
+.source-citation-controls .source-citation-search-label,
+.name-place-panel .name-place-search-label {
   flex: 1 1 220px;
 }
 
