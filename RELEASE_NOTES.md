@@ -1,16 +1,15 @@
-# Kakeizu Studio v1.0.0 Release Notes（Draft）
+# Kakeizu Studio v1.0.0 Release Notes
 
 ## ステータス
 
-- Release status: Release Candidate / Draft
-- Current package version: `0.9.0`
-- Current App version: `Version 0.9.0`
-- Final version update: 統合Dで実施
-- Release date: 未定
+- Release status: Stable
+- Current package version: `1.0.0`
+- Current App version: `Version 1.0.0`
+- Release date: 2026-10-06
 
 ## 概要
 
-v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0までに実装済みのproduction codeを固定し、文書、サンプル、互換性fixture、テスト範囲、GitHub Pages公開前確認を整理するリリース候補です。package / App versionは統合Dまで`0.9.0`を維持します。
+v1.0.0は、v0.9.0までの家系データ管理機能を安定版として整理したリリースです。文書、サンプル、互換性fixture、自動テストと実ブラウザ検証を整備し、確認中に見つかった出力・取り込み・詳細移動の不具合を修正しました。
 
 ## Added
 
@@ -33,6 +32,10 @@ v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0ま
 これらは安定化・可読性・保守性を目的とする整理であり、DB schema、JSON schema、標準CSVセット構造を変更していません。
 
 ## Fixed
+
+- PNG / PDF / SVGの出力領域を家系図全体へ合わせ、表示領域の欠けを修正しました。
+- 標準CSVセット反映直後にName / Placeが画面から消える問題を修正しました。
+- Union / Relation対象Eventから関連人物の詳細へ移動できるよう修正しました。
 
 - 旧schema復元後の再出力が旧schemaのままになる問題を修正済みです。
 - 再出力時はschema 1.4と新しいexported_atへ更新します。
@@ -61,16 +64,16 @@ v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0ま
 
 ## Testing
 
-- 自動テスト: 31 test files / 332 tests
+- 自動テスト: 33 test files / 343 tests
 - P0 related tests: 6 test files / 128 tests
 - `npm run build`: success
 - `npx tsc --noEmit`: success
 - JSON schema 1.0〜1.4代表fixture: success
 - GitHub Actions deploy: success
 - GitHub Pages technical verification: completed
-- Manual browser verification: not performed
-- Manual checklist: 0 / 50
-- 公開確認は外部環境およびGitHub Actionsの成功結果を使用。詳細は`docs/v1_release_verification.md`を参照。
+- Manual browser verification: completed within current scope and known limitations
+- Manual checklist: 50 / 50 PASS
+- 手動確認の証跡は`docs/manual_checklist_executed_2026-10-06.md`を参照。ブラウザ全体の再起動とSVG単独表示はユーザーが直接確認しました。
 
 ## Known limitations
 
@@ -94,9 +97,9 @@ v1.0.0 Draftは、Kakeizu Studioのv1.0.0リリース候補として、v0.9.0ま
 - [x] JSON schema 1.0〜1.4代表fixture
 - [x] GitHub Actions deploy
 - [x] GitHub Pages技術確認
-- [ ] 実ブラウザ手動確認
-- [ ] 手動確認チェックリスト
-- [ ] package / App version 1.0.0固定
+- [x] 実ブラウザ手動確認
+- [x] 手動確認チェックリスト
+- [x] package / App version 1.0.0固定
 - [ ] v1.0.0 tag
 - [ ] GitHub Release
 

@@ -1,176 +1,55 @@
-# Kakeizu Studio v1.0 リリース候補検証記録
+# Kakeizu Studio v1.0.0 リリース検証記録
 
-## 判定
+## 判定（2026-10-06）
 
-- Overall verdict: PASS WITH WARNINGS
-- 統合Cマージ後補完完了: はい
-- 統合C文書整備完了: はい
-- GitHub Pages技術確認完了: はい
-- 手動確認完了: いいえ
-- 統合Dへ進行可能: いいえ
+- P0 / P1: PASS WITH WARNINGS（現行仕様・既知制限の範囲）
+- 手動検証: 50 / 50 PASS、FAIL 0、未確認 0
+- package / package-lock / App / README: 1.0.0
+- JSON出力schema: 1.4、復元対象: 1.0〜1.4
+- Dexie: version(1)〜version(5)、標準CSVセット構造は維持
+- 正式版のタグ・GitHub Release・Pages: 公開処理後に追記
 
-## 対象
+## 検証対象
 
-- 対象: Kakeizu Studio v1.0.0 Release Candidate
-- GitHub Pages公開URL: https://kgymk1-hub.github.io/Kakeizu-Studio/
-- 確認対象main commit: ca8a1c32af4864f2bfe39583a4567f9190c833ca
-- 統合C作業ブランチ: work
-- 統合Cのアプリ実行内容への影響: 文書4ファイルのみの変更であり、production bundle・DB・schema・ロジックは変更していない。
+- 修正統合済みmain: `baa5e241a5057c01304ce2d11f86db386298b3f3`（PR #90 / #91）
+- 統合Dの変更: バージョン表示・文書・実施済み検証記録のみ
+- 実施記録: [手動チェックリスト](manual_checklist_executed_2026-10-06.md)
+- 詳細履歴: [残検証の結果](v1_remaining_verification_2026-10-06.md)
 
-## 固定状態
+## 自動検証
 
-- package version: 0.9.0
-- package-lock version: 0.9.0
-- App header: Version 0.9.0
-- README current version: Version 0.9.0
-- 状態: v1.0.0 Release Candidate / Draft
-- JSON current output: schema_version 1.4
-- JSON restore support: schema 1.0〜1.4
-- Dexie: version(1)〜version(5)
-- Dexie version(6): なし
-- 標準CSVセット構造: 変更なし
-- names.csv / places.csv / media.csv: なし
-- production code変更: なし
-- schema変更: なし
-- manual checklist: 0 / 50
+- Vitest 33ファイル / 343テストPASS
+- TypeScript / production build: PASS
+- schema 1.0〜1.4代表fixtureとv1サンプル: 自動テストでPASS
+- 統合Dのバージョン更新後にも全テスト・TypeScript・buildを再実施
 
-## v1.0準備確認
+## 実ブラウザ検証
 
-- UI文言整理: 確認済み
-- 表示専用パネル分離: 確認済み
-- EmptyState / MetricPills共通化: 確認済み
-- list系CSS整理: 確認済み
-- モバイル検索欄修正: 確認済み
-- 第0〜0-5監査: 確認済み
+Edge / Windows、desktop 1280×900、mobile 390×844で実施。
 
-## 統合A確認
+- Person / 関係 / person対象Event / 資料 / Citation / Name / Placeの操作
+- JSON復元、旧schema復元・再出力、標準CSV ZIP・複数ファイル・単一CSVの全置換
+- Name 2 / Place 4の反映直後・再読込後の保持
+- 関係対象Eventから関連人物への詳細移動
+- 公開用設定のprivate / hidden / 生存日付マスク
+- PNG / PDFの描画、SVG構造・単独表示、検索・フィルタとmobileレイアウト
+- 最終JSONの9データ配列は青葉家の元fixtureと一致
+- 最終状態: Person 7 / Name 2 / Place 4、error 0 / warning 2、コンソールerrorなし
 
-- 到達点棚卸し: 確認済み
-- 既知制限: 確認済み
-- フル機能JSONサンプル: 確認済み
-- サンプル検証テスト: 確認済み
+MAN-008はユーザーがEdge再起動後のPerson 7 / Name 2 / Place 4を直接確認。
+MAN-045のSVG単独表示もユーザーが直接確認。通常版は山田家、公開版は青葉家という出力時点の違いを説明し、各ファイルの欠けなし・公開用マスクを個別に確認した。
 
-## 統合A補完確認
+## 制限と警告
 
-- v1サンプルImportBatch整合修正: 確認済み
-- `total_rows: 50`: 確認済み
-- `imported_counts`合計50: 確認済み
-- 標準CSVセット由来Citation 23件: 確認済み
+- Vite chunk-size warningは継続。ビルド失敗ではない。
+- 標準CSVにはName / Placeの実体を含めない。既存Name / Placeの保持を確認。
+- Source / Place専用詳細へのカード移動は未対応。MAN-027はPerson / Name / Eventと既存編集導線の範囲。
+- Union / Relation対象Eventは一覧・関連人物移動のみ。CRUD UIはperson対象。
+- Project名編集は未対応。復元名の表示と設定永続化を確認。
+- 詳細: [既知制限](known_limitations_v1.0.md)
 
-## 統合B事前補完確認
+## 公開URL
 
-- 旧schema復元後の再出力をschema 1.4へ固定: 確認済み
-- 新しい`exported_at`: 確認済み
-- backupService回帰テスト: 確認済み
+https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0
 
-## 統合B確認
-
-- schema 1.0〜1.4代表fixture: 確認済み
-- 互換性テスト19件: 確認済み
-- 手動チェックリスト50項目: 作成済み、実ブラウザ確認は未実施
-- テスト範囲棚卸し: 確認済み
-
-## 統合C確認
-
-- README整理: 確認済み
-- Release Notes Draft: 確認済み
-- 仕様書Version 1.6: 確認済み
-- リリース検証記録: 確認済み
-- GitHub Pages技術確認: 完了
-
-## 自動テスト
-
-- `npm test`: success, 31 test files / 332 tests
-- P0 tests: success, 6 test files / 128 tests
-- `npm run build`: success
-- `npx tsc --noEmit`: success
-- `git diff --check`: success
-
-## ローカルbuild
-
-- dist/index.htmlあり
-- root要素あり
-- JavaScript assetあり
-- CSS assetあり
-- Vite base /Kakeizu-Studio/
-- manifest path /Kakeizu-Studio/manifest.json
-- bundle内 Version 0.9.0
-
-## GitHub Actions
-
-- Workflow: Deploy to GitHub Pages
-- Run ID: 29159290682
-- Head SHA: 251a354
-- Branch: main
-- Status: completed
-- Conclusion: success
-- Build: success
-- Deploy: success
-
-- pages-build-deployment Run ID: 29159289891
-- Status: completed
-- Conclusion: success
-
-## GitHub Pages技術確認
-
-Public URL:
-https://kgymk1-hub.github.io/Kakeizu-Studio/
-
-External verification:
-公開URL取得成功
-
-Local dist:
-- dist/index.htmlあり
-- root要素あり
-- JavaScript assetあり
-- CSS assetあり
-- Vite base /Kakeizu-Studio/
-- bundle内 Version 0.9.0
-
-Codex環境の結果:
-
-Codex実行環境からのcurlはHTTP 403。
-外部環境では公開URL取得成功、GitHub Actions deploy成功。
-実行環境固有のネットワーク制限としてWARN扱い。
-
-## 実ブラウザ手動確認
-
-- 実施数: 0
-- PASS: 0
-- FAIL: 0
-- 未実施: 50
-- 判定: 未実施
-
-## 累積差分
-
-- 基準: ac0e28a Add files via upload
-- 累積差分: 想定内
-- 変更禁止領域: 差分なし
-- services差分: 統合C以前の想定内差分のみ
-
-## Blockers
-
-- なし
-
-## Warnings
-
-- npm `Unknown env config "http-proxy"` 警告を確認。
-- Vite chunk-size warningを確認。
-- React `act(...)`警告を確認。
-- Codex実行環境からGitHub PagesへのcurlはHTTP 403。外部確認済みの公開URL取得成功とActions deploy成功を優先し、環境固有WARNとして扱う。
-- 外部環境では公開URL取得成功。
-- 実ブラウザ手動確認は未実施。
-
-## Notes
-
-- package / App versionは0.9.0を維持。
-- package / App version 1.0.0固定、tag作成、GitHub Release作成は統合Dで実施する。
-- JSON復元は現在データを全置換するため、復元前バックアップを推奨する。
-
-## 正式リリース前の残作業
-
-- 実ブラウザ手動確認
-- 手動確認チェックリスト完了
-- package / App version 1.0.0固定
-- v1.0.0 tag作成
-- GitHub Release作成
+公開後は対象commitのActions成功と実際のVersion 1.0.0表示を確認する。
