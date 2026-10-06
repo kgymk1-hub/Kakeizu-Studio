@@ -354,8 +354,8 @@ export default function App() {
     const fileNames = ['manifest.json', ...(standardPreview.preview.files?.filter((file) => file.present).map((file) => file.fileName) ?? [])];
     const importBatch = createImportBatchFromPreview({ mode: 'standard_csv_set', preview: standardPreview.preview, sourceLabel: '標準CSVセット', fileNames });
     const report = createImportReportFromPreview({ batch: importBatch, preview: standardPreview.preview, mode: 'standard_csv_set', sourceLabel: '標準CSVセット', fileNames });
-    const nextData = { ...standardPreview, importBatches: [importBatch] };
-    await saveBackupData({ ...nextData, names, places });
+    const nextData = { ...standardPreview, importBatches: [importBatch], names, places };
+    await saveBackupData(nextData);
     applyData({ ...nextData, issues: standardPreview.issues });
     setStandardPreview(undefined);
     setLastImportReport(report);
