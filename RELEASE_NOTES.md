@@ -100,8 +100,8 @@ v1.0.0は、v0.9.0までの家系データ管理機能を安定版として整�
 - [x] 実ブラウザ手動確認
 - [x] 手動確認チェックリスト
 - [x] package / App version 1.0.0固定
-- [ ] v1.0.0 tag
-- [ ] GitHub Release
+- [x] v1.0.0 tag
+- [x] GitHub Release
 
 ---
 

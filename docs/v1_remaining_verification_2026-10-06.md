@@ -1,8 +1,18 @@
 # 継続検証の結果と残作業 2026-10-06
 
+## 正式公開の完了
+
+- v1.0.0: 2026-10-06正式公開。PR #92統合済み。
+- Release: https://github.com/kgymk1-hub/Kakeizu-Studio/releases/tag/v1.0.0
+- アプリ: https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0
+- タグのcommit: 274bd0268f9107df568e860666f7f4987a657cb9
+- Pages Actions 37440455053: success。公開画面Version 1.0.0、console error 0。
+- 版更新後も343テスト・TypeScript・build PASS。手動50項目PASS。
+- 手動操作待ち・リリース前の残作業なし。既知制限とViteチャンクサイズ警告は継続。
+
 ## 残検証を進めた結果
 
-- 現行仕様と既知制限の範囲で、50項目すべてPASS。実施版は `manual_checklist_executed_2026-10-06.md`。MAN-008（ブラウザ全体の再起動）とMAN-045（SVG単独表示）は2026-10-06のユーザー直接確認により完了。正式リリース・公開は別途未完了。
+- 現行仕様と既知制限の範囲で、50項目すべてPASS。実施版は `manual_checklist_executed_2026-10-06.md`。MAN-008（ブラウザ全体の再起動）とMAN-045（SVG単独表示）は2026-10-06のユーザー直接確認により完了。正式リリース・公開は完了。
 - 標準CSVセットZIP、manifest + 6CSVの複数ファイル取り込み、両方のreplace_allを実ブラウザで実施。JSON `(14)` / `(15)`ではPerson 7 / Union 3 / Relation 6 / Event 7 / Source 4 / Citation 27 / Name 2 / Place 4。Name / Placeは反映直後と再読込後の両方で保持。結果レポート・ImportBatch履歴はcompleted_with_warnings（warning 4 / error 0）。warningはCSVに実体がないname / place対象Citationの既知制限。
 - 単一CSVと標準CSVの追加・external_id更新・既存スキップ・別ID追加は、いずれも反映ボタンが無効。単一CSVの全置換では内蔵架空サンプルPerson 9 / Union 4 / Relation 9、資料・出典・Event 0、成功レポートを確認してから元サンプルへ戻した。
 - 検証用人物に追加した母RelationのCitationを外して出典なし状態で削除。父RelationとUnionはCitation付きで削除。JSON `(16)`はRelation 6 / Union 3、追加関係を指すCitation 0。関係削除後も表示が破綻しない。
@@ -19,7 +29,7 @@
 1. MAN-008：Edge再起動後、人物7人 / Name 2件 / Place 4件を確認し「ここはokです」と回答。PASS。
 2. MAN-045：通常版 `kakeizu (1).svg` は山田家、公開版 `kakeizu (2).svg` は青葉家。出力時点のサンプルが異なるため同一家系の比較とは扱わず、各ファイルの欠けなし・公開版の非公開／生存中マスクを個別に確認する条件を説明。ユーザーが「OKです」と回答。PASS。
 
-残る手動操作待ちはない。50項目すべてPASS。Source / Placeの専用詳細へのカード移動は現行UIの既知制限であり、MAN-027の確認はPerson / Name / Eventの対応範囲と既存の編集ボタンについて記録している。PRの統合・版更新・タグ・GitHub Release・Pages公開の完了とは区別する。
+残る手動操作待ちはない。50項目すべてPASS。Source / Placeの専用詳細へのカード移動は現行UIの既知制限であり、MAN-027の確認はPerson / Name / Eventの対応範囲と既存の編集ボタンについて記録している。続く統合Dで版更新・タグ・GitHub Release・Pages公開も完了した。
 
 ## 今回の変更
 

@@ -7,7 +7,7 @@
 - package / package-lock / App / README: 1.0.0
 - JSON出力schema: 1.4、復元対象: 1.0〜1.4
 - Dexie: version(1)〜version(5)、標準CSVセット構造は維持
-- 正式版のタグ・GitHub Release・Pages: 公開処理後に追記
+- 正式版のタグ・GitHub Release・Pages: 公開完了
 
 ## 検証対象
 
@@ -52,4 +52,20 @@ MAN-045のSVG単独表示もユーザーが直接確認。通常版は山田家�
 
 https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0
 
-公開後は対象commitのActions成功と実際のVersion 1.0.0表示を確認する。
+対象commitのActions成功と実際のVersion 1.0.0表示を確認済み。
+
+## 正式公開の結果
+
+- リリース用PR #92: 統合済み
+- Release commit / v1.0.0 tag: `274bd0268f9107df568e860666f7f4987a657cb9`
+- GitHub Release: https://github.com/kgymk1-hub/Kakeizu-Studio/releases/tag/v1.0.0
+- Release: Stable / Latest、2026-10-06公開
+- Pages workflow: https://github.com/kgymk1-hub/Kakeizu-Studio/actions/runs/37440455053
+- Deploy to GitHub Pages: completed / success
+- 公開URLをEdgeで開き、Version 1.0.0・家系図・操作パネルの表示を確認
+- 公開画面のconsole error: 0
+- 版更新後のVitest: 33 files / 343 tests PASS（40.88秒）
+- 版更新後のTypeScript / production build / diff whitespace: PASS
+- 証跡: v1.0.0-release-published.jpg / v1.0.0-pages-published.jpg（ローカル保存）
+
+手動操作待ち・正式リリース前の残作業はない。上記の既知制限とチャンクサイズ警告は継続する。
