@@ -2,7 +2,7 @@
 
 Version 1.6
 
-v1.0.0リリース候補・統合C反映版
+v1.0.0安定版・統合D反映版
 
 ---
 
@@ -32,10 +32,10 @@ Version 1.6 では、Version 1.5.1までの実装反映内容を維持しつつ�
 ### 0.1 現在の状態
 
 - 仕様書Version: 1.6
-- アプリpackage version: 0.9.0
-- App表示: Version 0.9.0
-- 状態: v1.0.0 Release Candidate
-- 正式固定: 統合D
+- アプリpackage version: 1.0.0
+- App表示: Version 1.0.0
+- 状態: v1.0.0安定版
+- 正式固定: 統合Dで1.0.0へ更新
 
 ### 0.2 v1.0.0 Release Candidateの反映範囲
 
@@ -49,8 +49,8 @@ Version 1.6 では、Version 1.5.1までの実装反映内容を維持しつつ�
 - schema固定
 - sample / fixture / docs / tests
 - GitHub Pages技術確認
-- 実ブラウザ確認未実施
-- 統合Dで正式固定
+- 実ブラウザ確認50項目PASS（現行仕様・既知制限の範囲）
+- 統合Dでpackage / App versionを1.0.0へ固定
 
 v0.9.0 時点では、以下が実装済みまたは最小版実装済みである。
 
@@ -156,8 +156,8 @@ v0.9.0 時点では、以下が実装済みまたは最小版実装済みであ�
 
 ## 0.4 テスト仕様の現在状態
 
-- 31 test files
-- 332 tests
+- 33 test files
+- 343 tests
 - compatibility fixtures: schema 1.0〜1.4
 - manual checklist: 50 items
 
@@ -724,10 +724,10 @@ v1.0.0 Release Candidateでは、production codeの大型機能追加ではな�
 #### 8.10.7 現在状態
 
 - production codeの大型機能追加なし
-- package / App version: 0.9.0
-- 状態: Release Candidate
-- 実ブラウザ手動確認: 未実施
-- 正式固定: 統合D
+- package / App version: 1.0.0
+- 状態: 安定版
+- 実ブラウザ手動確認: 50項目PASS（現行仕様・既知制限の範囲）
+- 正式固定: 統合Dで1.0.0へ更新
 
 ---
 
@@ -735,7 +735,7 @@ v1.0.0 Release Candidateでは、production codeの大型機能追加ではな�
 
 v0.9.0までで、基本的な家系データ管理、家系図表示・出力、検索・一覧・修正導線、CSVインポートの取込前プレビュー・検証・履歴・結果レポート、Project/settingsの最小永続化、公開用出力モード最小版、Name / Place最小版まで到達した。
 
-現在はv1.0.0 Release Candidateである。収録範囲確定、到達点棚卸し、既知制限、サンプル、schema互換性、自動テスト、文書整理、GitHub Pages技術確認は完了している。実ブラウザ手動確認と手動チェックリスト記録は未完了であり、統合Dへ進む前に実施する。package / App / READMEの1.0.0固定、tag、GitHub Releaseは統合Dで扱う。
+v1.0.0では収録範囲確定、到達点棚卸し、既知制限、サンプル、schema互換性、自動テスト、文書整理、実ブラウザ手動検証50項目を完了した。package / App / READMEを1.0.0へ固定する。公開状態はdocs/v1_release_verification.mdに記録する。
 
 | バージョン | 内容 |
 |---|---|
@@ -769,7 +769,7 @@ v1.0.0では、戸籍・出典管理対応の安定版として、v0.1.0〜v0.9.
 
 v1.0.0では、新機能追加よりも、v0.1.0〜v0.9.0で到達した機能群を安定版として整えることを優先する。
 
-Release Candidate時点では、v0.1.0〜v0.9.0到達点の棚卸し、README / RELEASE_NOTES / 仕様書の整合、サンプルデータ整備、JSONバックアップ互換性確認、標準CSVセット互換性確認、主要導線の手動確認リスト整備、テスト整理、GitHub Pages技術確認、既知の未対応事項の明文化まで完了している。正式リリース固定は未実施である。
+Release Candidate時点では、v0.1.0〜v0.9.0到達点の棚卸し、README / RELEASE_NOTES / 仕様書の整合、サンプルデータ整備、JSONバックアップ互換性確認、標準CSVセット互換性確認、主要導線の手動確認リスト整備、テスト整理、GitHub Pages技術確認、既知の未対応事項の明文化まで完了している。統合Dではバージョンを1.0.0へ固定し、手動検証50項目の記録を反映する。
 
 v1.0.0では、表形式入力モード、複数ビュー、Media管理、標準CSVセット拡張、GEDCOM、親等計算などの大きな新機能は原則として追加しない。
 
@@ -2553,7 +2553,7 @@ v0.9.0時点で、Vitestにより主要機能のテストが整備されてい�
 
 ### 58.10 v1.0 Release Candidateの確認基準
 
-- 自動テスト基準: 31 test files / 332 tests
+- 自動テスト基準: 33 test files / 343 tests
 - `v1SampleData.test.ts`: v1.0フル機能サンプルを確認する。
 - `backupCompatibility.test.ts`: schema 1.0〜1.4代表fixture、default補完、schema 1.3 settings保持、schema 1.4 Name / Place保持、旧schemaからschema 1.4への再出力、unsupported schema、不正JSONを確認する。
 - buildとTypeScriptを確認する。
@@ -2668,7 +2668,7 @@ v1.0.0では、以下を安定版の基準とする。
 - tag作成
 - GitHub Release作成
 
-現在状態は、P0完了、P1未実施、正式リリース未実施である。
+P0とP1（現行仕様・既知制限の範囲）は完了。package / App / README versionは1.0.0。tag・Release・Pagesの公開状態はdocs/v1_release_verification.mdを参照。
 
 ### 60.2 v1.0.0で新規実装しないもの
 
@@ -2711,7 +2711,7 @@ v0.9.0までの開発では、小さなフェーズに分割して、各段階�
 
 ### v0.9.0：Name / Place 最小版
 
-v0.9.0は完了済みであり、現在はv1.0.0 Release Candidateである。
+v0.9.0は完了済みであり、v1.0.0で安定版として固定する。
 
 ### v1.0.0：安定版仕上げ
 

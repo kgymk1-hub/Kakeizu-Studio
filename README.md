@@ -4,16 +4,15 @@
 
 Kakeizu Studio は、戸籍・出典管理へ拡張できる React + TypeScript + Vite 製のローカルファースト家系図作成アプリです。ブラウザ内の IndexedDB（Dexie）へ保存するため、MVP公開版ではサーバーを使わずに人物・関係・資料・出典を扱えます。
 
-**Version 0.9.0**
+**Version 1.0.0**
 
-> 現在はv1.0.0リリース候補の文書・公開・最終確認フェーズです。
-> package / App versionの1.0.0固定は、最終確認後の統合Dで行います。
+> v1.0.0は、既存機能の安定化、互換性確認、実ブラウザ検証を完了した安定版です。
 
 > v0.9.0では、Name / Placeモデル最小版を正式版として整理し、PersonとName、Event / SourceとPlaceを最小限連携できるようにしました。
 
-## v1.0.0リリース候補：安定版仕上げ
+## v1.0.0：安定版
 
-Kakeizu Studioは現在、v1.0.0 Release Candidateとして安定版仕上げの段階です。統合Cでは文書・公開・最終確認フェーズを整理し、package / App versionは引き続き`0.9.0`のまま維持します。
+v1.0.0では、既存の家系データ管理機能を安定版として整理しました。出力領域の欠け、CSV反映後のName / Place表示、関係対象Eventからの詳細移動を修正し、現行仕様と既知制限の範囲で手動検証50項目を完了しています。
 
 ### 収録範囲
 
@@ -50,17 +49,17 @@ Kakeizu Studioは現在、v1.0.0 Release Candidateとして安定版仕上げの
 
 ### 品質基準
 
-- 31 test files
-- 332 tests
+- 33 test files
+- 343 tests
+- 実ブラウザ手動検証50項目PASS（現行仕様・既知制限の範囲）
 - JSON schema 1.0〜1.4代表fixture
 - v1.0フル機能サンプル
 
-### 残る作業
+### 検証記録
 
-- 実ブラウザ手動確認
-- package / App version 1.0.0固定
-- Git tag
-- GitHub Release
+- [実施済み手動チェックリスト](docs/manual_checklist_executed_2026-10-06.md)
+- [リリース検証記録](docs/v1_release_verification.md)
+- [GitHub Release](https://github.com/kgymk1-hub/Kakeizu-Studio/releases/tag/v1.0.0)
 
 
 ## v0.9.0: Name / Place 最小版
@@ -250,8 +249,8 @@ git push origin v0.8.0
 ## 公開URL
 
 - GitHub Pages: <https://kgymk1-hub.github.io/Kakeizu-Studio/>
-- v1.0.0-rc キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0-rc>
-- 統合D前の公開画面Version: `Version 0.9.0`
+- v1.0.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=1.0.0>
+- 公開画面Version: `Version 1.0.0`
 - v0.9.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.9.0>
 - v0.8.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.8.0>
 - v0.7.0 キャッシュ回避確認: <https://kgymk1-hub.github.io/Kakeizu-Studio/?v=0.7.0>
@@ -284,7 +283,7 @@ JSONバックアップの現行出力は`schema_version: "1.4"`です。schema 1
 - Media / 添付ファイル、GEDCOM、親等計算、法定相続人判定、相続関係説明図、OCR / AI支援は未実装です。
 - 大規模データ向け仮想スクロール、ページネーションは未実装です。
 
-詳細は`docs/known_limitations_v1.0.md`を参照してください。実ブラウザ手動確認は既知制限ではなく、統合Dへ進む前に実施する正式リリース前の確認作業です。package / App / README versionの`1.0.0`固定、Git tag、GitHub Releaseは統合Dで実施します。
+詳細は`docs/known_limitations_v1.0.md`を参照してください。手動検証の実施内容と制限は`docs/manual_checklist_executed_2026-10-06.md`に記録しています。
 
 ## 主な機能
 
@@ -851,7 +850,7 @@ npm run dev
 npm run preview
 ```
 
-現在の自動テスト基準は31 test files / 332 testsです。
+現在の自動テスト基準は33 test files / 343 testsです。
 
 ### v0.7.0 第2フェーズ: インポート結果プレビュー強化
 
